@@ -1,0 +1,131 @@
+import Fastify from 'fastify';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyCors from '@fastify/cors';
+import fastifyRateLimit from '@fastify/rate-limit';
+import fastifySensible from '@fastify/sensible';
+import { getConfig } from '@config';
+import { getPrismaClient, disconnectPrisma } from '@db/client';
+import { authMiddleware } from '@middleware/auth';
+import { registerRoutes } from '@routes/index';
+import { initializeFlags } from '@services/featureFlags';
+import { registerGlobalRateLimiter } from '@middleware/rateLimiter';
+
+async function buildServer(): Promise<ReturnType<typeof Fastify>> {
+  const config = getConfig();
+
+  const fastify = Fastify({
+    logger: {
+      level: config.LOG_LEVEL,
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          singleLine: false,
+        },
+      },
+    },
+  });
+
+  // Register plugins
+  await fastify.register(fastifyHelmet, {
+    contentSecurityPolicy: false, // Will be configured later if needed
+  });
+
+  await fastify.register(fastifyCors, {
+    origin: true, // Allow all origins in development
+    credentials: true,
+  });
+
+  await fastify.register(fastifyRateLimit, {
+    max: 100,
+    timeWindow: '15 minutes',
+  });
+
+  await fastify.register(fastifySensible);
+
+  // Register global rate limiter
+  await registerGlobalRateLimiter(fastify);
+
+  // Register auth middleware
+  fastify.addHook('preHandler', authMiddleware);
+
+  // Register error handler
+  fastify.setErrorHandler((error, request, reply) => {
+    fastify.log.error(error);
+
+    // Prisma errors
+    if (error.name === 'PrismaClientKnownRequestError') {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'Database error occurred',
+      });
+    }
+
+    // Validation errors are handled by middleware
+    if (error.statusCode === 400) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: error.message,
+      });
+    }
+
+    // Default error response
+    const statusCode = error.statusCode || 500;
+    return reply.status(statusCode).send({
+      statusCode,
+      error: error.name || 'Error',
+      message: error.message || 'An unexpected error occurred',
+    });
+  });
+
+  // Register all routes
+  await registerRoutes(fastify);
+
+  // Graceful shutdown
+  const signals = ['SIGINT', 'SIGTERM'] as const;
+  for (const signal of signals) {
+    process.on(signal, async () => {
+      fastify.log.info(`Received ${signal}, shutting down gracefully`);
+      await fastify.close();
+      await disconnectPrisma();
+      process.exit(0);
+    });
+  }
+
+  return fastify;
+}
+
+async function start(): Promise<void> {
+  try {
+    const config = getConfig();
+    const fastify = await buildServer();
+
+    // Initialize Prisma client
+    getPrismaClient();
+
+    // Initialize feature flags
+    await initializeFlags();
+
+    // Start server
+    await fastify.listen({ host: config.HOST, port: config.PORT });
+
+    fastify.log.info(`Server is running at http://${config.HOST}:${config.PORT}`);
+    fastify.log.info(`Environment: ${config.NODE_ENV}`);
+    fastify.log.info('Nova Backend Server v0.1.0');
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Only start if this is the main module
+if (require.main === module) {
+  start().catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}
+
+export { buildServer };

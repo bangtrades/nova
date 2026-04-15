@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nova-postgres
+    environment:
+      POSTGRES_USER: nova
+      POSTGRES_PASSWORD: nova_dev_password
+      POSTGRES_DB: nova_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nova"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nova-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nova-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://nova:nova_dev_password@postgres:5432/nova_dev
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-key-change-in-production
+      PORT: 3000
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+    networks:
+      - nova-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  nova-network:
+    driver: bridge

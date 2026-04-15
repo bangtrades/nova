@@ -1,0 +1,821 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		003C006B8A6358865F3F53A0 /* NovaStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4016D4D86767E83D36548370 /* NovaStorage */; };
+		016A7E7BA6B750B6B8EF4659 /* Sources/ViewModels/DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F577672B0643F9B68B9CEBE8 /* Sources/ViewModels/DashboardViewModel.swift */; };
+		055F40099791BBF320586AB1 /* Sources/Views/Curriculum/CurriculumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB712A63D74FBC9C1785AACB /* Sources/Views/Curriculum/CurriculumView.swift */; };
+		08BB4C210DEA5B6033293695 /* Sources/Views/Lessons/LessonManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5BD0D18AB8B247F78B9DC9E /* Sources/Views/Lessons/LessonManagerView.swift */; };
+		09E02EC9C35DFD378AF35735 /* Sources/ViewModels/AssetCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F9E2DC7D476F17E2B668783 /* Sources/ViewModels/AssetCacheManager.swift */; };
+		0C3F55926715B0A9429E2825 /* Sources/Views/Flipbook/ConceptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0668781BA6C2D19441BD0B /* Sources/Views/Flipbook/ConceptCardView.swift */; };
+		0EB4DF73C0BF763CBD2D9830 /* Sources/ViewModels/FlipbookViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2273BE8DD1873CE253447685 /* Sources/ViewModels/FlipbookViewModel.swift */; };
+		0F0ADA33A06E3F62599A248D /* Sources/ViewModels/ProgressDashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A7846D9BE9BC39FCEFAB8F /* Sources/ViewModels/ProgressDashboardViewModel.swift */; };
+		154F7958820C7C12202A4F89 /* Sources/Views/Common/LoadingSkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */; };
+		1A7F4B7FB1CA1A6017AFE1DF /* Sources/Views/Common/AccessibilityModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9A503EC4DB98282E7B7DCB /* Sources/Views/Common/AccessibilityModifiers.swift */; };
+		1E7D8FAB57551F5B71520BA3 /* Sources/Views/Progress/ProgressDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7644BE846F7D1B3D24ABEF /* Sources/Views/Progress/ProgressDashboardView.swift */; };
+		1F0FE4C33A4B88054A2399F9 /* NovaCore in Frameworks */ = {isa = PBXBuildFile; productRef = D7C028B8CBDD832EB07EF428 /* NovaCore */; };
+		1F7724623874BD2CD421D15C /* Sources/Views/Reports/WeeklyReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C738437CC449B84DC47A67EB /* Sources/Views/Reports/WeeklyReportView.swift */; };
+		236C65E7346FBEF4626EC34C /* Sources/Views/Flipbook/CardProgressDots.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70FA0BE404EAC27908DD1A0 /* Sources/Views/Flipbook/CardProgressDots.swift */; };
+		251DA17E071F13FB5F44B4A0 /* Sources/Views/Common/ParentalGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8625EFB88BD9F749D46B926 /* Sources/Views/Common/ParentalGateView.swift */; };
+		2721E5A43DE6D97F142565F1 /* Sources/Views/Flipbook/SparkyHintSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/SparkyHintSheet.swift */; };
+		2F2421A1715D50703CEAD01B /* NovaAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 32A1016D67A7E20E7EA68929 /* NovaAuth */; };
+		3104E3E0251F6B83439D5E91 /* Sources/Views/Settings/LLMProviderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE3408517BC4D66C95A0DC /* Sources/Views/Settings/LLMProviderSettingsView.swift */; };
+		327818B02248A32266FBD200 /* Sources/Views/Children/ChildProfileCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFD31900FAB4E655CE674CD /* Sources/Views/Children/ChildProfileCard.swift */; };
+		333D6EF2AA11F4527F2B628A /* Sources/Views/Settings/ChildProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C6F5DF0F5519F60E726E45 /* Sources/Views/Settings/ChildProfileView.swift */; };
+		33BB1816EF37A7A797183E00 /* Sources/Views/Flipbook/FlipbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65C0DE7FBDD5CE314BC41BF2 /* Sources/Views/Flipbook/FlipbookView.swift */; };
+		33E79F7036B4A273B7B358FA /* Sources/ViewModels/HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53733BA9AD1E0EB1A67EE1A9 /* Sources/ViewModels/HomeViewModel.swift */; };
+		34549122C94EC256E8A65FA0 /* Sources/Views/Lessons/CardEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B09CFD38D36F3C2B8707F448 /* Sources/Views/Lessons/CardEditorView.swift */; };
+		354F2FCBCC7FB979632B87DF /* Sources/Views/Trophies/BadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3481AF2E024363FB811EDF95 /* Sources/Views/Trophies/BadgeView.swift */; };
+		3581E51EF01651CFE4F699A5 /* Sources/ViewModels/PublishFlowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB8377E15F2699EABC45EB3 /* Sources/ViewModels/PublishFlowViewModel.swift */; };
+		37363F1507D9465B33AC90EB /* Sources/Views/Home/ContinueLearningSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFD4143D42BDDE7780EA4A46 /* Sources/Views/Home/ContinueLearningSection.swift */; };
+		373AF14850C3D29A01A6CC39 /* Sources/Views/Onboarding/CompanionOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 868C90FD2F2FC2FE2E92F3C5 /* Sources/Views/Onboarding/CompanionOnboardingView.swift */; };
+		3836C2DCB2AD5784B50D2385 /* Sources/Views/Common/ErrorBoundaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35472C81670F14E61683F8F6 /* Sources/Views/Common/ErrorBoundaryView.swift */; };
+		38B2CA4FB55102B569A452C1 /* Sources/Services/DeepLinkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09C69CEE0E068BACA3D5FF9 /* Sources/Services/DeepLinkHandler.swift */; };
+		3B03130B81B69267E128A04E /* Sources/Views/Flipbook/ExperimentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8E3FB0E48DAB16F5231287 /* Sources/Views/Flipbook/ExperimentCardView.swift */; };
+		3CA3A722BD3997DFCC31FADE /* Sources/ViewModels/SessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A9DE3EA7169CA3B34F9269 /* Sources/ViewModels/SessionTracker.swift */; };
+		3D86F9D1E86E81847CF061E0 /* Sources/Views/Common/EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74E8C5A4EDD853DD14B581D /* Sources/Views/Common/EmptyStateView.swift */; };
+		4134E86032AAE7E8DC8BD72B /* Sources/Views/Lessons/LessonTileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102D2516B9671BBDD0404461 /* Sources/Views/Lessons/LessonTileView.swift */; };
+		428605CF3A0D051E362877F8 /* Sources/Views/Dashboard/ActivityFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E571183EC3976EC4629C88C /* Sources/Views/Dashboard/ActivityFeedView.swift */; };
+		4745BBAE4676C981C188C495 /* NovaCore in Frameworks */ = {isa = PBXBuildFile; productRef = A9834D3C9A96E6587B8070D4 /* NovaCore */; };
+		47AE69C5374FA252603A42A6 /* Sources/Views/Lessons/LessonListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297A837F7E33708E2B466E9F /* Sources/Views/Lessons/LessonListRow.swift */; };
+		4DC35E0F8B2453043082807A /* Sources/Views/Settings/OAuthFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E7C72ED1EC35E501A2EE357 /* Sources/Views/Settings/OAuthFlowView.swift */; };
+		5059D9E65DF9A0BA4068FC90 /* Sources/Views/Lessons/LearningPathRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38648AD5653B374B8B96F675 /* Sources/Views/Lessons/LearningPathRow.swift */; };
+		52CC759A7D822C0DF53F7974 /* NovaVoice in Frameworks */ = {isa = PBXBuildFile; productRef = 5E3338B7C7592FB6D0D6425A /* NovaVoice */; };
+		533F06D588953413B32D0A25 /* Sources/Views/Dashboard/DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89452C19AC3D6CCAEBAEF48D /* Sources/Views/Dashboard/DashboardView.swift */; };
+		574A3C73EBF31040AE2E8E83 /* Sources/Views/Home/WelcomeHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82F262894EC476F14EF5E76C /* Sources/Views/Home/WelcomeHeader.swift */; };
+		584D4E54D9619535676E7709 /* Sources/Views/Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20DBB94A0FBCD00A359C2A0F /* Sources/Views/Settings/SettingsView.swift */; };
+		5983639104E384D63D02BF42 /* Sources/ViewModels/LessonsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C9C835DDEA88C76CEC0C82A /* Sources/ViewModels/LessonsViewModel.swift */; };
+		5B700FEF7DC8AAD21CFF5154 /* Sources/Views/Auth/WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3525877382A88911D7E080FB /* Sources/Views/Auth/WelcomeView.swift */; };
+		5B8C43621D5C5AF3EDC10E58 /* Sources/Views/Home/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7577D605E8A705269239A7A /* Sources/Views/Home/HomeView.swift */; };
+		6279834B0655B97A354C9F6A /* Sources/Services/NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1EF1D8C5705D6B757C7154 /* Sources/Services/NotificationScheduler.swift */; };
+		667D5165A2F32BB362F2D9F8 /* Sources/Views/Common/NovaPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B905FD80A93BD7151CFE8A /* Sources/Views/Common/NovaPalette.swift */; };
+		66DD2614C37257DBC06ECB74 /* Sources/ViewModels/ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C38D03FE5235B5F3310C42 /* Sources/ViewModels/ProgressViewModel.swift */; };
+		67EECDB60368A2DA3A18D8AF /* Sources/ViewModels/URLIntakeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C42666DE2BE3946F057429 /* Sources/ViewModels/URLIntakeViewModel.swift */; };
+		685E1E1BD1042CEC1E5D3F4F /* Sources/Views/Common/PreviewMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB88D8CE03B9856DB44F4DCC /* Sources/Views/Common/PreviewMocks.swift */; };
+		69C8F815B8EFAC3370B67AA0 /* Sources/Views/Editor/AdaptiveCardEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1705427833561354B68ADAC /* Sources/Views/Editor/AdaptiveCardEditorView.swift */; };
+		6E67DD67DF9BB76D4BEA5B3D /* Sources/Views/Lessons/LearningPathCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 448020CD02D0BA713713346C /* Sources/Views/Lessons/LearningPathCard.swift */; };
+		6F17137AC7129EBFE1C528D0 /* Sources/App/CompanionAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105BE7FB7463CA44563D083B /* Sources/App/CompanionAppState.swift */; };
+		71C6E334F6AFB83A246D7FAB /* Sources/ViewModels/WeeklyReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F461609A7F18F02A9B9F1BCE /* Sources/ViewModels/WeeklyReportViewModel.swift */; };
+		71D1DD64CD441FDE39A5925D /* Sources/Views/Common/OfflineBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A24C306137BFE66E9C732E2 /* Sources/Views/Common/OfflineBannerView.swift */; };
+		72CAB1108EF68E8DD88C658B /* Sources/Views/Progress/ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F43921F38CCBE3C317E9942 /* Sources/Views/Progress/ProgressView.swift */; };
+		740D4FCEFF257C0A59C68BB2 /* Sources/Views/Children/AddChildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3971B9E10A73333DF41AE7E4 /* Sources/Views/Children/AddChildView.swift */; };
+		76626819665492F44F853E4E /* NovaVoice in Frameworks */ = {isa = PBXBuildFile; productRef = 6282C0797C0F6F93E78DA811 /* NovaVoice */; };
+		7D546E330E207355A570A84D /* Sources/Views/Editor/LessonPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 725AB0E533207A409A98A8D8 /* Sources/Views/Editor/LessonPreviewView.swift */; };
+		7E5C514D15C8350DD0D5AC58 /* Sources/Views/Editor/PublishFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C0ED30372F1C69B2338964 /* Sources/Views/Editor/PublishFlowView.swift */; };
+		7F7C9F0D24CA6D90A4978A19 /* NovaStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4707CCC76B08378F30FF2ED8 /* NovaStorage */; };
+		80F91A995850CDF62766E5EF /* Sources/Views/Lessons/LessonEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1043718DD2240FADA6BFB0A /* Sources/Views/Lessons/LessonEditorView.swift */; };
+		80FEE13AF5CF14943D26B04D /* NovaAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 2A56072A95B4D7F45FD41361 /* NovaAuth */; };
+		82605057CC692B48A51E2A46 /* Sources/Views/Common/TierBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8214418E5F5BB52A0CB5308 /* Sources/Views/Common/TierBadgeView.swift */; };
+		88DD1879E0351C9D26D47A11 /* Sources/Views/Dashboard/QuickStatsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D778518FB1D6F9ECB5E31AD7 /* Sources/Views/Dashboard/QuickStatsCard.swift */; };
+		8B7AC272B1859DA304E9FC1D /* Sources/Views/Home/FeaturedLessonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CE8633863B93C675ED6BAD /* Sources/Views/Home/FeaturedLessonCard.swift */; };
+		8F4DA6594F3E3E12531DFD97 /* Sources/Views/Flipbook/ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93CC86935AFB6965EA4E2CC /* Sources/Views/Flipbook/ConfettiView.swift */; };
+		95859053271934129FBB4B2E /* Sources/Views/Children/ChildrenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F2D440B66663480A852502C /* Sources/Views/Children/ChildrenView.swift */; };
+		967A5727F7AB6B9C7C1964CD /* Sources/ViewModels/SparkyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591B8859205724FF6CB587E0 /* Sources/ViewModels/SparkyViewModel.swift */; };
+		9730365FBF51D83CF3A6B084 /* Sources/Views/Flipbook/StoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C38E81B60274B118D63FC0 /* Sources/Views/Flipbook/StoryCardView.swift */; };
+		9736A682585E8B2FE2B3D6BD /* Sources/Views/Common/CompanionPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C623C3F4956BF5977F34BD8 /* Sources/Views/Common/CompanionPalette.swift */; };
+		A123EEA9A4B6A52D3CD422D4 /* Sources/Views/Flipbook/VoiceCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B80BCD897677409908C75 /* Sources/Views/Flipbook/VoiceCardView.swift */; };
+		A4669090BC7B5B3DC9CBE20C /* Sources/Views/Trophies/TrophyRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9B8CDE35E40FFD7053976B /* Sources/Views/Trophies/TrophyRoomView.swift */; };
+		A954806FB05F250E72366F9E /* Sources/ViewModels/CurriculumViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EBE92744656E5361B78C891 /* Sources/ViewModels/CurriculumViewModel.swift */; };
+		ACE3D879AD761775EF76711A /* Sources/Views/Common/EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 697B5FBBB9931E4315B5D1B8 /* Sources/Views/Common/EmptyStateView.swift */; };
+		AD2D7B44B837FF8C815569B3 /* Sources/Views/Auth/LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFC732C1A1B20B46DBE8B3E1 /* Sources/Views/Auth/LoginView.swift */; };
+		AF44B9ED890BFE4F84013000 /* Sources/Views/Editor/CardFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA12AE9930CE73EB6A91985 /* Sources/Views/Editor/CardFormView.swift */; };
+		B4FDA9A2B9299840D0E906D8 /* Sources/Views/Flipbook/FlipbookHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6272D038F1E108B494151DA /* Sources/Views/Flipbook/FlipbookHeader.swift */; };
+		B525C8CD1952A9BFD74E0555 /* Sources/Views/Progress/ProgressChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */; };
+		B98E15FD756B077DEE528E7B /* Sources/Views/Lessons/MasonryGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF44BE1A429B8D6A63921E3 /* Sources/Views/Lessons/MasonryGrid.swift */; };
+		C435B79BA97B39533A4717A5 /* Sources/Views/Lessons/LessonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429D85B5D98F04BA2D85DF47 /* Sources/Views/Lessons/LessonsView.swift */; };
+		C6380E8378BB8D72E5972F6C /* Sources/Views/Curriculum/PathEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F738C802BE9204621F41CF71 /* Sources/Views/Curriculum/PathEditorView.swift */; };
+		CA41B80D4506F05D8E1D7903 /* Sources/Views/Common/OfflineGracefulView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7088A5577448C1E7158C2C00 /* Sources/Views/Common/OfflineGracefulView.swift */; };
+		D2A34D65B04979E0C6DADBEA /* Sources/Views/Pipeline/URLIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E2D2C458CBBA06D5492032 /* Sources/Views/Pipeline/URLIntakeView.swift */; };
+		D431E8F97E33BA3EBFF9E95E /* Sources/Views/Legal/LegalDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A78528DBE513E88239003352 /* Sources/Views/Legal/LegalDocumentView.swift */; };
+		D448EC7D4A0DEEF9EFBC3F1A /* Sources/App/NovaKidsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36884E5F9D470228AD66AA07 /* Sources/App/NovaKidsApp.swift */; };
+		D925DB72A335125DBD12DEF0 /* Sources/Views/Onboarding/AgeGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967059EB3C3EAFEB09F4520E /* Sources/Views/Onboarding/AgeGateView.swift */; };
+		D9A364803855FFD1205C19EF /* Sources/Views/Auth/KidsLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B433A8E3E8215D6543CF951A /* Sources/Views/Auth/KidsLoginView.swift */; };
+		DBFEDDF62345BAD19A0B8840 /* Sources/Views/Flipbook/QuizCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17C37D12EA3549C093FA6CE /* Sources/Views/Flipbook/QuizCardView.swift */; };
+		DD8F7F08EBA21867212D53AB /* Sources/ViewModels/AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAA852FBC7A39BB80E450C2 /* Sources/ViewModels/AuthViewModel.swift */; };
+		DE64DF80BAB9F3506205771B /* Sources/ViewModels/LessonManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 237D358CF81AFBBC5C6DC733 /* Sources/ViewModels/LessonManagerViewModel.swift */; };
+		E3187D4EDBBF9DBD1F437D2F /* Sources/Views/Editor/CardListSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 503767ACADFFBC15AAF192D5 /* Sources/Views/Editor/CardListSidebar.swift */; };
+		E4C33088D43088B502A265BD /* Sources/ViewModels/OfflineSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BAE7CE27E4DB8B50C3D44E8 /* Sources/ViewModels/OfflineSyncManager.swift */; };
+		E9303123F5D0ED64ADFB3D94 /* Sources/Services/BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D186BA9A8EFF285FEDF78A5B /* Sources/Services/BackgroundTaskManager.swift */; };
+		E9A49B24E61CFF82D697E805 /* Sources/Views/Editor/CardPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93EB5582A8D609A92873AF1 /* Sources/Views/Editor/CardPreviewView.swift */; };
+		EB515DD83F24B99C71610EB1 /* Sources/Views/Sparky/SparkyCharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Sparky/SparkyCharacterView.swift */; };
+		F0B824C417762A6B295EB430 /* Sources/Views/Common/ShareSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C78AC991BE1CDF9D69BDAA2F /* Sources/Views/Common/ShareSheetView.swift */; };
+		F3AB4F1F4E70BB5F28675587 /* Sources/ViewModels/ChildProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB92730B7992AAB01EA3FC2 /* Sources/ViewModels/ChildProfileViewModel.swift */; };
+		F4BD278A6FD811111C6321A3 /* Sources/Views/Common/PerformanceOptimizers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99366EA94F6BE7853DB1733 /* Sources/Views/Common/PerformanceOptimizers.swift */; };
+		F59578BCFFEDBE35939D3B5E /* Sources/ViewModels/TrophyRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7B95C7986033B43A1727A4E /* Sources/ViewModels/TrophyRoomViewModel.swift */; };
+		F5CDEF86C422D0F140415A0A /* Sources/Views/Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB3E8ED1D23FA44AF3BD609 /* Sources/Views/Onboarding/OnboardingView.swift */; };
+		F5F2B50E727775536D2619FA /* Sources/App/KidsAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */; };
+		F7FA543395D7DF3D9537FB7C /* Sources/Views/Home/EnhancedHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */; };
+		F85CBAABDEE1194967EFE542 /* Sources/Views/Progress/SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D1AA468D7048B9EB70E8C /* Sources/Views/Progress/SessionHistoryView.swift */; };
+		F9AFF746C2C2B8C76A90ED85 /* Sources/Views/Trophies/TrophiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 306A3ADD1172B9C030B3CF91 /* Sources/Views/Trophies/TrophiesView.swift */; };
+		FBDBF61FFE29AD1C581474E8 /* Sources/Views/Settings/SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48138F82BE647EED2EB2CD8 /* Sources/Views/Settings/SubscriptionView.swift */; };
+		FCAC8071E5F3BC1B24905CE0 /* Sources/Views/Flipbook/SparkyHintButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/SparkyHintButton.swift */; };
+		FEC8A3161DEBFF203FA093F7 /* Sources/Views/Sparky/SparkyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72031029B6E29935FC0046E3 /* Sources/Views/Sparky/SparkyView.swift */; };
+		FEFB5C6BD521DB2D111CD550 /* Sources/App/NovaCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C490ABC033D2FF49576124D8 /* Sources/App/NovaCompanionApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
+		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
+		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
+		102D2516B9671BBDD0404461 /* Sources/Views/Lessons/LessonTileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LessonTileView.swift; sourceTree = "<group>"; };
+		105BE7FB7463CA44563D083B /* Sources/App/CompanionAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/CompanionAppState.swift; sourceTree = "<group>"; };
+		11A9DE3EA7169CA3B34F9269 /* Sources/ViewModels/SessionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/SessionTracker.swift; sourceTree = "<group>"; };
+		150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/SparkyHintButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/SparkyHintButton.swift; sourceTree = "<group>"; };
+		1DB3E8ED1D23FA44AF3BD609 /* Sources/Views/Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
+		1E7644BE846F7D1B3D24ABEF /* Sources/Views/Progress/ProgressDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressDashboardView.swift; sourceTree = "<group>"; };
+		1EFD31900FAB4E655CE674CD /* Sources/Views/Children/ChildProfileCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Children/ChildProfileCard.swift; sourceTree = "<group>"; };
+		20C6F5DF0F5519F60E726E45 /* Sources/Views/Settings/ChildProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/ChildProfileView.swift; sourceTree = "<group>"; };
+		20DBB94A0FBCD00A359C2A0F /* Sources/Views/Settings/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/SettingsView.swift; sourceTree = "<group>"; };
+		2273BE8DD1873CE253447685 /* Sources/ViewModels/FlipbookViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/FlipbookViewModel.swift; sourceTree = "<group>"; };
+		237D358CF81AFBBC5C6DC733 /* Sources/ViewModels/LessonManagerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/LessonManagerViewModel.swift; sourceTree = "<group>"; };
+		23E2D2C458CBBA06D5492032 /* Sources/Views/Pipeline/URLIntakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Pipeline/URLIntakeView.swift; sourceTree = "<group>"; };
+		297A837F7E33708E2B466E9F /* Sources/Views/Lessons/LessonListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LessonListRow.swift; sourceTree = "<group>"; };
+		2B0668781BA6C2D19441BD0B /* Sources/Views/Flipbook/ConceptCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/ConceptCardView.swift; sourceTree = "<group>"; };
+		2D9A503EC4DB98282E7B7DCB /* Sources/Views/Common/AccessibilityModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/AccessibilityModifiers.swift; sourceTree = "<group>"; };
+		2E571183EC3976EC4629C88C /* Sources/Views/Dashboard/ActivityFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashboard/ActivityFeedView.swift; sourceTree = "<group>"; };
+		2E7C72ED1EC35E501A2EE357 /* Sources/Views/Settings/OAuthFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/OAuthFlowView.swift; sourceTree = "<group>"; };
+		2F2D440B66663480A852502C /* Sources/Views/Children/ChildrenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Children/ChildrenView.swift; sourceTree = "<group>"; };
+		306A3ADD1172B9C030B3CF91 /* Sources/Views/Trophies/TrophiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/TrophiesView.swift; sourceTree = "<group>"; };
+		3481AF2E024363FB811EDF95 /* Sources/Views/Trophies/BadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/BadgeView.swift; sourceTree = "<group>"; };
+		3525877382A88911D7E080FB /* Sources/Views/Auth/WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Auth/WelcomeView.swift; sourceTree = "<group>"; };
+		35472C81670F14E61683F8F6 /* Sources/Views/Common/ErrorBoundaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ErrorBoundaryView.swift; sourceTree = "<group>"; };
+		36884E5F9D470228AD66AA07 /* Sources/App/NovaKidsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/NovaKidsApp.swift; sourceTree = "<group>"; };
+		38648AD5653B374B8B96F675 /* Sources/Views/Lessons/LearningPathRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LearningPathRow.swift; sourceTree = "<group>"; };
+		3971B9E10A73333DF41AE7E4 /* Sources/Views/Children/AddChildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Children/AddChildView.swift; sourceTree = "<group>"; };
+		3CF44BE1A429B8D6A63921E3 /* Sources/Views/Lessons/MasonryGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/MasonryGrid.swift; sourceTree = "<group>"; };
+		3EAA852FBC7A39BB80E450C2 /* Sources/ViewModels/AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/AuthViewModel.swift; sourceTree = "<group>"; };
+		429D85B5D98F04BA2D85DF47 /* Sources/Views/Lessons/LessonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LessonsView.swift; sourceTree = "<group>"; };
+		448020CD02D0BA713713346C /* Sources/Views/Lessons/LearningPathCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LearningPathCard.swift; sourceTree = "<group>"; };
+		4BAE7CE27E4DB8B50C3D44E8 /* Sources/ViewModels/OfflineSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/OfflineSyncManager.swift; sourceTree = "<group>"; };
+		503767ACADFFBC15AAF192D5 /* Sources/Views/Editor/CardListSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/CardListSidebar.swift; sourceTree = "<group>"; };
+		528B80BCD897677409908C75 /* Sources/Views/Flipbook/VoiceCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/VoiceCardView.swift; sourceTree = "<group>"; };
+		53733BA9AD1E0EB1A67EE1A9 /* Sources/ViewModels/HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/HomeViewModel.swift; sourceTree = "<group>"; };
+		591B8859205724FF6CB587E0 /* Sources/ViewModels/SparkyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/SparkyViewModel.swift; sourceTree = "<group>"; };
+		5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Sparky/SparkyCharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Sparky/SparkyCharacterView.swift; sourceTree = "<group>"; };
+		5C9C835DDEA88C76CEC0C82A /* Sources/ViewModels/LessonsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/LessonsViewModel.swift; sourceTree = "<group>"; };
+		5F9E2DC7D476F17E2B668783 /* Sources/ViewModels/AssetCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/AssetCacheManager.swift; sourceTree = "<group>"; };
+		65C0DE7FBDD5CE314BC41BF2 /* Sources/Views/Flipbook/FlipbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/FlipbookView.swift; sourceTree = "<group>"; };
+		697B5FBBB9931E4315B5D1B8 /* Sources/Views/Common/EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/EmptyStateView.swift; sourceTree = "<group>"; };
+		6C623C3F4956BF5977F34BD8 /* Sources/Views/Common/CompanionPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/CompanionPalette.swift; sourceTree = "<group>"; };
+		6C8E3FB0E48DAB16F5231287 /* Sources/Views/Flipbook/ExperimentCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/ExperimentCardView.swift; sourceTree = "<group>"; };
+		6EBE92744656E5361B78C891 /* Sources/ViewModels/CurriculumViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/CurriculumViewModel.swift; sourceTree = "<group>"; };
+		6F43921F38CCBE3C317E9942 /* Sources/Views/Progress/ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressView.swift; sourceTree = "<group>"; };
+		7088A5577448C1E7158C2C00 /* Sources/Views/Common/OfflineGracefulView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/OfflineGracefulView.swift; sourceTree = "<group>"; };
+		72031029B6E29935FC0046E3 /* Sources/Views/Sparky/SparkyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Sparky/SparkyView.swift; sourceTree = "<group>"; };
+		725AB0E533207A409A98A8D8 /* Sources/Views/Editor/LessonPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/LessonPreviewView.swift; sourceTree = "<group>"; };
+		791D1AA468D7048B9EB70E8C /* Sources/Views/Progress/SessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/SessionHistoryView.swift; sourceTree = "<group>"; };
+		7AB8377E15F2699EABC45EB3 /* Sources/ViewModels/PublishFlowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/PublishFlowViewModel.swift; sourceTree = "<group>"; };
+		82F262894EC476F14EF5E76C /* Sources/Views/Home/WelcomeHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Home/WelcomeHeader.swift; sourceTree = "<group>"; };
+		868C90FD2F2FC2FE2E92F3C5 /* Sources/Views/Onboarding/CompanionOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Onboarding/CompanionOnboardingView.swift; sourceTree = "<group>"; };
+		89452C19AC3D6CCAEBAEF48D /* Sources/Views/Dashboard/DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashboard/DashboardView.swift; sourceTree = "<group>"; };
+		93A7846D9BE9BC39FCEFAB8F /* Sources/ViewModels/ProgressDashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/ProgressDashboardViewModel.swift; sourceTree = "<group>"; };
+		967059EB3C3EAFEB09F4520E /* Sources/Views/Onboarding/AgeGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Onboarding/AgeGateView.swift; sourceTree = "<group>"; };
+		9A24C306137BFE66E9C732E2 /* Sources/Views/Common/OfflineBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/OfflineBannerView.swift; sourceTree = "<group>"; };
+		A3FE3408517BC4D66C95A0DC /* Sources/Views/Settings/LLMProviderSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/LLMProviderSettingsView.swift; sourceTree = "<group>"; };
+		A78528DBE513E88239003352 /* Sources/Views/Legal/LegalDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Legal/LegalDocumentView.swift; sourceTree = "<group>"; };
+		A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/SparkyHintSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/SparkyHintSheet.swift; sourceTree = "<group>"; };
+		AA000000000000000000AA01 /* NovaKids.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NovaKids.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000000000000000000AA02 /* NovaCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NovaCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB1EF1D8C5705D6B757C7154 /* Sources/Services/NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Services/NotificationScheduler.swift; sourceTree = "<group>"; };
+		B09CFD38D36F3C2B8707F448 /* Sources/Views/Lessons/CardEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/CardEditorView.swift; sourceTree = "<group>"; };
+		B1705427833561354B68ADAC /* Sources/Views/Editor/AdaptiveCardEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/AdaptiveCardEditorView.swift; sourceTree = "<group>"; };
+		B17C37D12EA3549C093FA6CE /* Sources/Views/Flipbook/QuizCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/QuizCardView.swift; sourceTree = "<group>"; };
+		B2C0ED30372F1C69B2338964 /* Sources/Views/Editor/PublishFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/PublishFlowView.swift; sourceTree = "<group>"; };
+		B433A8E3E8215D6543CF951A /* Sources/Views/Auth/KidsLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Auth/KidsLoginView.swift; sourceTree = "<group>"; };
+		B5CE8633863B93C675ED6BAD /* Sources/Views/Home/FeaturedLessonCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Home/FeaturedLessonCard.swift; sourceTree = "<group>"; };
+		B6C38E81B60274B118D63FC0 /* Sources/Views/Flipbook/StoryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/StoryCardView.swift; sourceTree = "<group>"; };
+		B7577D605E8A705269239A7A /* Sources/Views/Home/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Home/HomeView.swift; sourceTree = "<group>"; };
+		B93CC86935AFB6965EA4E2CC /* Sources/Views/Flipbook/ConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/ConfettiView.swift; sourceTree = "<group>"; };
+		BB712A63D74FBC9C1785AACB /* Sources/Views/Curriculum/CurriculumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Curriculum/CurriculumView.swift; sourceTree = "<group>"; };
+		BCB92730B7992AAB01EA3FC2 /* Sources/ViewModels/ChildProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/ChildProfileViewModel.swift; sourceTree = "<group>"; };
+		C490ABC033D2FF49576124D8 /* Sources/App/NovaCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/NovaCompanionApp.swift; sourceTree = "<group>"; };
+		C5BD0D18AB8B247F78B9DC9E /* Sources/Views/Lessons/LessonManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LessonManagerView.swift; sourceTree = "<group>"; };
+		C738437CC449B84DC47A67EB /* Sources/Views/Reports/WeeklyReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Reports/WeeklyReportView.swift; sourceTree = "<group>"; };
+		C74E8C5A4EDD853DD14B581D /* Sources/Views/Common/EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/EmptyStateView.swift; sourceTree = "<group>"; };
+		C78AC991BE1CDF9D69BDAA2F /* Sources/Views/Common/ShareSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ShareSheetView.swift; sourceTree = "<group>"; };
+		C93EB5582A8D609A92873AF1 /* Sources/Views/Editor/CardPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/CardPreviewView.swift; sourceTree = "<group>"; };
+		C9C42666DE2BE3946F057429 /* Sources/ViewModels/URLIntakeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/URLIntakeViewModel.swift; sourceTree = "<group>"; };
+		CC9B8CDE35E40FFD7053976B /* Sources/Views/Trophies/TrophyRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/TrophyRoomView.swift; sourceTree = "<group>"; };
+		D186BA9A8EFF285FEDF78A5B /* Sources/Services/BackgroundTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Services/BackgroundTaskManager.swift; sourceTree = "<group>"; };
+		D6272D038F1E108B494151DA /* Sources/Views/Flipbook/FlipbookHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/FlipbookHeader.swift; sourceTree = "<group>"; };
+		D778518FB1D6F9ECB5E31AD7 /* Sources/Views/Dashboard/QuickStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashboard/QuickStatsCard.swift; sourceTree = "<group>"; };
+		D8625EFB88BD9F749D46B926 /* Sources/Views/Common/ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ParentalGateView.swift; sourceTree = "<group>"; };
+		D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Home/EnhancedHomeView.swift; sourceTree = "<group>"; };
+		D8C38D03FE5235B5F3310C42 /* Sources/ViewModels/ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/ProgressViewModel.swift; sourceTree = "<group>"; };
+		D99366EA94F6BE7853DB1733 /* Sources/Views/Common/PerformanceOptimizers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/PerformanceOptimizers.swift; sourceTree = "<group>"; };
+		DCA12AE9930CE73EB6A91985 /* Sources/Views/Editor/CardFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/CardFormView.swift; sourceTree = "<group>"; };
+		DFC732C1A1B20B46DBE8B3E1 /* Sources/Views/Auth/LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Auth/LoginView.swift; sourceTree = "<group>"; };
+		E09C69CEE0E068BACA3D5FF9 /* Sources/Services/DeepLinkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Services/DeepLinkHandler.swift; sourceTree = "<group>"; };
+		E1043718DD2240FADA6BFB0A /* Sources/Views/Lessons/LessonEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LessonEditorView.swift; sourceTree = "<group>"; };
+		E70FA0BE404EAC27908DD1A0 /* Sources/Views/Flipbook/CardProgressDots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/CardProgressDots.swift; sourceTree = "<group>"; };
+		E7B905FD80A93BD7151CFE8A /* Sources/Views/Common/NovaPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/NovaPalette.swift; sourceTree = "<group>"; };
+		EFD4143D42BDDE7780EA4A46 /* Sources/Views/Home/ContinueLearningSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Home/ContinueLearningSection.swift; sourceTree = "<group>"; };
+		F461609A7F18F02A9B9F1BCE /* Sources/ViewModels/WeeklyReportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/WeeklyReportViewModel.swift; sourceTree = "<group>"; };
+		F48138F82BE647EED2EB2CD8 /* Sources/Views/Settings/SubscriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/SubscriptionView.swift; sourceTree = "<group>"; };
+		F577672B0643F9B68B9CEBE8 /* Sources/ViewModels/DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/DashboardViewModel.swift; sourceTree = "<group>"; };
+		F738C802BE9204621F41CF71 /* Sources/Views/Curriculum/PathEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Curriculum/PathEditorView.swift; sourceTree = "<group>"; };
+		F7B95C7986033B43A1727A4E /* Sources/ViewModels/TrophyRoomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/TrophyRoomViewModel.swift; sourceTree = "<group>"; };
+		F8214418E5F5BB52A0CB5308 /* Sources/Views/Common/TierBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/TierBadgeView.swift; sourceTree = "<group>"; };
+		FB88D8CE03B9856DB44F4DCC /* Sources/Views/Common/PreviewMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/PreviewMocks.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA000000000000000000FP01 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4745BBAE4676C981C188C495 /* NovaCore in Frameworks */,
+				2F2421A1715D50703CEAD01B /* NovaAuth in Frameworks */,
+				52CC759A7D822C0DF53F7974 /* NovaVoice in Frameworks */,
+				003C006B8A6358865F3F53A0 /* NovaStorage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000000000000000000FP02 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1F0FE4C33A4B88054A2399F9 /* NovaCore in Frameworks */,
+				80FEE13AF5CF14943D26B04D /* NovaAuth in Frameworks */,
+				76626819665492F44F853E4E /* NovaVoice in Frameworks */,
+				7F7C9F0D24CA6D90A4978A19 /* NovaStorage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA000000000000000000GR01 = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000GR02 /* NovaKids */,
+				AA000000000000000000GR03 /* NovaCompanion */,
+				AA000000000000000000GR05 /* Packages */,
+				AA000000000000000000GR04 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA000000000000000000GR02 /* NovaKids */ = {
+			isa = PBXGroup;
+			children = (
+				2D9A503EC4DB98282E7B7DCB /* Sources/Views/Common/AccessibilityModifiers.swift */,
+				967059EB3C3EAFEB09F4520E /* Sources/Views/Onboarding/AgeGateView.swift */,
+				5F9E2DC7D476F17E2B668783 /* Sources/ViewModels/AssetCacheManager.swift */,
+				3EAA852FBC7A39BB80E450C2 /* Sources/ViewModels/AuthViewModel.swift */,
+				D186BA9A8EFF285FEDF78A5B /* Sources/Services/BackgroundTaskManager.swift */,
+				3481AF2E024363FB811EDF95 /* Sources/Views/Trophies/BadgeView.swift */,
+				E70FA0BE404EAC27908DD1A0 /* Sources/Views/Flipbook/CardProgressDots.swift */,
+				2B0668781BA6C2D19441BD0B /* Sources/Views/Flipbook/ConceptCardView.swift */,
+				B93CC86935AFB6965EA4E2CC /* Sources/Views/Flipbook/ConfettiView.swift */,
+				EFD4143D42BDDE7780EA4A46 /* Sources/Views/Home/ContinueLearningSection.swift */,
+				C74E8C5A4EDD853DD14B581D /* Sources/Views/Common/EmptyStateView.swift */,
+				D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */,
+				35472C81670F14E61683F8F6 /* Sources/Views/Common/ErrorBoundaryView.swift */,
+				6C8E3FB0E48DAB16F5231287 /* Sources/Views/Flipbook/ExperimentCardView.swift */,
+				B5CE8633863B93C675ED6BAD /* Sources/Views/Home/FeaturedLessonCard.swift */,
+				D6272D038F1E108B494151DA /* Sources/Views/Flipbook/FlipbookHeader.swift */,
+				65C0DE7FBDD5CE314BC41BF2 /* Sources/Views/Flipbook/FlipbookView.swift */,
+				2273BE8DD1873CE253447685 /* Sources/ViewModels/FlipbookViewModel.swift */,
+				B7577D605E8A705269239A7A /* Sources/Views/Home/HomeView.swift */,
+				53733BA9AD1E0EB1A67EE1A9 /* Sources/ViewModels/HomeViewModel.swift */,
+				00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */,
+				B433A8E3E8215D6543CF951A /* Sources/Views/Auth/KidsLoginView.swift */,
+				448020CD02D0BA713713346C /* Sources/Views/Lessons/LearningPathCard.swift */,
+				38648AD5653B374B8B96F675 /* Sources/Views/Lessons/LearningPathRow.swift */,
+				102D2516B9671BBDD0404461 /* Sources/Views/Lessons/LessonTileView.swift */,
+				429D85B5D98F04BA2D85DF47 /* Sources/Views/Lessons/LessonsView.swift */,
+				5C9C835DDEA88C76CEC0C82A /* Sources/ViewModels/LessonsViewModel.swift */,
+				030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */,
+				3CF44BE1A429B8D6A63921E3 /* Sources/Views/Lessons/MasonryGrid.swift */,
+				36884E5F9D470228AD66AA07 /* Sources/App/NovaKidsApp.swift */,
+				E7B905FD80A93BD7151CFE8A /* Sources/Views/Common/NovaPalette.swift */,
+				9A24C306137BFE66E9C732E2 /* Sources/Views/Common/OfflineBannerView.swift */,
+				7088A5577448C1E7158C2C00 /* Sources/Views/Common/OfflineGracefulView.swift */,
+				4BAE7CE27E4DB8B50C3D44E8 /* Sources/ViewModels/OfflineSyncManager.swift */,
+				1DB3E8ED1D23FA44AF3BD609 /* Sources/Views/Onboarding/OnboardingView.swift */,
+				D8625EFB88BD9F749D46B926 /* Sources/Views/Common/ParentalGateView.swift */,
+				D99366EA94F6BE7853DB1733 /* Sources/Views/Common/PerformanceOptimizers.swift */,
+				B17C37D12EA3549C093FA6CE /* Sources/Views/Flipbook/QuizCardView.swift */,
+				11A9DE3EA7169CA3B34F9269 /* Sources/ViewModels/SessionTracker.swift */,
+				5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Sparky/SparkyCharacterView.swift */,
+				150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/SparkyHintButton.swift */,
+				A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/SparkyHintSheet.swift */,
+				72031029B6E29935FC0046E3 /* Sources/Views/Sparky/SparkyView.swift */,
+				591B8859205724FF6CB587E0 /* Sources/ViewModels/SparkyViewModel.swift */,
+				B6C38E81B60274B118D63FC0 /* Sources/Views/Flipbook/StoryCardView.swift */,
+				306A3ADD1172B9C030B3CF91 /* Sources/Views/Trophies/TrophiesView.swift */,
+				CC9B8CDE35E40FFD7053976B /* Sources/Views/Trophies/TrophyRoomView.swift */,
+				F7B95C7986033B43A1727A4E /* Sources/ViewModels/TrophyRoomViewModel.swift */,
+				528B80BCD897677409908C75 /* Sources/Views/Flipbook/VoiceCardView.swift */,
+				82F262894EC476F14EF5E76C /* Sources/Views/Home/WelcomeHeader.swift */,
+			);
+			name = NovaKids;
+			path = Apps/NovaKids;
+			sourceTree = "<group>";
+		};
+		AA000000000000000000GR03 /* NovaCompanion */ = {
+			isa = PBXGroup;
+			children = (
+				2E571183EC3976EC4629C88C /* Sources/Views/Dashboard/ActivityFeedView.swift */,
+				B1705427833561354B68ADAC /* Sources/Views/Editor/AdaptiveCardEditorView.swift */,
+				3971B9E10A73333DF41AE7E4 /* Sources/Views/Children/AddChildView.swift */,
+				B09CFD38D36F3C2B8707F448 /* Sources/Views/Lessons/CardEditorView.swift */,
+				DCA12AE9930CE73EB6A91985 /* Sources/Views/Editor/CardFormView.swift */,
+				503767ACADFFBC15AAF192D5 /* Sources/Views/Editor/CardListSidebar.swift */,
+				C93EB5582A8D609A92873AF1 /* Sources/Views/Editor/CardPreviewView.swift */,
+				1EFD31900FAB4E655CE674CD /* Sources/Views/Children/ChildProfileCard.swift */,
+				20C6F5DF0F5519F60E726E45 /* Sources/Views/Settings/ChildProfileView.swift */,
+				BCB92730B7992AAB01EA3FC2 /* Sources/ViewModels/ChildProfileViewModel.swift */,
+				2F2D440B66663480A852502C /* Sources/Views/Children/ChildrenView.swift */,
+				105BE7FB7463CA44563D083B /* Sources/App/CompanionAppState.swift */,
+				868C90FD2F2FC2FE2E92F3C5 /* Sources/Views/Onboarding/CompanionOnboardingView.swift */,
+				6C623C3F4956BF5977F34BD8 /* Sources/Views/Common/CompanionPalette.swift */,
+				BB712A63D74FBC9C1785AACB /* Sources/Views/Curriculum/CurriculumView.swift */,
+				6EBE92744656E5361B78C891 /* Sources/ViewModels/CurriculumViewModel.swift */,
+				89452C19AC3D6CCAEBAEF48D /* Sources/Views/Dashboard/DashboardView.swift */,
+				F577672B0643F9B68B9CEBE8 /* Sources/ViewModels/DashboardViewModel.swift */,
+				E09C69CEE0E068BACA3D5FF9 /* Sources/Services/DeepLinkHandler.swift */,
+				697B5FBBB9931E4315B5D1B8 /* Sources/Views/Common/EmptyStateView.swift */,
+				A3FE3408517BC4D66C95A0DC /* Sources/Views/Settings/LLMProviderSettingsView.swift */,
+				A78528DBE513E88239003352 /* Sources/Views/Legal/LegalDocumentView.swift */,
+				E1043718DD2240FADA6BFB0A /* Sources/Views/Lessons/LessonEditorView.swift */,
+				297A837F7E33708E2B466E9F /* Sources/Views/Lessons/LessonListRow.swift */,
+				C5BD0D18AB8B247F78B9DC9E /* Sources/Views/Lessons/LessonManagerView.swift */,
+				237D358CF81AFBBC5C6DC733 /* Sources/ViewModels/LessonManagerViewModel.swift */,
+				725AB0E533207A409A98A8D8 /* Sources/Views/Editor/LessonPreviewView.swift */,
+				DFC732C1A1B20B46DBE8B3E1 /* Sources/Views/Auth/LoginView.swift */,
+				AB1EF1D8C5705D6B757C7154 /* Sources/Services/NotificationScheduler.swift */,
+				C490ABC033D2FF49576124D8 /* Sources/App/NovaCompanionApp.swift */,
+				2E7C72ED1EC35E501A2EE357 /* Sources/Views/Settings/OAuthFlowView.swift */,
+				F738C802BE9204621F41CF71 /* Sources/Views/Curriculum/PathEditorView.swift */,
+				FB88D8CE03B9856DB44F4DCC /* Sources/Views/Common/PreviewMocks.swift */,
+				0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */,
+				1E7644BE846F7D1B3D24ABEF /* Sources/Views/Progress/ProgressDashboardView.swift */,
+				93A7846D9BE9BC39FCEFAB8F /* Sources/ViewModels/ProgressDashboardViewModel.swift */,
+				6F43921F38CCBE3C317E9942 /* Sources/Views/Progress/ProgressView.swift */,
+				D8C38D03FE5235B5F3310C42 /* Sources/ViewModels/ProgressViewModel.swift */,
+				B2C0ED30372F1C69B2338964 /* Sources/Views/Editor/PublishFlowView.swift */,
+				7AB8377E15F2699EABC45EB3 /* Sources/ViewModels/PublishFlowViewModel.swift */,
+				D778518FB1D6F9ECB5E31AD7 /* Sources/Views/Dashboard/QuickStatsCard.swift */,
+				791D1AA468D7048B9EB70E8C /* Sources/Views/Progress/SessionHistoryView.swift */,
+				20DBB94A0FBCD00A359C2A0F /* Sources/Views/Settings/SettingsView.swift */,
+				C78AC991BE1CDF9D69BDAA2F /* Sources/Views/Common/ShareSheetView.swift */,
+				F48138F82BE647EED2EB2CD8 /* Sources/Views/Settings/SubscriptionView.swift */,
+				F8214418E5F5BB52A0CB5308 /* Sources/Views/Common/TierBadgeView.swift */,
+				23E2D2C458CBBA06D5492032 /* Sources/Views/Pipeline/URLIntakeView.swift */,
+				C9C42666DE2BE3946F057429 /* Sources/ViewModels/URLIntakeViewModel.swift */,
+				C738437CC449B84DC47A67EB /* Sources/Views/Reports/WeeklyReportView.swift */,
+				F461609A7F18F02A9B9F1BCE /* Sources/ViewModels/WeeklyReportViewModel.swift */,
+				3525877382A88911D7E080FB /* Sources/Views/Auth/WelcomeView.swift */,
+			);
+			name = NovaCompanion;
+			path = Apps/NovaCompanion;
+			sourceTree = "<group>";
+		};
+		AA000000000000000000GR04 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000AA01 /* NovaKids.app */,
+				AA000000000000000000AA02 /* NovaCompanion.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA000000000000000000GR05 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA000000000000000000NT01 /* NovaKids */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA000000000000000000CL02 /* Build configuration list for PBXNativeTarget "NovaKids" */;
+			buildPhases = (
+				AA000000000000000000SP01 /* Sources */,
+				AA000000000000000000FP01 /* Frameworks */,
+				AA000000000000000000RP01 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NovaKids;
+			packageProductDependencies = (
+				A9834D3C9A96E6587B8070D4 /* NovaCore */,
+				32A1016D67A7E20E7EA68929 /* NovaAuth */,
+				5E3338B7C7592FB6D0D6425A /* NovaVoice */,
+				4016D4D86767E83D36548370 /* NovaStorage */,
+			);
+			productName = NovaKids;
+			productReference = AA000000000000000000AA01 /* NovaKids.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA000000000000000000NT02 /* NovaCompanion */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA000000000000000000CL03 /* Build configuration list for PBXNativeTarget "NovaCompanion" */;
+			buildPhases = (
+				AA000000000000000000SP02 /* Sources */,
+				AA000000000000000000FP02 /* Frameworks */,
+				AA000000000000000000RP02 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NovaCompanion;
+			packageProductDependencies = (
+				D7C028B8CBDD832EB07EF428 /* NovaCore */,
+				2A56072A95B4D7F45FD41361 /* NovaAuth */,
+				6282C0797C0F6F93E78DA811 /* NovaVoice */,
+				4707CCC76B08378F30FF2ED8 /* NovaStorage */,
+			);
+			productName = NovaCompanion;
+			productReference = AA000000000000000000AA02 /* NovaCompanion.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA000000000000000000PJ01 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1540;
+			};
+			buildConfigurationList = AA000000000000000000CL01 /* Build configuration list for PBXProject "Nova" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA000000000000000000GR01;
+			productRefGroup = AA000000000000000000GR04 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA000000000000000000NT01 /* NovaKids */,
+				AA000000000000000000NT02 /* NovaCompanion */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA000000000000000000RP01 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000000000000000000RP02 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA000000000000000000SP01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A7F4B7FB1CA1A6017AFE1DF /* Sources/Views/Common/AccessibilityModifiers.swift in Sources */,
+				D925DB72A335125DBD12DEF0 /* Sources/Views/Onboarding/AgeGateView.swift in Sources */,
+				09E02EC9C35DFD378AF35735 /* Sources/ViewModels/AssetCacheManager.swift in Sources */,
+				DD8F7F08EBA21867212D53AB /* Sources/ViewModels/AuthViewModel.swift in Sources */,
+				E9303123F5D0ED64ADFB3D94 /* Sources/Services/BackgroundTaskManager.swift in Sources */,
+				354F2FCBCC7FB979632B87DF /* Sources/Views/Trophies/BadgeView.swift in Sources */,
+				236C65E7346FBEF4626EC34C /* Sources/Views/Flipbook/CardProgressDots.swift in Sources */,
+				0C3F55926715B0A9429E2825 /* Sources/Views/Flipbook/ConceptCardView.swift in Sources */,
+				8F4DA6594F3E3E12531DFD97 /* Sources/Views/Flipbook/ConfettiView.swift in Sources */,
+				37363F1507D9465B33AC90EB /* Sources/Views/Home/ContinueLearningSection.swift in Sources */,
+				3D86F9D1E86E81847CF061E0 /* Sources/Views/Common/EmptyStateView.swift in Sources */,
+				F7FA543395D7DF3D9537FB7C /* Sources/Views/Home/EnhancedHomeView.swift in Sources */,
+				3836C2DCB2AD5784B50D2385 /* Sources/Views/Common/ErrorBoundaryView.swift in Sources */,
+				3B03130B81B69267E128A04E /* Sources/Views/Flipbook/ExperimentCardView.swift in Sources */,
+				8B7AC272B1859DA304E9FC1D /* Sources/Views/Home/FeaturedLessonCard.swift in Sources */,
+				B4FDA9A2B9299840D0E906D8 /* Sources/Views/Flipbook/FlipbookHeader.swift in Sources */,
+				33BB1816EF37A7A797183E00 /* Sources/Views/Flipbook/FlipbookView.swift in Sources */,
+				0EB4DF73C0BF763CBD2D9830 /* Sources/ViewModels/FlipbookViewModel.swift in Sources */,
+				5B8C43621D5C5AF3EDC10E58 /* Sources/Views/Home/HomeView.swift in Sources */,
+				33E79F7036B4A273B7B358FA /* Sources/ViewModels/HomeViewModel.swift in Sources */,
+				F5F2B50E727775536D2619FA /* Sources/App/KidsAppState.swift in Sources */,
+				D9A364803855FFD1205C19EF /* Sources/Views/Auth/KidsLoginView.swift in Sources */,
+				6E67DD67DF9BB76D4BEA5B3D /* Sources/Views/Lessons/LearningPathCard.swift in Sources */,
+				5059D9E65DF9A0BA4068FC90 /* Sources/Views/Lessons/LearningPathRow.swift in Sources */,
+				4134E86032AAE7E8DC8BD72B /* Sources/Views/Lessons/LessonTileView.swift in Sources */,
+				C435B79BA97B39533A4717A5 /* Sources/Views/Lessons/LessonsView.swift in Sources */,
+				5983639104E384D63D02BF42 /* Sources/ViewModels/LessonsViewModel.swift in Sources */,
+				154F7958820C7C12202A4F89 /* Sources/Views/Common/LoadingSkeletonView.swift in Sources */,
+				B98E15FD756B077DEE528E7B /* Sources/Views/Lessons/MasonryGrid.swift in Sources */,
+				D448EC7D4A0DEEF9EFBC3F1A /* Sources/App/NovaKidsApp.swift in Sources */,
+				667D5165A2F32BB362F2D9F8 /* Sources/Views/Common/NovaPalette.swift in Sources */,
+				71D1DD64CD441FDE39A5925D /* Sources/Views/Common/OfflineBannerView.swift in Sources */,
+				CA41B80D4506F05D8E1D7903 /* Sources/Views/Common/OfflineGracefulView.swift in Sources */,
+				E4C33088D43088B502A265BD /* Sources/ViewModels/OfflineSyncManager.swift in Sources */,
+				F5CDEF86C422D0F140415A0A /* Sources/Views/Onboarding/OnboardingView.swift in Sources */,
+				251DA17E071F13FB5F44B4A0 /* Sources/Views/Common/ParentalGateView.swift in Sources */,
+				F4BD278A6FD811111C6321A3 /* Sources/Views/Common/PerformanceOptimizers.swift in Sources */,
+				DBFEDDF62345BAD19A0B8840 /* Sources/Views/Flipbook/QuizCardView.swift in Sources */,
+				3CA3A722BD3997DFCC31FADE /* Sources/ViewModels/SessionTracker.swift in Sources */,
+				EB515DD83F24B99C71610EB1 /* Sources/Views/Sparky/SparkyCharacterView.swift in Sources */,
+				FCAC8071E5F3BC1B24905CE0 /* Sources/Views/Flipbook/SparkyHintButton.swift in Sources */,
+				2721E5A43DE6D97F142565F1 /* Sources/Views/Flipbook/SparkyHintSheet.swift in Sources */,
+				FEC8A3161DEBFF203FA093F7 /* Sources/Views/Sparky/SparkyView.swift in Sources */,
+				967A5727F7AB6B9C7C1964CD /* Sources/ViewModels/SparkyViewModel.swift in Sources */,
+				9730365FBF51D83CF3A6B084 /* Sources/Views/Flipbook/StoryCardView.swift in Sources */,
+				F9AFF746C2C2B8C76A90ED85 /* Sources/Views/Trophies/TrophiesView.swift in Sources */,
+				A4669090BC7B5B3DC9CBE20C /* Sources/Views/Trophies/TrophyRoomView.swift in Sources */,
+				F59578BCFFEDBE35939D3B5E /* Sources/ViewModels/TrophyRoomViewModel.swift in Sources */,
+				A123EEA9A4B6A52D3CD422D4 /* Sources/Views/Flipbook/VoiceCardView.swift in Sources */,
+				574A3C73EBF31040AE2E8E83 /* Sources/Views/Home/WelcomeHeader.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000000000000000000SP02 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				428605CF3A0D051E362877F8 /* Sources/Views/Dashboard/ActivityFeedView.swift in Sources */,
+				69C8F815B8EFAC3370B67AA0 /* Sources/Views/Editor/AdaptiveCardEditorView.swift in Sources */,
+				740D4FCEFF257C0A59C68BB2 /* Sources/Views/Children/AddChildView.swift in Sources */,
+				34549122C94EC256E8A65FA0 /* Sources/Views/Lessons/CardEditorView.swift in Sources */,
+				AF44B9ED890BFE4F84013000 /* Sources/Views/Editor/CardFormView.swift in Sources */,
+				E3187D4EDBBF9DBD1F437D2F /* Sources/Views/Editor/CardListSidebar.swift in Sources */,
+				E9A49B24E61CFF82D697E805 /* Sources/Views/Editor/CardPreviewView.swift in Sources */,
+				327818B02248A32266FBD200 /* Sources/Views/Children/ChildProfileCard.swift in Sources */,
+				333D6EF2AA11F4527F2B628A /* Sources/Views/Settings/ChildProfileView.swift in Sources */,
+				F3AB4F1F4E70BB5F28675587 /* Sources/ViewModels/ChildProfileViewModel.swift in Sources */,
+				95859053271934129FBB4B2E /* Sources/Views/Children/ChildrenView.swift in Sources */,
+				6F17137AC7129EBFE1C528D0 /* Sources/App/CompanionAppState.swift in Sources */,
+				373AF14850C3D29A01A6CC39 /* Sources/Views/Onboarding/CompanionOnboardingView.swift in Sources */,
+				9736A682585E8B2FE2B3D6BD /* Sources/Views/Common/CompanionPalette.swift in Sources */,
+				055F40099791BBF320586AB1 /* Sources/Views/Curriculum/CurriculumView.swift in Sources */,
+				A954806FB05F250E72366F9E /* Sources/ViewModels/CurriculumViewModel.swift in Sources */,
+				533F06D588953413B32D0A25 /* Sources/Views/Dashboard/DashboardView.swift in Sources */,
+				016A7E7BA6B750B6B8EF4659 /* Sources/ViewModels/DashboardViewModel.swift in Sources */,
+				38B2CA4FB55102B569A452C1 /* Sources/Services/DeepLinkHandler.swift in Sources */,
+				ACE3D879AD761775EF76711A /* Sources/Views/Common/EmptyStateView.swift in Sources */,
+				3104E3E0251F6B83439D5E91 /* Sources/Views/Settings/LLMProviderSettingsView.swift in Sources */,
+				D431E8F97E33BA3EBFF9E95E /* Sources/Views/Legal/LegalDocumentView.swift in Sources */,
+				80F91A995850CDF62766E5EF /* Sources/Views/Lessons/LessonEditorView.swift in Sources */,
+				47AE69C5374FA252603A42A6 /* Sources/Views/Lessons/LessonListRow.swift in Sources */,
+				08BB4C210DEA5B6033293695 /* Sources/Views/Lessons/LessonManagerView.swift in Sources */,
+				DE64DF80BAB9F3506205771B /* Sources/ViewModels/LessonManagerViewModel.swift in Sources */,
+				7D546E330E207355A570A84D /* Sources/Views/Editor/LessonPreviewView.swift in Sources */,
+				AD2D7B44B837FF8C815569B3 /* Sources/Views/Auth/LoginView.swift in Sources */,
+				6279834B0655B97A354C9F6A /* Sources/Services/NotificationScheduler.swift in Sources */,
+				FEFB5C6BD521DB2D111CD550 /* Sources/App/NovaCompanionApp.swift in Sources */,
+				4DC35E0F8B2453043082807A /* Sources/Views/Settings/OAuthFlowView.swift in Sources */,
+				C6380E8378BB8D72E5972F6C /* Sources/Views/Curriculum/PathEditorView.swift in Sources */,
+				685E1E1BD1042CEC1E5D3F4F /* Sources/Views/Common/PreviewMocks.swift in Sources */,
+				B525C8CD1952A9BFD74E0555 /* Sources/Views/Progress/ProgressChartView.swift in Sources */,
+				1E7D8FAB57551F5B71520BA3 /* Sources/Views/Progress/ProgressDashboardView.swift in Sources */,
+				0F0ADA33A06E3F62599A248D /* Sources/ViewModels/ProgressDashboardViewModel.swift in Sources */,
+				72CAB1108EF68E8DD88C658B /* Sources/Views/Progress/ProgressView.swift in Sources */,
+				66DD2614C37257DBC06ECB74 /* Sources/ViewModels/ProgressViewModel.swift in Sources */,
+				7E5C514D15C8350DD0D5AC58 /* Sources/Views/Editor/PublishFlowView.swift in Sources */,
+				3581E51EF01651CFE4F699A5 /* Sources/ViewModels/PublishFlowViewModel.swift in Sources */,
+				88DD1879E0351C9D26D47A11 /* Sources/Views/Dashboard/QuickStatsCard.swift in Sources */,
+				F85CBAABDEE1194967EFE542 /* Sources/Views/Progress/SessionHistoryView.swift in Sources */,
+				584D4E54D9619535676E7709 /* Sources/Views/Settings/SettingsView.swift in Sources */,
+				F0B824C417762A6B295EB430 /* Sources/Views/Common/ShareSheetView.swift in Sources */,
+				FBDBF61FFE29AD1C581474E8 /* Sources/Views/Settings/SubscriptionView.swift in Sources */,
+				82605057CC692B48A51E2A46 /* Sources/Views/Common/TierBadgeView.swift in Sources */,
+				D2A34D65B04979E0C6DADBEA /* Sources/Views/Pipeline/URLIntakeView.swift in Sources */,
+				67EECDB60368A2DA3A18D8AF /* Sources/ViewModels/URLIntakeViewModel.swift in Sources */,
+				1F7724623874BD2CD421D15C /* Sources/Views/Reports/WeeklyReportView.swift in Sources */,
+				71C6E334F6AFB83A246D7FAB /* Sources/ViewModels/WeeklyReportViewModel.swift in Sources */,
+				5B700FEF7DC8AAD21CFF5154 /* Sources/Views/Auth/WelcomeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA000000000000000000BC01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA000000000000000000BC02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		AA000000000000000000BC03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q6GBVS2487;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = N.O.V.A.I;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nova uses speech recognition so you can talk to Sparky and answer questions with your voice.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova needs microphone access so Sparky can hear your voice during lessons.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nova uses the camera for fun AR experiments in lessons.";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nova.kids;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		AA000000000000000000BC04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q6GBVS2487;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = N.O.V.A.I;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nova uses speech recognition so you can talk to Sparky and answer questions with your voice.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova needs microphone access so Sparky can hear your voice during lessons.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nova uses the camera for fun AR experiments in lessons.";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nova.kids;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		AA000000000000000000BC05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q6GBVS2487;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nova.companion;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA000000000000000000BC06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q6GBVS2487;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nova.companion;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA000000000000000000CL01 /* Build configuration list for PBXProject "Nova" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000BC01 /* Debug */,
+				AA000000000000000000BC02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA000000000000000000CL02 /* Build configuration list for PBXNativeTarget "NovaKids" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000BC03 /* Debug */,
+				AA000000000000000000BC04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA000000000000000000CL03 /* Build configuration list for PBXNativeTarget "NovaCompanion" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000BC05 /* Debug */,
+				AA000000000000000000BC06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2A56072A95B4D7F45FD41361 /* NovaAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaAuth;
+		};
+		32A1016D67A7E20E7EA68929 /* NovaAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaAuth;
+		};
+		4016D4D86767E83D36548370 /* NovaStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaStorage;
+		};
+		4707CCC76B08378F30FF2ED8 /* NovaStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaStorage;
+		};
+		5E3338B7C7592FB6D0D6425A /* NovaVoice */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaVoice;
+		};
+		6282C0797C0F6F93E78DA811 /* NovaVoice */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaVoice;
+		};
+		A9834D3C9A96E6587B8070D4 /* NovaCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaCore;
+		};
+		D7C028B8CBDD832EB07EF428 /* NovaCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AA000000000000000000PJ01 /* Project object */;
+}

@@ -1,0 +1,79 @@
+# =============================================================================
+# Nova Monorepo .gitignore — Swift (iOS) + Node.js (Backend) + Prisma
+# =============================================================================
+
+# ─── Secrets & Environment ───────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+*.xcconfig
+!**/xcconfigs/Shared.xcconfig
+
+# ─── Node.js / Backend ──────────────────────────────────────────────────────
+node_modules/
+Backend/dist/
+Backend/coverage/
+Backend/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Prisma ─────────────────────────────────────────────────────────────────
+Backend/src/db/*.db
+Backend/src/db/*.db-journal
+Backend/src/db/migrations/
+
+# ─── Xcode / Swift ──────────────────────────────────────────────────────────
+## Build
+DerivedData/
+build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/contents.xcworkspacedata
+
+## User-specific
+*.xcscheme
+!*.xcscheme
+xcuserdata/
+*.xcuserdatad/
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+
+## Package resolution
+.build/
+Packages/*/Package.resolved
+.swiftpm/
+
+## Code signing (don't commit provisioning profiles or certs)
+*.mobileprovision
+*.p12
+
+# ─── macOS ──────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ─── IDE ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Testing / Coverage ─────────────────────────────────────────────────────
+*.lcov
+coverage/
+.nyc_output/
+
+# ─── Assets (large binaries tracked separately or via R2) ───────────────────
+# Uncomment if using Git LFS for lesson assets:
+# *.mp3
+# *.m4a
+# *.png
+# *.jpg

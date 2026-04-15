@@ -1,0 +1,111 @@
+graph TB
+    subgraph Kids["📱 SPARKY KIDS (iPad)"]
+        KHome["Home Grid<br/>(Pinterest Layout)"]
+        KFlip["Flipbook View<br/>(Swipe Cards)"]
+        KSparky["Sparky AI Buddy<br/>(Voice Chat)"]
+        KTrophy["Trophy Room<br/>(Badges & Streaks)"]
+        KVoice["Voice Engine<br/>(AVSpeech + SFSpeech)"]
+        KCache["Offline Cache<br/>(Core Data + Assets)"]
+
+        KHome --> KFlip
+        KHome --> KSparky
+        KHome --> KTrophy
+        KFlip --> KVoice
+        KSparky --> KVoice
+        KCache -.-> KHome
+    end
+
+    subgraph Companion["📱 SPARKY COMPANION (iPhone + iPad)"]
+        CDash["Dashboard<br/>(Activity + Stats)"]
+        CStudio["Content Studio<br/>(URL → AI → Cards)"]
+        CEditor["Card Editor<br/>(WYSIWYG)"]
+        CCurriculum["Curriculum<br/>Manager"]
+        CProgress["Progress<br/>Dashboard"]
+        CSettings["Settings<br/>(OAuth, Subs, Profile)"]
+
+        CDash --> CStudio
+        CStudio --> CEditor
+        CEditor -->|"Publish"| CDash
+    end
+
+    subgraph Shared["📦 SHARED SWIFT PACKAGES"]
+        SparkCore["SparkCore<br/>(Models, API Client, Sync)"]
+        SparkAuth["SparkAuth<br/>(Apple SSO, JWT, OAuth)"]
+        SparkVoice["SparkVoice<br/>(TTS + Recognition)"]
+        SparkStorage["SparkStorage<br/>(Core Data, Asset Cache)"]
+    end
+
+    subgraph Backend["⚙️ BACKEND (Node.js / Fastify)"]
+        API["REST API<br/>/api/v1/"]
+        Auth["Auth Service<br/>(JWT + Apple SSO)"]
+        DB[("PostgreSQL<br/>(Prisma ORM)")]
+        R2["Cloudflare R2<br/>(Images, Audio)"]
+        Billing["StoreKit 2<br/>Server Validation"]
+        Sync["Sync Engine"]
+    end
+
+    subgraph LLM["🤖 LLM PROVIDER LAYER"]
+        Router["Provider Router"]
+        OAuth["OpenAI OAuth<br/>(User's Account)"]
+        Proxy["Sparky Proxy<br/>(Our API Key)"]
+        Future["Future Providers<br/>(Gemini, etc.)"]
+
+        Router --> OAuth
+        Router --> Proxy
+        Router -.-> Future
+    end
+
+    subgraph Pipeline["🔄 AI CONTENT PIPELINE"]
+        Scrape["URL Scraper<br/>(Readability + Puppeteer)"]
+        Analyze["Content Analyzer"]
+        CardGen["Card Generator"]
+        TTS["TTS Generator<br/>(OpenAI TTS)"]
+        ImgGen["Image Generator<br/>(DALL-E 3)"]
+
+        Scrape --> Analyze
+        Analyze --> CardGen
+        CardGen --> TTS
+        CardGen --> ImgGen
+    end
+
+    subgraph Cards["🃏 CARD TYPES"]
+        Story["📖 Story"]
+        Concept["💡 Concept"]
+        Experiment["🧪 Experiment"]
+        Quiz["❓ Quiz"]
+        VoiceCard["🎤 Voice"]
+        Video["🎬 Video"]
+    end
+
+    %% Connections
+    Kids --> Shared
+    Companion --> Shared
+    Shared -->|"REST + WebSocket"| Backend
+    CStudio -->|"URL"| Scrape
+    Pipeline -->|"LLM Calls"| Router
+    TTS -->|"Audio"| R2
+    ImgGen -->|"Images"| R2
+    CardGen -->|"Draft"| CEditor
+    API --> DB
+    API --> R2
+    Sync -->|"Push lessons"| KCache
+    CSettings -->|"OAuth Flow"| OAuth
+    Billing -->|"Entitlements"| Router
+    KFlip --> Cards
+    CProgress -.->|"Analytics"| DB
+
+    classDef kids fill:#f59e0b,stroke:#d97706,color:#000
+    classDef companion fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef shared fill:#6366f1,stroke:#4338ca,color:#fff
+    classDef backend fill:#059669,stroke:#047857,color:#fff
+    classDef llm fill:#8b5cf6,stroke:#5b21b6,color:#fff
+    classDef pipeline fill:#ec4899,stroke:#be185d,color:#fff
+    classDef cards fill:#f97316,stroke:#c2410c,color:#fff
+
+    class KHome,KFlip,KSparky,KTrophy,KVoice,KCache kids
+    class CDash,CStudio,CEditor,CCurriculum,CProgress,CSettings companion
+    class SparkCore,SparkAuth,SparkVoice,SparkStorage shared
+    class API,Auth,DB,R2,Billing,Sync backend
+    class Router,OAuth,Proxy,Future llm
+    class Scrape,Analyze,CardGen,TTS,ImgGen pipeline
+    class Story,Concept,Experiment,Quiz,VoiceCard,Video cards
