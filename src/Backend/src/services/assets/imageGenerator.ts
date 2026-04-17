@@ -63,34 +63,63 @@ function isSafePrompt(prompt: string): boolean {
 }
 
 /**
- * Build a child-safe, kid-friendly image prompt from a concept
- * @param concept - The learning concept to illustrate
- * @param cardType - Type of card (story, concept, experiment, etc.)
- * @returns A safe, kid-friendly DALL-E prompt
+ * Build a child-safe, kid-friendly image prompt from a concept.
+ *
+ * DALL-E-3 weights the FIRST ~200 characters heaviest and handles negative
+ * phrasing ("no X", "without Y") poorly — it tends to include what you ask
+ * it not to. So this builder:
+ *   1. Frontloads the lesson subject noun (the most important token).
+ *   2. Uses only positive stylistic anchors, no negatives.
+ *   3. Keeps the prompt short and concrete (~200-280 chars).
+ *
+ * @param concept - The card-specific scene description (already includes the
+ *   subject when produced by `buildCardConcept`). May also be a raw LLM
+ *   `imagePrompt` that already names the subject.
+ * @param cardType - story | concept | experiment | quiz | voice.
+ * @param subject - Optional lesson subject noun (e.g., "hippopotamus"). When
+ *   provided and not already present in `concept`, it is frontloaded.
+ * @returns A safe, kid-friendly DALL-E-3 prompt.
  */
-export function buildImagePrompt(concept: string, cardType: string): string {
-  // Base style for all images
-  const baseStyle = 'Pixar-style, bright colorful illustration, rounded shapes, cheerful, no text, no people faces';
+export function buildImagePrompt(
+  concept: string,
+  cardType: string,
+  subject?: string
+): string {
+  // Positive stylistic anchors only — no "no X" phrases.
+  const style =
+    'Flat digital illustration for a children\'s book, warm friendly palette, soft rounded shapes, soft lighting, wholesome mood';
 
-  // Context-specific prompt building
-  let contextPrompt = '';
-
+  // Card-type-specific scene framing. Each adds action/setting around the
+  // subject rather than replacing it.
+  let framing = '';
   if (cardType === 'story') {
-    contextPrompt = `A storybook illustration depicting: ${concept}`;
+    framing = 'Storybook scene';
   } else if (cardType === 'experiment') {
-    contextPrompt = `A fun science experiment scene showing: ${concept}`;
+    framing = 'Kid-safe science activity scene';
   } else if (cardType === 'concept') {
-    contextPrompt = `An educational illustration explaining: ${concept}`;
+    framing = 'Clear educational illustration';
   } else if (cardType === 'quiz') {
-    contextPrompt = `A learning-themed illustration about: ${concept}`;
+    framing = 'Playful scene matching a multiple-choice question';
+  } else if (cardType === 'voice') {
+    framing = 'Expressive scene inviting the child to speak';
   } else {
-    contextPrompt = `A friendly educational illustration of: ${concept}`;
+    framing = 'Friendly educational illustration';
   }
 
-  // Combine with safety prefix
-  const fullPrompt = `Colorful, friendly illustration for a 4-8 year old child. ${contextPrompt}. ${baseStyle}`;
+  const cleanSubject = (subject || '').trim();
+  const cleanConcept = concept.trim();
 
-  return fullPrompt;
+  // Frontload the subject if it isn't already the first thing mentioned.
+  // DALL-E-3 weights tokens by position; the subject MUST come first.
+  let subjectPrefix = '';
+  if (
+    cleanSubject &&
+    !cleanConcept.toLowerCase().startsWith(cleanSubject.toLowerCase())
+  ) {
+    subjectPrefix = `Subject: ${cleanSubject}. `;
+  }
+
+  return `${subjectPrefix}${framing}: ${cleanConcept}. ${style}. For children ages 4-8.`;
 }
 
 /**

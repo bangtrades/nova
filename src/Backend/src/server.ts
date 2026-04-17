@@ -1,8 +1,10 @@
+import path from 'path';
 import Fastify from 'fastify';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyCors from '@fastify/cors';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifySensible from '@fastify/sensible';
+import fastifyStatic from '@fastify/static';
 import { getConfig } from '@config';
 import { getPrismaClient, disconnectPrisma } from '@db/client';
 import { authMiddleware } from '@middleware/auth';
@@ -32,12 +34,21 @@ async function buildServer(): Promise<ReturnType<typeof Fastify>> {
   });
 
   await fastify.register(fastifyCors, {
-    origin: true, // Allow all origins in development
+    origin: (origin, cb) => {
+      // In development, allow everything including file:// (null origin)
+      if (config.NODE_ENV === 'development') {
+        cb(null, true);
+        return;
+      }
+      // In production, restrict to known origins
+      const allowed = ['https://nova-app.com', 'https://companion.nova-app.com'];
+      cb(null, allowed.includes(origin ?? ''));
+    },
     credentials: true,
   });
 
   await fastify.register(fastifyRateLimit, {
-    max: 100,
+    max: config.NODE_ENV === 'development' ? 1000 : 100,
     timeWindow: '15 minutes',
   });
 
@@ -79,6 +90,15 @@ async function buildServer(): Promise<ReturnType<typeof Fastify>> {
       message: error.message || 'An unexpected error occurred',
     });
   });
+
+  // In development, serve dev tools from /public
+  if (config.NODE_ENV === 'development') {
+    await fastify.register(fastifyStatic, {
+      root: path.join(__dirname, '..', 'public'),
+      prefix: '/dev/',
+      decorateReply: false,
+    });
+  }
 
   // Register all routes
   await registerRoutes(fastify);

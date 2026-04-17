@@ -4,6 +4,7 @@ import { getPrismaClient } from '@db/client';
 import { validateBody, validateParams, validateQuery } from '@middleware/validate';
 import { runPipeline } from '@services/pipeline/pipelineOrchestrator';
 import { scrapeUrl } from '@services/pipeline/scraper';
+import { recordPipelineEvent } from './devConsole';
 
 const ingestUrlSchema = z.object({
   url: z.string().url(),
@@ -179,6 +180,7 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: validateBody(generateCardsSchema),
     },
     async (request, reply) => {
+      const pipelineStartedAt = Date.now();
       try {
         if (!request.userId) {
           return reply.status(401).send({
@@ -191,10 +193,11 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
         const { ingestId, pathId } = request.body;
         const prisma = getPrismaClient();
 
-        // Verify ingest ownership
+        // Verify ingest ownership — pull url/title along with userId so we
+        // can annotate the ring-buffer entry without a second lookup.
         const ingest = await prisma.urlIngest.findUnique({
           where: { id: ingestId },
-          select: { userId: true },
+          select: { userId: true, url: true },
         });
 
         if (!ingest) {
@@ -217,6 +220,18 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
         try {
           const result = await runPipeline(request.userId, ingestId, pathId);
 
+          // DC-04: record a pipeline run in the dev-console ring buffer.
+          recordPipelineEvent({
+            userId: request.userId,
+            ingestId: result.ingestId,
+            url: ingest.url,
+            title: null,
+            status: result.status,
+            cardCount: result.cardCount ?? null,
+            costCents: null, // Cost is aggregated separately; fetched from /monitoring/costs.
+            durationMs: Date.now() - pipelineStartedAt,
+          });
+
           return reply.status(200).send({
             ingestId: result.ingestId,
             lessonId: result.lessonId,
@@ -226,6 +241,19 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
           });
         } catch (pipelineError) {
           fastify.log.error(`Pipeline error: ${pipelineError}`);
+
+          // Record failures too — they're often what we most want to inspect.
+          recordPipelineEvent({
+            userId: request.userId,
+            ingestId,
+            url: ingest.url,
+            title: null,
+            status: 'failed',
+            cardCount: null,
+            costCents: null,
+            durationMs: Date.now() - pipelineStartedAt,
+          });
+
           return reply.status(400).send({
             statusCode: 400,
             error: 'Pipeline Error',
@@ -311,7 +339,7 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
 
         // Process assets asynchronously (fire and forget)
         const apiKey = config.OPENAI_API_KEY || '';
-        processLessonAssets(lessonId, apiKey)
+        processLessonAssets(lessonId, apiKey, request.userId)
           .then(() => {
             fastify.log.info(`Asset generation completed for lesson ${lessonId}`);
           })
@@ -447,13 +475,27 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
-        // Map status to step progress
+        // Map status to step progress (Grand Architect pipeline stages)
         const statusMap: Record<string, { step: number; completed: string[] }> = {
           pending: { step: 0, completed: [] },
           scraped: { step: 1, completed: ['scrape'] },
           analyzing: { step: 2, completed: ['scrape', 'analyze'] },
-          generating: { step: 3, completed: ['scrape', 'analyze', 'generate'] },
-          completed: { step: 4, completed: ['scrape', 'analyze', 'generate', 'save'] },
+          decomposing: {
+            step: 3,
+            completed: ['scrape', 'analyze', 'decompose'],
+          },
+          generating: {
+            step: 4,
+            completed: ['scrape', 'analyze', 'decompose', 'generate'],
+          },
+          quality_gate: {
+            step: 5,
+            completed: ['scrape', 'analyze', 'decompose', 'generate', 'quality'],
+          },
+          completed: {
+            step: 6,
+            completed: ['scrape', 'analyze', 'decompose', 'generate', 'quality', 'save'],
+          },
           failed: { step: 0, completed: [] },
         };
 

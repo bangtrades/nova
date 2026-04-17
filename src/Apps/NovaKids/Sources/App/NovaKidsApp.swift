@@ -44,10 +44,10 @@ struct NovaKidsApp: App {
         // Create API client (requires TokenProvider)
         let authManager = AuthManager(
             apiClient: APIClient(
-                baseURL: URL(string: "https://api.nova.local")!,
+                baseURL: URL(string: "http://localhost:3000/api/v1")!,
                 tokenProvider: AuthManager(
                     apiClient: APIClient(
-                        baseURL: URL(string: "https://api.nova.local")!,
+                        baseURL: URL(string: "http://localhost:3000/api/v1")!,
                         tokenProvider: _TokenProvider()
                     )
                 )
@@ -56,7 +56,7 @@ struct NovaKidsApp: App {
 
         let apiRouter = APIRouter(
             apiClient: APIClient(
-                baseURL: URL(string: "https://api.nova.local")!,
+                baseURL: URL(string: "http://localhost:3000/api/v1")!,
                 tokenProvider: authManager
             )
         )

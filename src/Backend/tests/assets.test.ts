@@ -27,6 +27,7 @@ import {
   isYouTubeUrl,
   YouTubeExtractorError,
 } from '../src/services/assets/youtubeExtractor';
+import { buildCardConcept } from '../src/services/assets/assetJobProcessor';
 
 // ============================================================================
 // TTS Generator Tests
@@ -163,36 +164,80 @@ describe('TTS Generator', () => {
 describe('Image Generator', () => {
   const validApiKey = 'sk-test-key-123';
 
-  describe('buildImagePrompt', () => {
-    it('should create story prompt with base style', () => {
+  describe('buildImagePrompt (post-S9 fix)', () => {
+    it('creates a story prompt with positive style anchors', () => {
       const prompt = buildImagePrompt('A magical forest', 'story');
 
-      expect(prompt).toContain('storybook illustration');
-      expect(prompt).toContain('Pixar-style');
-      expect(prompt).toContain('4-8 year old child');
+      expect(prompt).toContain('Storybook scene');
+      expect(prompt).toContain('Flat digital illustration');
+      expect(prompt).toContain('children');
       expect(prompt).toContain('magical forest');
     });
 
-    it('should create experiment prompt', () => {
+    it('creates an experiment prompt with kid-safe framing', () => {
       const prompt = buildImagePrompt('Crystal growing', 'experiment');
 
-      expect(prompt).toContain('science experiment');
+      expect(prompt).toContain('Kid-safe science activity');
       expect(prompt).toContain('Crystal growing');
     });
 
-    it('should create concept prompt', () => {
+    it('creates a concept prompt', () => {
       const prompt = buildImagePrompt('Photosynthesis', 'concept');
 
-      expect(prompt).toContain('educational illustration');
+      expect(prompt).toContain('Clear educational illustration');
       expect(prompt).toContain('Photosynthesis');
     });
 
-    it('should include safety keywords', () => {
-      const prompt = buildImagePrompt('Learning', 'quiz');
+    it('creates a quiz prompt (no longer collapses to stock imagery)', () => {
+      const prompt = buildImagePrompt(
+        'hippopotamus pointing at a menu of leafy foods',
+        'quiz'
+      );
+      expect(prompt).toContain('Playful scene matching a multiple-choice question');
+      expect(prompt).toContain('hippopotamus');
+    });
 
-      expect(prompt).toContain('no text');
-      expect(prompt).toContain('rounded shapes');
-      expect(prompt).toContain('bright');
+    it('creates a voice prompt framing the child as speaker', () => {
+      const prompt = buildImagePrompt('a hippopotamus opening its mouth wide', 'voice');
+      expect(prompt).toContain('Expressive scene inviting the child to speak');
+      expect(prompt).toContain('hippopotamus');
+    });
+
+    it('frontloads the subject noun when not already in the concept', () => {
+      const prompt = buildImagePrompt(
+        'splashing in a river under a rainbow',
+        'story',
+        'hippopotamus'
+      );
+      expect(prompt.startsWith('Subject: hippopotamus')).toBe(true);
+      expect(prompt).toContain('splashing in a river under a rainbow');
+    });
+
+    it('does NOT double-prepend the subject when concept already leads with it', () => {
+      const prompt = buildImagePrompt(
+        'hippopotamus splashing in a river',
+        'story',
+        'hippopotamus'
+      );
+      expect(prompt.startsWith('Subject:')).toBe(false);
+      expect(prompt.toLowerCase().indexOf('hippopotamus')).toBe(
+        prompt.toLowerCase().lastIndexOf('hippopotamus')
+      );
+    });
+
+    it('contains NO negative prompt phrases (DALL-E-3 interprets these inversely)', () => {
+      const prompt = buildImagePrompt('a learning scene', 'concept', 'hippopotamus');
+      const lower = prompt.toLowerCase();
+      expect(lower).not.toContain('no text');
+      expect(lower).not.toContain('no people faces');
+      expect(lower).not.toContain('without');
+    });
+
+    it('works without a subject (backward-compatible call signature)', () => {
+      const prompt = buildImagePrompt('a friendly fox', 'story');
+      expect(prompt).toContain('Storybook scene');
+      expect(prompt).toContain('a friendly fox');
+      expect(prompt.startsWith('Subject:')).toBe(false);
     });
   });
 
@@ -621,6 +666,98 @@ describe('StoreKit Webhook', () => {
     for (const code of statusCodes) {
       expect(code).toBe(200);
     }
+  });
+});
+
+// ============================================================================
+// buildCardConcept — S9 image-pipeline fix
+// ============================================================================
+
+describe('buildCardConcept (S9 image-pipeline fix)', () => {
+  it('returns the LLM imagePrompt verbatim when it already includes the subject', () => {
+    const concept = buildCardConcept(
+      { imagePrompt: 'A cartoon hippopotamus splashing in a river' },
+      'story',
+      'hippopotamus'
+    );
+    expect(concept).toBe('A cartoon hippopotamus splashing in a river');
+  });
+
+  it('prepends the subject when the LLM imagePrompt omits it', () => {
+    const concept = buildCardConcept(
+      { imagePrompt: 'splashing in a river under a rainbow' },
+      'story',
+      'hippopotamus'
+    );
+    expect(concept).toBe('hippopotamus: splashing in a river under a rainbow');
+  });
+
+  it('synthesizes "subject — atom: title" when imagePrompt is missing', () => {
+    const concept = buildCardConcept(
+      { title: 'Hippos Are Huge!', text: 'They are the third largest land animal.' },
+      'concept',
+      'hippopotamus',
+      { name: 'Size and weight' }
+    );
+    expect(concept).toBe('hippopotamus — Size and weight: Hippos Are Huge!');
+  });
+
+  it('uses text when a card has no title (story cards)', () => {
+    const concept = buildCardConcept(
+      { text: 'Hannah the happy hippo loved splashing in the pond.' },
+      'story',
+      'hippopotamus',
+      { name: 'Meet the hippo' }
+    );
+    expect(concept).toContain('hippopotamus — Meet the hippo');
+    expect(concept).toContain('Hannah the happy hippo');
+  });
+
+  it('uses the question when a quiz card has no title/text', () => {
+    const concept = buildCardConcept(
+      { question: 'What do hippos like to eat?', options: ['Plants', 'Meat'], correctAnswer: 0 },
+      'quiz',
+      'hippopotamus',
+      { name: 'Diet' }
+    );
+    expect(concept).toContain('hippopotamus — Diet');
+    expect(concept).toContain('What do hippos like to eat?');
+  });
+
+  it('never collapses to the literal "learning concept" fallback for quiz cards', () => {
+    // This was the exact bug seen in the dev tool — quiz cards produced
+    // generic "school supplies" imagery because the chain fell through to
+    // the literal string "learning concept". Verify that can no longer happen.
+    const concept = buildCardConcept(
+      { options: ['A', 'B', 'C'] },
+      'quiz',
+      'hippopotamus',
+      { name: 'Quick check' }
+    );
+    expect(concept).not.toContain('learning concept');
+    expect(concept).toContain('hippopotamus');
+  });
+
+  it('still works when no atom and no subject are available (degraded path)', () => {
+    const concept = buildCardConcept(
+      { title: 'Test card' },
+      'concept',
+      '',
+      undefined
+    );
+    expect(concept).toBe('Test card');
+  });
+
+  it('truncates very long body text to keep the DALL-E prompt small', () => {
+    const longText = 'x'.repeat(500);
+    const concept = buildCardConcept(
+      { text: longText },
+      'story',
+      'hippopotamus'
+    );
+    // Should be "hippopotamus: <140 chars of x>"
+    expect(concept.length).toBeLessThan(200);
+    expect(concept).toContain('hippopotamus');
   });
 });
 

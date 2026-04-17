@@ -50,11 +50,11 @@ export async function analyzeContent(
   let analysisResponse;
   try {
     analysisResponse = await routeRequest(userId, {
-      model: 'gpt-4o-mini',
+      model: 'claude-sonnet',
       messages,
       temperature: 0.5,
       maxTokens: 500,
-    });
+    }, 'content_analysis');
   } catch (error) {
     throw new Error(`LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -98,11 +98,11 @@ export async function analyzeContent(
       ];
 
       const safetyResponse = await routeRequest(userId, {
-        model: 'gpt-4o-mini',
+        model: 'claude-sonnet',
         messages: safetyMessages,
         temperature: 0.3,
         maxTokens: 300,
-      });
+      }, 'safety_filter');
 
       const jsonMatch = safetyResponse.content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {

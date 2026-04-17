@@ -4,6 +4,13 @@ import { z } from 'zod';
 import { getPrismaClient } from '@db/client';
 import { validateBody, validateParams, validateQuery } from '@middleware/validate';
 import { evaluateBadges } from '@services/pipeline/badgeCriteriaEngine';
+import { recordQuizResultsBatch, type QuizResultEvent } from '@services/mastery/masteryTracker';
+import {
+  ingestInteractionsForSession,
+  type InteractionEvent as EngagementInteractionEvent,
+  type ProfileDelta as EngagementProfileDelta,
+} from '@services/engagement/engagementProfiler';
+import { recordSyncEvent } from './devConsole';
 
 const cardInteractionSchema = z.object({
   cardId: z.string().uuid(),
@@ -40,6 +47,7 @@ export async function progressRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: validateBody(syncProgressSchema),
     },
     async (request, reply) => {
+      const syncStartedAt = Date.now();
       try {
         if (!request.userId) {
           return reply.status(401).send({
@@ -98,13 +106,128 @@ export async function progressRoutes(fastify: FastifyInstance): Promise<void> {
           )
         );
 
+        // Fetch card metadata once — reused by both the mastery path (S10-02)
+        // and the engagement path (S10-03). Includes concept.domain so the
+        // profiler can build topic affinities without a second query.
+        const uniqueCardIds = [...new Set(interactions.map((i) => i.cardId))];
+        const cards = uniqueCardIds.length > 0
+          ? await prisma.card.findMany({
+              where: { id: { in: uniqueCardIds } },
+              select: {
+                id: true,
+                type: true,
+                conceptId: true,
+                concept: { select: { domain: true } },
+              },
+            })
+          : [];
+        const cardById = new Map(cards.map((c) => [c.id, c]));
+
+        // S10-02: Update per-concept mastery from quiz results.
+        // A quiz result is any interaction where:
+        //   - action === 'answer'
+        //   - result.correct is a boolean
+        //   - the card has a conceptId (mastery-bearing cards only)
+        // Non-quiz interactions (views, story completions, sparky chats) are ignored.
+        const quizInteractions = interactions.filter(
+          (i) => i.action === 'answer' && typeof i.result?.correct === 'boolean'
+        );
+        let masteryUpdates: Awaited<ReturnType<typeof recordQuizResultsBatch>> = [];
+        if (quizInteractions.length > 0) {
+          const events: QuizResultEvent[] = quizInteractions
+            .map((i) => {
+              const card = cardById.get(i.cardId);
+              if (!card?.conceptId) return null;
+              return {
+                childId,
+                conceptId: card.conceptId,
+                isCorrect: i.result?.correct === true,
+              };
+            })
+            .filter((e): e is QuizResultEvent => e !== null);
+
+          if (events.length > 0) {
+            masteryUpdates = await recordQuizResultsBatch(events);
+          }
+        }
+
+        // S10-03: Ingest ALL interactions into the per-child engagement
+        // profile. Unlike mastery (quiz-only), engagement signals come from
+        // every interaction type — views, completions, skips, quiz answers.
+        let engagementDelta: EngagementProfileDelta | null = null;
+        if (interactions.length > 0) {
+          const engagementEvents: EngagementInteractionEvent[] = interactions.map((i) => {
+            const card = cardById.get(i.cardId);
+            const isAnswer = i.action === 'answer' && typeof i.result?.correct === 'boolean';
+            return {
+              cardId: i.cardId,
+              cardType: card?.type ?? 'unknown',
+              conceptId: card?.conceptId ?? null,
+              domain: card?.concept?.domain ?? null,
+              action: i.action,
+              durationMs: i.durationMs,
+              isCorrect: isAnswer ? (i.result?.correct as boolean) : null,
+            };
+          });
+          engagementDelta = await ingestInteractionsForSession(childId, engagementEvents);
+        }
+
         // Evaluate badges after progress is recorded
         const earnedBadges = await evaluateBadges(childId);
         const newlyEarned = earnedBadges.filter((badge) => badge.newlyEarned);
 
+        // DC-04: capture this sync in the dev-console ring buffer so the
+        // Progress Inspector tab can live-tail what the handler did.
+        // Safe to call unconditionally — the recorder is in-memory only.
+        recordSyncEvent({
+          userId: request.userId,
+          childId,
+          deviceId: deviceId ?? null,
+          sessionId: session.id,
+          interactionCount: createdInteractions.length,
+          masteryUpdates: masteryUpdates.map((m) => ({
+            conceptId: m.conceptId,
+            priorConfidence: Number(m.priorConfidence.toFixed(3)),
+            nextConfidence: Number(m.nextConfidence.toFixed(3)),
+            attempts: m.attempts,
+            correctCount: m.correctCount,
+            wasFirstIntroduction: m.wasFirstIntroduction,
+          })),
+          engagementDelta: engagementDelta
+            ? {
+                interactionsApplied: engagementDelta.interactionsApplied,
+                durationAddedMs: engagementDelta.durationAddedMs,
+                frustrationEventsAdded: engagementDelta.frustrationEventsAdded,
+                flowEventsAdded: engagementDelta.flowEventsAdded,
+                finalStreak: engagementDelta.finalStreak,
+                newLongestStreak: engagementDelta.newLongestStreak,
+              }
+            : null,
+          newlyEarnedBadgeCount: newlyEarned.length,
+          durationMs: Date.now() - syncStartedAt,
+        });
+
         return reply.status(201).send({
           sessionId: session.id,
           interactionCount: createdInteractions.length,
+          masteryUpdates: masteryUpdates.map((m) => ({
+            conceptId: m.conceptId,
+            priorConfidence: Number(m.priorConfidence.toFixed(3)),
+            nextConfidence: Number(m.nextConfidence.toFixed(3)),
+            attempts: m.attempts,
+            correctCount: m.correctCount,
+            wasFirstIntroduction: m.wasFirstIntroduction,
+          })),
+          engagementDelta: engagementDelta
+            ? {
+                interactionsApplied: engagementDelta.interactionsApplied,
+                durationAddedMs: engagementDelta.durationAddedMs,
+                frustrationEventsAdded: engagementDelta.frustrationEventsAdded,
+                flowEventsAdded: engagementDelta.flowEventsAdded,
+                finalStreak: engagementDelta.finalStreak,
+                newLongestStreak: engagementDelta.newLongestStreak,
+              }
+            : null,
           newlyEarnedBadges: newlyEarned.map((badge) => ({
             badgeId: badge.badgeId,
             title: badge.title,

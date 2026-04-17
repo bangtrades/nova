@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:knowledge": "tsx src/db/seedKnowledgeGraph.ts",
     "db:studio": "prisma studio",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
@@ -23,20 +24,22 @@
     "@fastify/helmet": "^11.1.1",
     "@fastify/rate-limit": "^9.1.0",
     "@fastify/sensible": "^5.6.0",
+    "@fastify/static": "^7.0.4",
     "@prisma/client": "^5.14.0",
+    "dotenv": "^16.4.5",
+    "esbuild": "^0.28.0",
     "fastify": "^4.27.0",
     "jsonwebtoken": "^9.0.2",
-    "zod": "^3.23.8",
     "pino": "^9.1.0",
     "pino-pretty": "^11.1.0",
-    "dotenv": "^16.4.5"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.12.12",
-    "eslint": "^8.57.0",
     "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.10.0",
+    "eslint": "^8.57.0",
     "prisma": "^5.14.0",
     "tsx": "^4.11.0",
     "typescript": "^5.4.5",

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validateBody, validateParams } from '@middleware/validate';
 import { processSparkyMessage } from '@services/sparky/conversationEngine';
 import { checkUsageLimit, recordUsage } from '@services/entitlement/entitlementEngine';
+import { getPrismaClient } from '@db/client';
 import { randomUUID } from 'crypto';
 
 const sparkyMessageSchema = z.object({
@@ -45,7 +46,7 @@ export default async function sparkyRoutes(fastify: FastifyInstance): Promise<vo
         }
 
         const { childId, transcript, conversationHistory, providerId } = request.body;
-        const prisma = (fastify as any).prisma;
+        const prisma = getPrismaClient() as any;
 
         // Verify child ownership
         const child = await prisma.childProfile.findUnique({

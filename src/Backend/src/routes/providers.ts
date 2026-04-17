@@ -234,7 +234,7 @@ export async function providersRoutes(fastify: FastifyInstance): Promise<void> {
         };
 
         // Route the request
-        const response = await routeRequest(request.userId, llmRequest);
+        const response = await routeRequest(request.userId, llmRequest, 'other');
 
         // Get routing info for context
         const routingInfo = await getRoutingInfo(request.userId);

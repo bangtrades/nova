@@ -143,11 +143,8 @@ export async function initializeFlags(): Promise<void> {
   try {
     const prisma = getPrismaClient();
 
-    // Try to load from DB
-    const dbFlags = await (prisma as any).$queryRaw`
-      SELECT key, enabled, "rolloutPercentage", "allowedTiers", metadata
-      FROM "FeatureFlag"
-    `;
+    // Try to load from DB using Prisma model
+    const dbFlags = await (prisma as any).featureFlag.findMany();
 
     if (Array.isArray(dbFlags) && dbFlags.length > 0) {
       // Use DB flags

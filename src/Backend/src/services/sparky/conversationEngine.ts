@@ -78,7 +78,7 @@ export async function processSparkyMessage(
     };
 
     // Route to appropriate LLM provider
-    const response: LLMResponse = await routeRequest(childId, llmRequest);
+    const response: LLMResponse = await routeRequest(childId, llmRequest, 'sparky_chat');
 
     // Parse the response
     const responseText = response.content;

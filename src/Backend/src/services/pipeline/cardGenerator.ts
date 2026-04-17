@@ -9,6 +9,7 @@ import { routeRequest } from '../llm/providerRouter';
 import type { LLMMessage } from '../llm/types';
 import { getCardGenerationSystemPrompt } from './promptTemplates';
 import type { ContentAnalysis } from './contentAnalyzer';
+import type { ConceptDecomposition } from './conceptDecomposer';
 import type { ScrapedContent } from './scraper';
 
 export type CardType = 'story' | 'concept' | 'experiment' | 'quiz' | 'voice';
@@ -30,12 +31,18 @@ export interface GeneratedCard {
 }
 
 /**
- * Generate lesson cards from analyzed content
+ * Generate lesson cards from analyzed content.
+ *
+ * If a {@link ConceptDecomposition} is provided (Pipeline Stage 3 output),
+ * the generator uses it to target ONE card per atom in strategy-matched form,
+ * plus a wrap-up quiz/voice card. Without a decomposition, it falls back to
+ * the generic prompt-based generation from Sprint 8.
  */
 export async function generateCards(
   userId: string,
   analysis: ContentAnalysis,
-  scraped: ScrapedContent
+  scraped: ScrapedContent,
+  decomposition?: ConceptDecomposition
 ): Promise<GeneratedCard[]> {
   // Prepare content text
   const contentText = `Title: ${scraped.title}\n\nContent:\n${scraped.content.substring(0, 3000)}`;
@@ -46,6 +53,10 @@ export async function generateCards(
     analysis.keyConcepts
   );
 
+  const userPrompt = decomposition
+    ? buildDecompositionUserPrompt(analysis, contentText, decomposition)
+    : `Create ${analysis.suggestedCardCount} lesson cards for stage ${analysis.suggestedStage} children:\n\n${contentText}`;
+
   const messages: LLMMessage[] = [
     {
       role: 'system',
@@ -53,18 +64,18 @@ export async function generateCards(
     },
     {
       role: 'user',
-      content: `Create ${analysis.suggestedCardCount} lesson cards for stage ${analysis.suggestedStage} children:\n\n${contentText}`,
+      content: userPrompt,
     },
   ];
 
   let response;
   try {
     response = await routeRequest(userId, {
-      model: 'gpt-4o-mini',
+      model: 'claude-sonnet',
       messages,
       temperature: 0.7,
       maxTokens: 2000,
-    });
+    }, 'card_generation');
   } catch (error) {
     throw new Error(`Card generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -101,6 +112,47 @@ export async function generateCards(
       `Failed to parse card response: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
+}
+
+/**
+ * Build the user-turn prompt when a concept decomposition is available.
+ * Each atom becomes one targeted card with a matched card type.
+ */
+function buildDecompositionUserPrompt(
+  analysis: ContentAnalysis,
+  contentText: string,
+  decomposition: ConceptDecomposition
+): string {
+  const atomLines = decomposition.atoms
+    .map((atom, index) => {
+      const prereqs = atom.prerequisites.length
+        ? ` (builds on: ${atom.prerequisites.join(', ')})`
+        : '';
+      return `  Card ${index + 1}: ${atom.name} — type "${atom.recommendedCardType}" via ${atom.teachingStrategy} strategy${prereqs}
+    What to teach: ${atom.description}`;
+    })
+    .join('\n');
+
+  const wrapupIndex = decomposition.atoms.length + 1;
+  const totalCards = Math.max(analysis.suggestedCardCount, decomposition.atoms.length + 1);
+  const extraCards = totalCards - decomposition.atoms.length - 1;
+  const extraBlock =
+    extraCards > 0
+      ? `\n  Cards ${wrapupIndex}..${totalCards}: ${extraCards === 1 ? 'a wrap-up quiz or voice card' : 'wrap-up quiz and voice cards'} reinforcing the atoms above.`
+      : '';
+
+  return `Create a lesson of exactly ${totalCards} cards for stage ${analysis.suggestedStage} children.
+
+Use this concept decomposition — one card per atom, in this order, with the recommended type:
+
+${atomLines}${extraBlock}
+
+Rationale from the decomposer: ${decomposition.rationale}
+
+Source excerpt (for facts — rewrite for kids, do NOT copy):
+${contentText}
+
+Return the JSON array per the card schema in your system prompt. sortOrder must be 0..${totalCards - 1}.`;
 }
 
 /**
@@ -171,11 +223,13 @@ function validateAndNormalizeCard(card: Record<string, unknown>, fallbackIndex: 
       text: String(content.text || '').trim(),
       options,
       correctIndex,
+      imagePrompt: content.imagePrompt ? String(content.imagePrompt).trim() : undefined,
     };
   } else if (type === 'voice') {
     normalizedContent = {
       text: String(content.text || '').trim(),
       title: content.title ? String(content.title).trim() : undefined,
+      imagePrompt: content.imagePrompt ? String(content.imagePrompt).trim() : undefined,
     };
   }
 

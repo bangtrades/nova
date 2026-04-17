@@ -30,6 +30,9 @@ const envSchema = z.object({
   OPENAI_OAUTH_CLIENT_SECRET: z.string().optional(),
   OPENAI_OAUTH_REDIRECT_URI: z.string().url().optional(),
 
+  // Anthropic (Claude — for content generation)
+  ANTHROPIC_API_KEY: z.string().optional(),
+
   // Encryption
   ENCRYPTION_KEY: z
     .string()

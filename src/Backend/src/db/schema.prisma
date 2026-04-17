@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -46,9 +47,41 @@ model ChildProfile {
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   learningSessions  LearningSession[]
   earnedBadges      EarnedBadge[]
+  sparkyConversations SparkyConversation[]
+  childConcepts     ChildConcept[]
+  engagementProfile EngagementProfile?   // S10-03
 
   @@index([userId])
   @@map("child_profiles")
+}
+
+// S10-03: Engagement Profile — per-child behavioral signals derived from CardInteractions.
+// - Raw counters (totalSessions, totalInteractions, totalDurationMs, frustration/flow counts,
+//   streaks) are stored in the clear: they are not child-identifying on their own.
+// - `cardTypeStatsEncrypted` and `topicAffinitiesEncrypted` are AES-256-GCM encrypted JSON
+//   blobs (via services/oauth/tokenEncryption) because they profile what the child prefers
+//   and engages with — treated as COPPA-sensitive at rest.
+model EngagementProfile {
+  id                       String              @id @default(uuid())
+  childId                  String              @unique
+  totalSessions            Int                 @default(0)
+  totalInteractions        Int                 @default(0)
+  totalDurationMs          Int                 @default(0)
+  frustrationEventCount    Int                 @default(0)
+  flowEventCount           Int                 @default(0)
+  currentStreak            Int                 @default(0)  // consecutive correct answers (resets on wrong)
+  longestStreak            Int                 @default(0)
+  cardTypeStatsEncrypted   String?              // encrypted JSON: Record<CardType,{count,totalDurationMs,completionCount}>
+  topicAffinitiesEncrypted String?              // encrypted JSON: Record<Domain,{count,totalDurationMs}>
+  lastInteractionAt        DateTime?
+  lastComputedAt           DateTime            @default(now())
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+
+  // Relations
+  child                    ChildProfile        @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@map("engagement_profiles")
 }
 
 model Subscription {
@@ -117,7 +150,7 @@ model Lesson {
   thumbnailUrl      String?
   difficulty        Int                 @default(1)
   sourceUrl         String?
-  aiAnalysis        Json?
+  aiAnalysis        String?              // JSON stored as text (SQLite compat)
   status            String              @default("draft")
   sortOrder         Int                 @default(0)
   createdAt         DateTime            @default(now())
@@ -141,19 +174,22 @@ model Card {
   lessonId          String
   type              String
   sortOrder         Int                 @default(0)
-  content           Json
+  content           String               // JSON stored as text (SQLite compat)
   voiceScript       String?
   imageUrl          String?
   audioUrl          String?
-  interactionConfig Json?
+  interactionConfig String?              // JSON stored as text (SQLite compat)
+  conceptId         String?             // S10-02: optional link to a Concept (mastery-bearing cards)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
   // Relations
   lesson            Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   interactions      CardInteraction[]
+  concept           Concept?            @relation(fields: [conceptId], references: [id], onDelete: SetNull)
 
   @@index([lessonId])
+  @@index([conceptId])
   @@map("cards")
 }
 
@@ -180,7 +216,7 @@ model CardInteraction {
   action            String
   durationMs        Int
   voiceTranscript   String?
-  result            Json?
+  result            String?              // JSON stored as text (SQLite compat)
   timestamp         DateTime            @default(now())
 
   // Relations
@@ -197,7 +233,7 @@ model Badge {
   title             String              @unique
   description       String?
   icon              String?
-  criteria          Json
+  criteria          String               // JSON stored as text (SQLite compat)
   createdAt         DateTime            @default(now())
 
   // Relations
@@ -227,7 +263,7 @@ model UrlIngest {
   userId            String
   url               String
   rawContent        String?
-  aiAnalysis        Json?
+  aiAnalysis        String?              // JSON stored as text (SQLite compat)
   status            String              @default("scraped")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -244,7 +280,7 @@ model AssetJob {
   id                String              @id @default(uuid())
   lessonId          String?
   type              String
-  input             Json
+  input             String               // JSON stored as text (SQLite compat)
   outputUrl         String?
   status            String              @default("queued")
   createdAt         DateTime            @default(now())
@@ -256,4 +292,124 @@ model AssetJob {
   @@index([lessonId])
   @@index([status])
   @@map("asset_jobs")
+}
+
+model UsageRecord {
+  id                String              @id @default(uuid())
+  userId            String
+  feature           String
+  count             Int                 @default(1)
+  recordedAt        DateTime            @default(now())
+
+  @@index([userId, feature])
+  @@map("usage_records")
+}
+
+model LlmUsageLog {
+  id                String              @id @default(uuid())
+  userId            String
+  provider          String              // "openai", "anthropic"
+  model             String              // "gpt-4o-mini", "claude-sonnet", "dall-e-3", "tts-1"
+  feature           String              // "content_analysis", "card_generation", "sparky_chat", "image_gen", "tts"
+  promptTokens      Int                 @default(0)
+  completionTokens  Int                 @default(0)
+  totalTokens       Int                 @default(0)
+  costCents         Float               @default(0) // Cost in cents (USD)
+  metadata          String?             // JSON stored as text (SQLite compat)
+  createdAt         DateTime            @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([feature])
+  @@index([createdAt])
+  @@map("llm_usage_logs")
+}
+
+model SparkyConversation {
+  id                String              @id @default(uuid())
+  childId           String
+  transcript        String
+  response          String
+  emotion           String              @default("happy")
+  followUpQuestions String?             // JSON stored as text (SQLite compat)
+  createdAt         DateTime            @default(now())
+
+  // Relations
+  child             ChildProfile        @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+  @@map("sparky_conversations")
+}
+
+model FeatureFlag {
+  id                String              @id @default(uuid())
+  key               String              @unique
+  enabled           Boolean             @default(false)
+  rolloutPercentage Int                 @default(0)
+  requiredTier      String?
+  description       String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@map("feature_flags")
+}
+
+// ============================================================
+// Knowledge Graph (Sprint 10 / S10-01 — "The Brain")
+// ============================================================
+// `Concept` is the domain-level unit of learning (e.g. "Binary numbers",
+// "What a loop is"). Concepts live in a DAG via `prerequisites` — a
+// JSON-stored array of `Concept.id` values representing dependency edges.
+//
+// `ChildConcept` is the per-child mastery record. Confidence is a 0..1
+// rolling score updated by S10-02 from quiz results. A child has at most
+// one `ChildConcept` row per `Concept` (enforced by @@unique).
+//
+// JSON storage: `prerequisites` is stored as a JSON string because SQLite
+// has no native JSON column. The middleware in `client.ts` auto-stringifies
+// on write and auto-parses on read — see `JSON_STRING_FIELDS`.
+// ============================================================
+
+model Concept {
+  id                String              @id @default(uuid())
+  name              String              @unique
+  domain            String              // "computers" | "robots" | "ai"
+  description       String?
+  prerequisites     String              @default("[]") // JSON array of concept IDs (stored as text for SQLite)
+  difficulty        Int                 @default(1)    // 1-5, rough age-appropriate ordering
+  sortOrder         Int                 @default(0)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relations
+  childConcepts     ChildConcept[]
+  cards             Card[]              // S10-02: back-relation for Card.conceptId
+
+  @@index([domain])
+  @@index([difficulty])
+  @@index([domain, difficulty])
+  @@map("concepts")
+}
+
+model ChildConcept {
+  id                String              @id @default(uuid())
+  childId           String
+  conceptId         String
+  confidence        Float               @default(0.0)  // 0.0 - 1.0
+  attempts          Int                 @default(0)
+  correctCount      Int                 @default(0)
+  lastTested        DateTime?
+  firstIntroduced   DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relations
+  child             ChildProfile        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  concept           Concept             @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, conceptId])
+  @@index([childId])
+  @@index([conceptId])
+  @@index([childId, confidence])
+  @@map("child_concepts")
 }

@@ -20,6 +20,9 @@ import dataRightsRoutes from './dataRights';
 import featureFlagsRoutes from './featureFlags';
 import monitoringRoutes from './monitoring';
 import privacyRoutes from './privacy';
+import { knowledgeRoutes } from './knowledge';
+import { engagementRoutes } from './engagement';
+import { devConsoleRoutes } from './devConsole';
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   // Webhook routes (no auth required - called by Apple directly)
@@ -87,6 +90,15 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
 
       // Privacy & legal routes (no auth required) - Sprint 7
       await fastify.register(privacyRoutes);
+
+      // Knowledge graph routes (require auth) - Sprint 10 (S10-01)
+      await fastify.register(knowledgeRoutes, { prefix: '/knowledge' });
+
+      // Engagement profile routes (require auth) - Sprint 10 (S10-03)
+      await fastify.register(engagementRoutes, { prefix: '/engagement' });
+
+      // Dev console support routes (require auth) - Sprint 10 side-quest (DC-04)
+      await fastify.register(devConsoleRoutes, { prefix: '/dev' });
     },
     { prefix: '/api/v1' }
   );

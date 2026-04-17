@@ -7,6 +7,8 @@
  */
 
 import { createHmac, randomUUID, createHash } from 'crypto';
+import { mkdirSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
 import { getConfig } from '@config';
 
 interface S3SigningParameters {
@@ -87,10 +89,15 @@ export async function uploadToR2(
 ): Promise<string> {
   const config = getConfig();
 
-  // Dev fallback: if R2 not configured, return mock URL
+  // Dev fallback: if R2 not configured, save to local disk and serve via static route
   if (!config.R2_ACCESS_KEY_ID || !config.R2_SECRET_ACCESS_KEY || !config.R2_PUBLIC_URL) {
-    const mockUrl = `${config.R2_PUBLIC_URL || 'http://localhost:3000'}/assets/mock/${filename}`;
-    return mockUrl;
+    const localDir = join(__dirname, '..', '..', '..', 'public', 'assets');
+    const localPath = join(localDir, filename);
+    mkdirSync(dirname(localPath), { recursive: true });
+    writeFileSync(localPath, buffer);
+    const localUrl = `http://localhost:${config.PORT}/dev/assets/${filename}`;
+    console.log(`[Asset] Saved locally: ${localUrl} (${(buffer.length / 1024).toFixed(1)} KB)`);
+    return localUrl;
   }
 
   const bucket = config.R2_BUCKET_NAME || 'nova-assets';

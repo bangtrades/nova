@@ -19,13 +19,25 @@ export async function authMiddleware(
   // Strip query string for route matching
   const urlPath = request.url.split('?')[0];
 
-  // Skip auth for public routes
-  if (PUBLIC_ROUTES.includes(urlPath)) {
+  // Skip auth for public routes and dev tool pages
+  if (PUBLIC_ROUTES.includes(urlPath) || urlPath.startsWith('/dev/')) {
     return;
   }
 
   const config = getConfig();
   const authHeader = request.headers.authorization;
+
+  // Dev bypass: in development, if no auth header, use the first user in DB
+  if (config.NODE_ENV === 'development' && (!authHeader || !authHeader.startsWith('Bearer '))) {
+    const { getPrismaClient } = await import('../db/client');
+    const prisma = getPrismaClient();
+    const firstUser = await (prisma as any).user.findFirst();
+    if (firstUser) {
+      request.userId = firstUser.id;
+      request.user = { id: firstUser.id };
+      return;
+    }
+  }
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return reply.status(401).send({

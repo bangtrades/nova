@@ -27,7 +27,7 @@ struct NovaCompanionApp: App {
 
     /// Initialize the app with all necessary managers.
     init() {
-        let baseURL = URL(string: "https://api.nova.local")!
+        let baseURL = URL(string: "http://localhost:3000/api/v1")!
 
         // Create AuthManager with temporary token provider
         // AuthManager will become the token provider for APIRouter

@@ -19,8 +19,8 @@ export interface TierLimits {
 export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   free: {
     lessons: 3,
-    aiGenerations: 0,
-    voiceChats: 0,
+    aiGenerations: 5,
+    voiceChats: 5,
     children: 1,
   },
   pro: {

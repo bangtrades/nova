@@ -6,6 +6,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { getUserCostSummary, getAggregateCostSummary } from '@services/llm/costTracker';
 
 // In-memory metrics counters
 interface Metrics {
@@ -198,6 +199,86 @@ export default async function monitoringRoutes(fastify: FastifyInstance): Promis
         statusCode: 500,
         error: 'Internal Server Error',
         message: 'Failed to fetch statistics',
+      });
+    }
+  });
+
+  // GET /monitoring/costs - LLM cost dashboard (auth required)
+  fastify.get('/monitoring/costs', async (request: FastifyRequest, reply) => {
+    try {
+      if (!request.userId) {
+        return reply.status(401).send({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message: 'Authentication required',
+        });
+      }
+
+      // Parse optional query params
+      const query = request.query as { days?: string; userId?: string };
+      const days = parseInt(query.days || '30', 10);
+      const targetUserId = query.userId;
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      // If requesting a specific user's costs, return user-level summary
+      if (targetUserId) {
+        const userSummary = await getUserCostSummary(targetUserId, startDate);
+        return reply.status(200).send({
+          period: { days, startDate: startDate.toISOString() },
+          userId: targetUserId,
+          ...userSummary,
+          totalCostDollars: (userSummary.totalCostCents / 100).toFixed(4),
+        });
+      }
+
+      // Otherwise return aggregate summary
+      const aggregate = await getAggregateCostSummary(startDate);
+      return reply.status(200).send({
+        period: { days, startDate: startDate.toISOString() },
+        ...aggregate,
+        totalCostDollars: (aggregate.totalCostCents / 100).toFixed(4),
+      });
+    } catch (error) {
+      fastify.log.error(`Cost monitoring error: ${error}`);
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: 'Failed to fetch cost data',
+      });
+    }
+  });
+
+  // GET /monitoring/costs/me - Current user's own costs
+  fastify.get('/monitoring/costs/me', async (request: FastifyRequest, reply) => {
+    try {
+      if (!request.userId) {
+        return reply.status(401).send({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message: 'Authentication required',
+        });
+      }
+
+      const query = request.query as { days?: string };
+      const days = parseInt(query.days || '30', 10);
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const summary = await getUserCostSummary(request.userId, startDate);
+      return reply.status(200).send({
+        period: { days, startDate: startDate.toISOString() },
+        ...summary,
+        totalCostDollars: (summary.totalCostCents / 100).toFixed(4),
+      });
+    } catch (error) {
+      fastify.log.error(`User cost error: ${error}`);
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: 'Failed to fetch cost data',
       });
     }
   });

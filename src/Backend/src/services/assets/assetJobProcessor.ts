@@ -11,6 +11,7 @@ import { getConfig } from '@config';
 import { generateTTSAudio } from './ttsGenerator';
 import { generateImage, buildImagePrompt, downloadImage } from './imageGenerator';
 import { uploadAudio, uploadImage } from './assetUploader';
+import { logUsage } from '../llm/costTracker';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
@@ -64,6 +65,7 @@ async function processJobWithRetry(
   type: string,
   input: Record<string, unknown>,
   apiKey: string,
+  userId: string = 'system',
   retryCount: number = 0
 ): Promise<string> {
   const prisma = getPrismaClient();
@@ -88,19 +90,38 @@ async function processJobWithRetry(
 
       const audioBuffer = await generateTTSAudio(apiKey, text, voice);
       outputUrl = await uploadAudio(audioBuffer, lessonId, 0);
+
+      // Log TTS cost
+      logUsage({
+        userId,
+        provider: 'openai',
+        model: 'tts-1',
+        feature: 'tts',
+        metadata: { charCount: text.length, lessonId },
+      });
     } else if (type === 'image') {
       // Generate DALL-E image
       const concept = input.concept as string;
       const cardType = input.cardType as string;
+      const subject = typeof input.subject === 'string' ? input.subject : undefined;
 
       if (!concept || !concept.trim()) {
         throw new AssetProcessorError('invalid_input', false, 'Image concept is required');
       }
 
-      const prompt = buildImagePrompt(concept, cardType || 'concept');
+      const prompt = buildImagePrompt(concept, cardType || 'concept', subject);
       const result = await generateImage(apiKey, prompt);
       const imageBuffer = await downloadImage(result.url);
       outputUrl = await uploadImage(imageBuffer, lessonId, 0);
+
+      // Log DALL-E 3 cost
+      logUsage({
+        userId,
+        provider: 'openai',
+        model: 'dall-e-3',
+        feature: 'image_gen',
+        metadata: { lessonId, promptLength: prompt.length },
+      });
     } else {
       throw new AssetProcessorError('invalid_type', false, `Unknown asset type: ${type}`);
     }
@@ -124,7 +145,7 @@ async function processJobWithRetry(
       // Wait before retrying
       await sleep(RETRY_DELAY_MS * (retryCount + 1));
 
-      return processJobWithRetry(jobId, lessonId, type, input, apiKey, retryCount + 1);
+      return processJobWithRetry(jobId, lessonId, type, input, apiKey, userId, retryCount + 1);
     }
 
     // Mark job as failed
@@ -145,7 +166,8 @@ async function processJobWithRetry(
  */
 export async function processAssetJob(
   jobId: string,
-  apiKey: string
+  apiKey: string,
+  userId: string = 'system'
 ): Promise<void> {
   const prisma = getPrismaClient();
 
@@ -168,7 +190,8 @@ export async function processAssetJob(
     job.lessonId,
     job.type,
     job.input as Record<string, unknown>,
-    apiKey
+    apiKey,
+    userId
   );
 }
 
@@ -177,7 +200,8 @@ export async function processAssetJob(
  */
 export async function processLessonAssets(
   lessonId: string,
-  apiKey: string
+  apiKey: string,
+  userId: string = 'system'
 ): Promise<AssetJobResult[]> {
   const prisma = getPrismaClient();
   const results: AssetJobResult[] = [];
@@ -196,8 +220,22 @@ export async function processLessonAssets(
     throw new AssetProcessorError('invalid_api_key', false, 'OpenAI API key is required');
   }
 
+  // Extract the lesson subject noun ("hippopotamus", "volcano", ...) from the
+  // Stage 2 analysis / Stage 3 decomposition. This is what anchors every image
+  // prompt so DALL-E-3 actually paints the right subject, not generic stock
+  // classroom imagery. Without a subject, we fall back to the lesson title.
+  const aiAnalysis = parseLessonAiAnalysis(lesson.aiAnalysis);
+  const subject = (aiAnalysis?.topic || lesson.title || '').trim();
+  const atoms = Array.isArray(aiAnalysis?.decomposition?.atoms)
+    ? (aiAnalysis!.decomposition!.atoms as Array<Record<string, unknown>>)
+    : [];
+
   // Create asset jobs for cards that need them
   const jobsToProcess: typeof lesson.cards = [];
+
+  // Track which image-eligible card we're on so we can pair it to its atom
+  // (decomposition and cards are in sortOrder, see cardGenerator Stage 4).
+  let atomCursor = 0;
 
   for (const card of lesson.cards) {
     // Create TTS job if card has a voice script
@@ -226,10 +264,9 @@ export async function processLessonAssets(
     // Create image job if card needs illustration and doesn't have one
     const cardContent = card.content as Record<string, unknown> | null;
     if (cardContent && !card.imageUrl) {
-      const concept = (cardContent.text ||
-        cardContent.title ||
-        cardContent.imagePrompt ||
-        'learning concept') as string;
+      const atom = atoms[atomCursor];
+      const concept = buildCardConcept(cardContent, card.type, subject, atom);
+      atomCursor++;
 
       const imageJob = await prisma.assetJob.create({
         data: {
@@ -238,6 +275,7 @@ export async function processLessonAssets(
           input: {
             concept,
             cardType: card.type,
+            subject,
           },
           status: 'queued',
         },
@@ -252,45 +290,60 @@ export async function processLessonAssets(
   }
 
   // Process jobs sequentially to avoid rate limits
-  for (const result of results) {
+  // Fetch actual job records so we have real input data
+  const allJobs = await prisma.assetJob.findMany({
+    where: { lessonId, status: 'queued' },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Track which card index we're on for TTS and images separately
+  let ttsCardIndex = 0;
+  let imageCardIndex = 0;
+
+  for (const job of allJobs) {
+    const resultEntry = results.find((r) => r.jobId === job.id);
+    if (!resultEntry) continue;
+
     try {
+      const jobInput = (typeof job.input === 'string' ? JSON.parse(job.input) : job.input) as Record<string, unknown>;
+
       const outputUrl = await processJobWithRetry(
-        result.jobId,
+        job.id,
         lessonId,
-        result.type,
-        result.type === 'tts'
-          ? { text: 'processing' }
-          : { concept: 'processing', cardType: 'concept' },
-        apiKey
+        job.type,
+        jobInput,
+        apiKey,
+        userId
       );
 
-      result.status = 'completed';
-      result.outputUrl = outputUrl;
+      resultEntry.status = 'completed';
+      resultEntry.outputUrl = outputUrl;
 
-      // Update card with the new asset URL
-      const cardIndex = jobsToProcess.findIndex((c: any) => c.lessonId === lessonId);
-
-      if (result.type === 'tts' && cardIndex >= 0) {
-        await prisma.card.update({
-          where: { id: jobsToProcess[cardIndex].id },
-          data: { audioUrl: outputUrl },
-        });
-      } else if (result.type === 'image') {
-        const card = lesson.cards.find((c: any) => {
-          const content = c.content as Record<string, unknown> | null;
-          return content && (content.imagePrompt || content.text);
-        });
-
-        if (card) {
+      // Update the corresponding card with the asset URL
+      if (job.type === 'tts') {
+        // Find cards with voiceScript but no audioUrl, in order
+        const ttsCards = lesson.cards.filter((c) => c.voiceScript && !c.audioUrl);
+        if (ttsCards[ttsCardIndex]) {
           await prisma.card.update({
-            where: { id: card.id },
+            where: { id: ttsCards[ttsCardIndex].id },
+            data: { audioUrl: outputUrl },
+          });
+        }
+        ttsCardIndex++;
+      } else if (job.type === 'image') {
+        // Find cards without imageUrl, in order
+        const imageCards = lesson.cards.filter((c) => !c.imageUrl);
+        if (imageCards[imageCardIndex]) {
+          await prisma.card.update({
+            where: { id: imageCards[imageCardIndex].id },
             data: { imageUrl: outputUrl },
           });
         }
+        imageCardIndex++;
       }
     } catch (error) {
-      result.status = 'failed';
-      result.error = error instanceof Error ? error.message : 'Unknown error';
+      resultEntry.status = 'failed';
+      resultEntry.error = error instanceof Error ? error.message : 'Unknown error';
     }
 
     // Small delay between requests to avoid rate limiting
@@ -327,6 +380,86 @@ export async function getAssetJobStatus(lessonId: string): Promise<AssetJobStatu
   };
 
   return status;
+}
+
+/**
+ * Parse the lesson.aiAnalysis JSON blob (stored as TEXT in SQLite).
+ * Returns a structured object with topic + decomposition, or null on failure.
+ * Non-throwing — a malformed blob must not block asset generation.
+ */
+function parseLessonAiAnalysis(
+  raw: string | null
+): { topic?: string; decomposition?: { atoms?: unknown[] } } | null {
+  if (!raw) return null;
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (parsed && typeof parsed === 'object') {
+      return parsed as { topic?: string; decomposition?: { atoms?: unknown[] } };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build the `concept` string that will be forwarded to `buildImagePrompt`.
+ *
+ * Priority (highest wins):
+ *   1. LLM-authored `imagePrompt` on the card (already subject-anchored per
+ *      the updated CARD_GENERATION_PROMPT).
+ *   2. Synthesized "<subject> — <atom.name>: <card title/text excerpt>".
+ *   3. "<subject> — <card title/text excerpt>".
+ *   4. Plain subject if nothing else.
+ *
+ * This replaces the old `text || title || imagePrompt || "learning concept"`
+ * chain, which dropped the lesson subject entirely and collapsed to the
+ * literal string "learning concept" for quiz cards.
+ */
+export function buildCardConcept(
+  cardContent: Record<string, unknown>,
+  cardType: string,
+  subject: string,
+  atom?: Record<string, unknown>
+): string {
+  const llmPrompt =
+    typeof cardContent.imagePrompt === 'string'
+      ? cardContent.imagePrompt.trim()
+      : '';
+  if (llmPrompt) {
+    // If the LLM already anchored the subject, use its prompt verbatim.
+    // If not, prepend the subject so DALL-E-3 sees it in the first tokens.
+    if (subject && !llmPrompt.toLowerCase().includes(subject.toLowerCase())) {
+      return `${subject}: ${llmPrompt}`;
+    }
+    return llmPrompt;
+  }
+
+  const atomName =
+    atom && typeof atom.name === 'string' ? atom.name.trim() : '';
+  const cardTitle =
+    typeof cardContent.title === 'string' ? cardContent.title.trim() : '';
+  const cardText =
+    typeof cardContent.text === 'string'
+      ? cardContent.text.trim().slice(0, 140)
+      : '';
+  const cardQuestion =
+    typeof cardContent.question === 'string'
+      ? cardContent.question.trim()
+      : '';
+
+  const detail = cardTitle || cardQuestion || cardText || cardType;
+
+  if (subject && atomName) {
+    return `${subject} — ${atomName}: ${detail}`;
+  }
+  if (subject) {
+    return `${subject}: ${detail}`;
+  }
+  if (atomName) {
+    return `${atomName}: ${detail}`;
+  }
+  return detail || 'educational scene';
 }
 
 export { AssetProcessorError };

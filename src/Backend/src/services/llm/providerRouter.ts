@@ -15,8 +15,10 @@ import { getPrismaClient } from '@db/client';
 import type { LLMRequest, LLMResponse } from './types';
 import { chatCompletion } from './openaiProvider';
 import { chatCompletionProxy } from './proxyProvider';
+import { claudeCompletion } from './anthropicProvider';
 import { decryptToken } from '../oauth/tokenEncryption';
 import { getConfig } from '@config';
+import { logUsage, type CostFeature } from './costTracker';
 
 export interface RoutingResult {
   provider: 'byok' | 'proxy';
@@ -25,10 +27,44 @@ export interface RoutingResult {
 
 /**
  * Routes an LLM request to the appropriate provider
+ * @param userId - User making the request
+ * @param request - LLM request payload
+ * @param feature - What pipeline stage this call serves (for cost tracking)
  */
-export async function routeRequest(userId: string, request: LLMRequest): Promise<LLMResponse> {
+export async function routeRequest(
+  userId: string,
+  request: LLMRequest,
+  feature: CostFeature = 'other'
+): Promise<LLMResponse> {
   const prisma = getPrismaClient();
   const config = getConfig();
+
+  // Route Claude models directly to Anthropic API (server-side key)
+  if (request.model.startsWith('claude')) {
+    if (config.ANTHROPIC_API_KEY) {
+      try {
+        const response = await claudeCompletion(config.ANTHROPIC_API_KEY, request);
+        // Log cost
+        logUsage({
+          userId,
+          provider: 'anthropic',
+          model: request.model,
+          feature,
+          promptTokens: response.usage.promptTokens,
+          completionTokens: response.usage.completionTokens,
+          totalTokens: response.usage.totalTokens,
+        });
+        return response;
+      } catch (error) {
+        // If Claude fails (network, rate limit, etc.), fall through to OpenAI
+        console.warn(`Claude provider failed, falling back to OpenAI:`, error);
+      }
+    } else {
+      console.warn('ANTHROPIC_API_KEY not configured — falling back to OpenAI for Claude model request');
+    }
+    // Remap to OpenAI equivalent for fallback
+    request = { ...request, model: 'gpt-4o-mini' };
+  }
 
   // Check for connected BYOK provider with valid token
   const provider = await prisma.lLMProvider.findUnique({
@@ -54,6 +90,16 @@ export async function routeRequest(userId: string, request: LLMRequest): Promise
       // Use BYOK provider (no rate limits)
       try {
         const response = await chatCompletion(decryptedToken, request);
+        // Log cost (BYOK — user's own key, but still track for analytics)
+        logUsage({
+          userId,
+          provider: 'openai-byok',
+          model: request.model,
+          feature,
+          promptTokens: response.usage.promptTokens,
+          completionTokens: response.usage.completionTokens,
+          totalTokens: response.usage.totalTokens,
+        });
         return {
           ...response,
           provider: 'byok',
@@ -73,7 +119,20 @@ export async function routeRequest(userId: string, request: LLMRequest): Promise
   const tier = (subscription?.plan as 'free' | 'pro') || 'free';
 
   // Use proxy provider with subscription-based rate limiting
-  return chatCompletionProxy(userId, tier, request);
+  const response = await chatCompletionProxy(userId, tier, request);
+
+  // Log cost
+  logUsage({
+    userId,
+    provider: 'openai',
+    model: request.model,
+    feature,
+    promptTokens: response.usage.promptTokens,
+    completionTokens: response.usage.completionTokens,
+    totalTokens: response.usage.totalTokens,
+  });
+
+  return response;
 }
 
 /**
