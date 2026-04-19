@@ -1,0 +1,9 @@
+{{#if (eq ctx.teachingStrategy.modality "visual")}}
+**Modality note:** this child learns best when information is *shown* — lean on concrete visual imagery (colors, shapes, diagrams-in-words, spatial arrangements). For quiz items: describe a scene the child can picture, and let the distractors differ by a visible property.
+{{else if (eq ctx.teachingStrategy.modality "auditory")}}
+**Modality note:** this child learns best through *sound and rhythm* — use rhyme, repetition, onomatopoeia, short dialogue, and call-and-response structures. For quiz items: frame the question as a small story or a what-did-they-say moment.
+{{else if (eq ctx.teachingStrategy.modality "kinesthetic")}}
+**Modality note:** this child learns best through *action* — describe things the child could do, mime, or physically compare. Prefer verbs over adjectives. For quiz items: anchor each option in an action or a bodily sensation when possible.
+{{else}}
+**Modality note:** use a balanced mix of visual imagery and concrete action; default to the age profile's guidance on sensory detail.
+{{/if}}

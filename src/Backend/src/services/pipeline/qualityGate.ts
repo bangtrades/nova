@@ -18,6 +18,8 @@ import type { LLMMessage } from '../llm/types';
 import {
   getQualityGateSystemPrompt,
   getCardGenerationSystemPrompt,
+  type GuidancePreambleInput,
+  type SessionContextPreambleInput,
 } from './promptTemplates';
 import type { ContentAnalysis } from './contentAnalyzer';
 import type { GeneratedCard } from './cardGenerator';
@@ -59,11 +61,13 @@ const REGENERATION_CAP = 3; // never regenerate more than this many cards
 export async function runQualityGate(
   userId: string,
   analysis: ContentAnalysis,
-  cards: GeneratedCard[]
+  cards: GeneratedCard[],
+  guidance?: GuidancePreambleInput | null,
+  sessionContext?: SessionContextPreambleInput | null
 ): Promise<QualityGateResult> {
   let report: QualityReport;
   try {
-    report = await reviewLesson(userId, analysis, cards);
+    report = await reviewLesson(userId, analysis, cards, guidance);
   } catch (error) {
     console.warn(
       `[QualityGate] Review failed, treating lesson as pass-through: ${
@@ -124,12 +128,14 @@ export async function runQualityGate(
 async function reviewLesson(
   userId: string,
   analysis: ContentAnalysis,
-  cards: GeneratedCard[]
+  cards: GeneratedCard[],
+  guidance?: GuidancePreambleInput | null
 ): Promise<QualityReport> {
   const systemPrompt = getQualityGateSystemPrompt(
     analysis.topic,
     analysis.suggestedStage,
-    analysis.summary
+    analysis.summary,
+    guidance
   );
 
   // Compact the cards so the reviewer sees structure without excessive tokens

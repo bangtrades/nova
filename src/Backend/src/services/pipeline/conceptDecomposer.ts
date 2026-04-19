@@ -12,7 +12,11 @@
  */
 import { routeRequest } from '../llm/providerRouter';
 import type { LLMMessage } from '../llm/types';
-import { getConceptDecompositionSystemPrompt } from './promptTemplates';
+import {
+  getConceptDecompositionSystemPrompt,
+  type GuidancePreambleInput,
+  type SessionContextPreambleInput,
+} from './promptTemplates';
 import type { ContentAnalysis } from './contentAnalyzer';
 import type { ScrapedContent } from './scraper';
 import type { CardType } from './cardGenerator';
@@ -75,7 +79,9 @@ const STRATEGY_TO_CARD_TYPE: Record<TeachingStrategy, CardType> = {
 export async function decomposeConcepts(
   userId: string,
   analysis: ContentAnalysis,
-  scraped: ScrapedContent
+  scraped: ScrapedContent,
+  guidance?: GuidancePreambleInput | null,
+  sessionContext?: SessionContextPreambleInput | null
 ): Promise<ConceptDecomposition> {
   if (!analysis.topic || !analysis.summary) {
     throw new Error('Concept decomposition requires a topic and summary');
@@ -86,7 +92,9 @@ export async function decomposeConcepts(
     analysis.summary,
     analysis.keyConcepts,
     analysis.suggestedStage,
-    analysis.suggestedCardCount
+    analysis.suggestedCardCount,
+    guidance,
+    sessionContext
   );
 
   const userPrompt = `Source excerpt (truncated):

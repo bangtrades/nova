@@ -1,0 +1,14 @@
+{
+  "name": "quiz-maker",
+  "version": "0.1.0",
+  "description": "Formative-assessment skill — produces a single age-appropriate multiple-choice question with plausible distractors, a correct-answer index, and a per-option rationale. Never uses 'all of the above' or 'none of the above'.",
+  "modelHint": "flash",
+  "temperatureHint": 0.4,
+  "inputs": {
+    "requires": ["concept", "conceptType"],
+    "optional": ["topic", "targetLessonId", "lastStoryExcerpt"]
+  },
+  "ageProfiles": [4, 6, 8],
+  "difficulties": ["easy", "medium", "hard"],
+  "handlesConceptTypes": ["vocabulary", "abstract", "process", "comparison", "causeEffect", "factual"]
+}

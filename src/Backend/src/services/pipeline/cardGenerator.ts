@@ -7,10 +7,16 @@
 
 import { routeRequest } from '../llm/providerRouter';
 import type { LLMMessage } from '../llm/types';
-import { getCardGenerationSystemPrompt } from './promptTemplates';
+import {
+  getCardGenerationSystemPrompt,
+  type GuidancePreambleInput,
+  type SessionContextPreambleInput,
+} from './promptTemplates';
 import type { ContentAnalysis } from './contentAnalyzer';
 import type { ConceptDecomposition } from './conceptDecomposer';
 import type { ScrapedContent } from './scraper';
+import type { ChildContext } from '@services/skills/types';
+import { routeAllAtoms, type AtomTrace, type SkipReason } from './skillRouter';
 
 export type CardType = 'story' | 'concept' | 'experiment' | 'quiz' | 'voice';
 
@@ -42,7 +48,9 @@ export async function generateCards(
   userId: string,
   analysis: ContentAnalysis,
   scraped: ScrapedContent,
-  decomposition?: ConceptDecomposition
+  decomposition?: ConceptDecomposition,
+  guidance?: GuidancePreambleInput | null,
+  sessionContext?: SessionContextPreambleInput | null
 ): Promise<GeneratedCard[]> {
   // Prepare content text
   const contentText = `Title: ${scraped.title}\n\nContent:\n${scraped.content.substring(0, 3000)}`;
@@ -50,7 +58,9 @@ export async function generateCards(
   const systemPrompt = getCardGenerationSystemPrompt(
     analysis.topic,
     analysis.summary,
-    analysis.keyConcepts
+    analysis.keyConcepts,
+    guidance,
+    sessionContext
   );
 
   const userPrompt = decomposition
@@ -153,6 +163,129 @@ Source excerpt (for facts — rewrite for kids, do NOT copy):
 ${contentText}
 
 Return the JSON array per the card schema in your system prompt. sortOrder must be 0..${totalCards - 1}.`;
+}
+
+// ---------------------------------------------------------------------------
+// S10-12 · R4 — Skill-engine-aware card generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Result of the skill-engine path. Returned from
+ * {@link generateCardsWithSkills}. The orchestrator surfaces `traces` to
+ * Dev Console (R7) and records `skippedAtomIds` + `usedLegacyFallback`
+ * in the ingest audit trail.
+ */
+export interface SkillCardGenerationResult {
+  cards: GeneratedCard[];
+  traces: AtomTrace[];
+  skipped: Array<{ atomId: string; reason: SkipReason }>;
+  /** True when the legacy generator ran to fill in skipped atoms. */
+  usedLegacyFallback: boolean;
+}
+
+/**
+ * Route every atom in the decomposition through the skill engine
+ * (story-writer / quiz-maker today; more coming in S10-08+). For atoms
+ * that don't have a mapped skill (e.g. `concept`, `experiment`, `voice`
+ * today), or for skill failures that the Zod-retry couldn't recover
+ * from, run the legacy generator once and cherry-pick the cards at the
+ * matching atom indices to preserve lesson completeness.
+ *
+ * Callers:
+ *   - pipelineOrchestrator Stage 4 (when childId is present + flag on)
+ *   - Dev Console /dev/pipeline/run endpoint (for observability)
+ */
+export async function generateCardsWithSkills(
+  userId: string,
+  analysis: ContentAnalysis,
+  scraped: ScrapedContent,
+  decomposition: ConceptDecomposition,
+  childContext: ChildContext,
+  guidance?: GuidancePreambleInput | null,
+  sessionContext?: SessionContextPreambleInput | null
+): Promise<SkillCardGenerationResult> {
+  const route = await routeAllAtoms(decomposition.atoms, {
+    userId,
+    baseContext: childContext,
+    analysis,
+  });
+
+  // Map atomId → card for the successful atoms.
+  const skilledByAtomId = new Map<string, GeneratedCard>();
+  for (const r of route.results) {
+    if (r.kind === 'ok') skilledByAtomId.set(r.atomId, r.card);
+  }
+
+  const allSucceeded = route.skipped.length === 0;
+  let legacyCards: GeneratedCard[] | null = null;
+
+  // Only invoke the legacy generator if at least one atom skipped.
+  // Saves a full LLM round-trip in the happy path.
+  if (!allSucceeded) {
+    try {
+      legacyCards = await generateCards(
+        userId,
+        analysis,
+        scraped,
+        decomposition,
+        guidance,
+        sessionContext
+      );
+    } catch (err) {
+      // Legacy fallback itself failed — log and proceed with whatever
+      // the skill engine produced. A partial lesson beats no lesson.
+      console.warn(
+        `[cardGenerator] legacy fallback failed, shipping partial skill output: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+      legacyCards = null;
+    }
+  }
+
+  // Assemble final cards in atom order. Skill-produced cards take
+  // priority; legacy at matching index fills the gaps.
+  const finalCards: GeneratedCard[] = [];
+  for (let i = 0; i < decomposition.atoms.length; i++) {
+    const atom = decomposition.atoms[i];
+    const skilled = skilledByAtomId.get(atom.id);
+    if (skilled) {
+      skilled.sortOrder = i;
+      finalCards.push(skilled);
+      continue;
+    }
+    const legacy = legacyCards?.[i];
+    if (legacy) {
+      legacy.sortOrder = i;
+      finalCards.push(legacy);
+    }
+  }
+
+  // Preserve the legacy generator's trailing wrap-up card (if any) so
+  // lessons retain their "ending quiz" beat. Only when we actually
+  // invoked the legacy path.
+  if (legacyCards && legacyCards.length > decomposition.atoms.length) {
+    const tail = legacyCards[legacyCards.length - 1];
+    tail.sortOrder = finalCards.length;
+    finalCards.push(tail);
+  }
+
+  return {
+    cards: finalCards,
+    traces: route.traces,
+    skipped: route.skipped,
+    usedLegacyFallback: legacyCards !== null,
+  };
+}
+
+/**
+ * Feature flag reader for `SKILL_ENGINE_STAGE4`. Defaults to ON.
+ * Any of "false" / "0" / "off" (case-insensitive) disables the skill
+ * engine and forces the pipeline back onto the legacy path.
+ */
+export function isSkillEngineStage4Enabled(): boolean {
+  const raw = (process.env.SKILL_ENGINE_STAGE4 ?? 'true').trim().toLowerCase();
+  return raw !== 'false' && raw !== '0' && raw !== 'off' && raw !== '';
 }
 
 /**

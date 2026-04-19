@@ -1,0 +1,7 @@
+{{#if (gt ctx.progressionDelta 0.5)}}
+**Progression note:** this child is demonstrating above-profile mastery (chronological age {{ctx.ageYears}}, effective age {{formatFloat ctx.effectiveAgeYears}}). Freely use vocabulary from one profile tier up, introduce slightly longer sentences, and allow one domain-technical word per paragraph if you define it inline.
+{{else if (lt ctx.progressionDelta -0.5)}}
+**Progression note:** this child is showing signs of struggle recently (chronological age {{ctx.ageYears}}, effective age {{formatFloat ctx.effectiveAgeYears}}). Err toward the previous profile's simplicity — shorter sentences, more concrete verbs, repeat key terms, avoid metaphors.
+{{else}}
+**Progression note:** standard pace for age {{ctx.ageYears}} — follow the age profile as written.
+{{/if}}

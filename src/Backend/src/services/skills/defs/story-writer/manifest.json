@@ -1,0 +1,13 @@
+{
+  "name": "story-writer",
+  "version": "0.1.0",
+  "description": "Narrative-teaching skill — produces a short age-appropriate story that embeds a target concept. The story is the vehicle; comprehension follows in a separate quiz pass.",
+  "modelHint": "flash",
+  "temperatureHint": 0.8,
+  "inputs": {
+    "requires": ["topic"],
+    "optional": ["targetLessonId", "characterHint", "settingHint"]
+  },
+  "ageProfiles": [4, 6, 8],
+  "handlesConceptTypes": ["vocabulary", "abstract", "causeEffect", "process"]
+}

@@ -7,6 +7,12 @@
 
 import { routeRequest } from '@services/llm/providerRouter';
 import type { LLMRequest, LLMResponse } from '@services/llm/types';
+import {
+  buildParentGuidancePreamble,
+  buildSessionContextPreamble,
+} from '@services/pipeline/promptTemplates';
+import { getGuidance } from '@services/guidance/parentGuidance';
+import { buildSessionContext } from '@services/context/sessionContext';
 
 export const SPARKY_SYSTEM_PROMPT = `You are Sparky, a friendly AI buddy for kids aged 4-8. You explain technology concepts in simple, fun ways. You celebrate curiosity. You NEVER discuss violence, politics, adult content, or anything inappropriate for children. If asked about something off-topic, gently redirect to learning about technology and science.
 
@@ -62,6 +68,26 @@ export async function processSparkyMessage(
     },
   ];
 
+  // S10-04 / S10-05: fetch parent guidance + session context for this turn.
+  // Failures degrade to "no preamble" — Sparky never dies on a missing row.
+  let preamble = '';
+  try {
+    const [guidance, sessionContext] = await Promise.all([
+      getGuidance(childId),
+      buildSessionContext(childId),
+    ]);
+    preamble =
+      buildParentGuidancePreamble(guidance) +
+      buildSessionContextPreamble(sessionContext);
+  } catch (err) {
+    // Swallow — no preamble is the old Sprint 6 behavior.
+    console.warn(
+      `[Sparky] Failed to compose guidance/context preamble for child ${childId}: ${
+        err instanceof Error ? err.message : 'Unknown'
+      }`
+    );
+  }
+
   try {
     // Create LLM request
     const llmRequest: LLMRequest = {
@@ -69,7 +95,7 @@ export async function processSparkyMessage(
       messages: [
         {
           role: 'system',
-          content: SPARKY_SYSTEM_PROMPT,
+          content: preamble + SPARKY_SYSTEM_PROMPT,
         },
         ...messages,
       ],

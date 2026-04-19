@@ -224,6 +224,178 @@ shouldRegenerate should be true ONLY when score < 0.6 or there is a factAccuracy
 export const CONTENT_SCRAPER_TIMEOUT = 10000; // 10 seconds
 export const MAX_CONTENT_LENGTH = 50000; // 50KB max
 
+// ============================================================================
+// S10-04 / S10-05 preamble builders — parent guidance + session context.
+//
+// Each builder returns either an empty string (no-op when the profile is
+// zero-state) or a compact "PARENT GUIDANCE" / "SESSION CONTEXT" block
+// that is prepended to whichever system prompt needs calibration.
+//
+// These are kept pure and string-in/string-out so every call site looks
+// identical:
+//     const preamble = buildParentGuidancePreamble(guidance) +
+//                      buildSessionContextPreamble(ctx);
+//     return preamble + promptBody;
+// ============================================================================
+
+/**
+ * Shape needed by the guidance preamble. Kept structurally-typed so we
+ * don't pull in the full service types from a template module.
+ */
+export interface GuidancePreambleInput {
+  topicFocus: string[];
+  topicAvoid: string[];
+  difficultyOffset: number;
+  contentBoundaries: {
+    disallowedKeywords?: string[];
+    allowedTags?: string[];
+  };
+}
+
+/** Shape needed by the session-context preamble. Structural typing. */
+export interface SessionContextPreambleInput {
+  ianaTimezone: string;
+  localClock: string;
+  localDayOfWeek: string;
+  timeOfDay: string;
+  currentSessionMinutes: number | null;
+  lessonsCompletedToday: number;
+  currentStreak: number;
+  recentQuizResults: Array<{
+    outcome: 'correct' | 'incorrect';
+    durationMinutes: number;
+  }>;
+}
+
+/**
+ * Guardrail: parent-authored strings could contain prompt-injection payloads
+ * ("ignore previous instructions..."). We aggressively strip control chars
+ * and the most common injection keywords, and truncate to a hard cap.
+ *
+ * This is belt-and-suspenders on top of the service-level length caps in
+ * parentGuidance.ts — the service already limits each entry to 80 chars
+ * and each list to 32 entries, but we defend here too.
+ */
+function sanitizePromptInput(raw: string, maxLen = 80): string {
+  return raw
+    .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+    .replace(/ignore previous instructions/gi, '')
+    .replace(/system\s*:/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
+}
+
+/**
+ * Translate a -2..+2 difficulty offset to a directive the model can act on.
+ * We don't want to leak raw numeric scale — the offset is an internal
+ * affordance, the model should hear "simpler" or "more challenging".
+ */
+function describeDifficultyOffset(offset: number): string | null {
+  if (offset <= -2) return 'Make this noticeably SIMPLER than the baseline for the stage — shorter sentences, more familiar words, fewer moving parts per card.';
+  if (offset === -1) return 'Make this slightly SIMPLER than the baseline — favour familiar words and one idea per card.';
+  if (offset === 0) return null;
+  if (offset === 1) return 'Make this slightly MORE CHALLENGING than the baseline — one fresh word or idea is OK if anchored to something familiar.';
+  if (offset >= 2) return 'Make this noticeably MORE CHALLENGING than the baseline — richer vocabulary, an extra reasoning step, or a multi-part concept.';
+  return null;
+}
+
+export function buildParentGuidancePreamble(
+  guidance: GuidancePreambleInput | null | undefined
+): string {
+  if (!guidance) return '';
+  const focus = (guidance.topicFocus || []).map((t) => sanitizePromptInput(t)).filter(Boolean);
+  const avoid = (guidance.topicAvoid || []).map((t) => sanitizePromptInput(t)).filter(Boolean);
+  const disallowed = (guidance.contentBoundaries?.disallowedKeywords || [])
+    .map((t) => sanitizePromptInput(t))
+    .filter(Boolean);
+  const allowed = (guidance.contentBoundaries?.allowedTags || [])
+    .map((t) => sanitizePromptInput(t))
+    .filter(Boolean);
+  const offsetDirective = describeDifficultyOffset(guidance.difficultyOffset);
+
+  const allEmpty =
+    focus.length === 0 &&
+    avoid.length === 0 &&
+    disallowed.length === 0 &&
+    allowed.length === 0 &&
+    !offsetDirective;
+  if (allEmpty) return '';
+
+  const lines: string[] = ['PARENT GUIDANCE (the child\'s parent set these preferences — honour them):'];
+  if (focus.length > 0) lines.push(`- Lean TOWARD these topics when relevant: ${focus.join('; ')}`);
+  if (avoid.length > 0) lines.push(`- Do NOT include these topics, even tangentially: ${avoid.join('; ')}`);
+  if (disallowed.length > 0) lines.push(`- Hard keyword block — never use these words or their roots: ${disallowed.join(', ')}`);
+  if (allowed.length > 0) lines.push(`- When tagging or categorizing, prefer these tags: ${allowed.join(', ')}`);
+  if (offsetDirective) lines.push(`- Difficulty calibration: ${offsetDirective}`);
+  lines.push('');
+  return lines.join('\n');
+}
+
+function describeTimeOfDay(bucket: string): string {
+  switch (bucket) {
+    case 'earlyMorning':
+      return 'Early morning — the child may still be waking up. Keep the opening calm and the pace unhurried.';
+    case 'morning':
+      return 'Morning — peak attention window. Introduce new ideas here first.';
+    case 'afternoon':
+      return 'Afternoon — mid-energy window. Good time for review and practice.';
+    case 'evening':
+      return 'Evening — energy is winding down. Favour warm, story-shaped framings over dense explanation.';
+    case 'night':
+      return 'Night — the child should be heading to bed soon. Keep it short, calm, and low-stimulation.';
+    default:
+      return '';
+  }
+}
+
+function describeMomentum(results: SessionContextPreambleInput['recentQuizResults']): string | null {
+  if (!results || results.length === 0) return null;
+  const window = results.slice(0, 5);
+  const correct = window.filter((r) => r.outcome === 'correct').length;
+  const total = window.length;
+  if (total === 0) return null;
+  const ratio = correct / total;
+  if (ratio >= 0.8) return `Child is on a roll — ${correct}/${total} recent answers correct. Safe to step up the challenge a touch.`;
+  if (ratio <= 0.3) return `Child is struggling a bit — only ${correct}/${total} of the last few answers were correct. Pull back on difficulty and add encouragement.`;
+  return `Mixed recent results — ${correct}/${total} correct. Keep the pace steady, reinforce what they got right.`;
+}
+
+export function buildSessionContextPreamble(
+  ctx: SessionContextPreambleInput | null | undefined
+): string {
+  if (!ctx) return '';
+  const parts: string[] = ['SESSION CONTEXT (adapt tone and pacing — do not mention these details to the child):'];
+
+  const tod = describeTimeOfDay(ctx.timeOfDay);
+  if (tod) parts.push(`- Time of day: ${ctx.localDayOfWeek} ${ctx.localClock} (${ctx.ianaTimezone}). ${tod}`);
+
+  if (ctx.currentSessionMinutes !== null && ctx.currentSessionMinutes !== undefined) {
+    if (ctx.currentSessionMinutes >= 20) {
+      parts.push(`- Session length: the child has been in this session for ${ctx.currentSessionMinutes} minutes — start winding toward a satisfying stopping point.`);
+    } else if (ctx.currentSessionMinutes >= 8) {
+      parts.push(`- Session length: ${ctx.currentSessionMinutes} minutes in — mid-session, keep momentum.`);
+    } else {
+      parts.push(`- Session length: just started (${ctx.currentSessionMinutes} minutes).`);
+    }
+  }
+
+  if (ctx.lessonsCompletedToday > 0) {
+    parts.push(`- Lessons completed today: ${ctx.lessonsCompletedToday}. This is a multi-lesson day — vary the tone from earlier lessons.`);
+  }
+
+  if (ctx.currentStreak >= 3) {
+    parts.push(`- Current answer streak: ${ctx.currentStreak} in a row — acknowledge the momentum briefly, don't over-celebrate.`);
+  }
+
+  const momentum = describeMomentum(ctx.recentQuizResults);
+  if (momentum) parts.push(`- Recent momentum: ${momentum}`);
+
+  if (parts.length === 1) return ''; // only the header, no actual signals
+  parts.push('');
+  return parts.join('\n');
+}
+
 /**
  * Extract system prompt for content analysis
  */
@@ -232,14 +404,19 @@ export function getContentAnalysisSystemPrompt(): string {
 }
 
 /**
- * Extract system prompt for card generation with content context
+ * Extract system prompt for card generation with content context.
+ * Optional parent guidance + session context are prepended as preambles.
  */
 export function getCardGenerationSystemPrompt(
   topic: string,
   summary: string,
-  keyConcepts: string[]
+  keyConcepts: string[],
+  guidance?: GuidancePreambleInput | null,
+  sessionContext?: SessionContextPreambleInput | null
 ): string {
-  const context = `CONTENT CONTEXT:
+  const preamble =
+    buildParentGuidancePreamble(guidance) + buildSessionContextPreamble(sessionContext);
+  const context = `${preamble}CONTENT CONTEXT:
 Topic: ${topic}
 Summary: ${summary}
 Key Concepts: ${keyConcepts.join(', ')}
@@ -257,15 +434,20 @@ export function getSafetyFilterSystemPrompt(): string {
 
 /**
  * Build the concept decomposition system prompt with analysis context baked in.
+ * Optional parent guidance + session context are prepended.
  */
 export function getConceptDecompositionSystemPrompt(
   topic: string,
   summary: string,
   keyConcepts: string[],
   stage: 1 | 2 | 3 | 4,
-  targetCardCount: number
+  targetCardCount: number,
+  guidance?: GuidancePreambleInput | null,
+  sessionContext?: SessionContextPreambleInput | null
 ): string {
-  return `CONTEXT:
+  const preamble =
+    buildParentGuidancePreamble(guidance) + buildSessionContextPreamble(sessionContext);
+  return `${preamble}CONTEXT:
 Topic: ${topic}
 Summary: ${summary}
 Seed concepts (from analysis, NOT final): ${keyConcepts.join(', ') || '(none extracted)'}
@@ -277,13 +459,18 @@ ${CONCEPT_DECOMPOSITION_PROMPT}`;
 
 /**
  * Build the quality gate system prompt with lesson context baked in.
+ * Parent guidance is prepended so the reviewer model can also check whether
+ * cards respected the parent's topic/keyword constraints. Session context is
+ * NOT included here — quality review is about the lesson, not the moment.
  */
 export function getQualityGateSystemPrompt(
   topic: string,
   stage: 1 | 2 | 3 | 4,
-  summary: string
+  summary: string,
+  guidance?: GuidancePreambleInput | null
 ): string {
-  return `LESSON UNDER REVIEW:
+  const preamble = buildParentGuidancePreamble(guidance);
+  return `${preamble}LESSON UNDER REVIEW:
 Topic: ${topic}
 Stage: ${stage} (${stage === 1 ? 'Explorer/4yo' : stage === 2 ? 'Thinker/5yo' : stage === 3 ? 'Maker/6-7yo' : 'Creator/7-8yo'})
 Summary of intended lesson: ${summary}

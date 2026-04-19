@@ -12,6 +12,7 @@ const JSON_STRING_FIELDS: Record<string, string[]> = {
   sparkyConversation: ['followUpQuestions'],
   llmUsageLog: ['metadata'],
   concept: ['prerequisites'], // S10-01: knowledge graph — array of concept IDs
+  parentGuidance: ['topicFocus', 'topicAvoid', 'contentBoundaries'], // S10-04: parent controls
 };
 
 let prismaClient: PrismaClient | null = null;

@@ -40,6 +40,9 @@ model ChildProfile {
   birthDate         DateTime
   avatarUrl         String?
   currentStage      Int                 @default(1)
+  // S10-05: IANA timezone for DST-safe time-of-day context (e.g. "America/New_York").
+  // Never store a UTC offset here — offsets shift twice a year under DST.
+  ianaTimezone      String              @default("UTC")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -50,6 +53,7 @@ model ChildProfile {
   sparkyConversations SparkyConversation[]
   childConcepts     ChildConcept[]
   engagementProfile EngagementProfile?   // S10-03
+  parentGuidance    ParentGuidance?      // S10-04
 
   @@index([userId])
   @@map("child_profiles")
@@ -82,6 +86,41 @@ model EngagementProfile {
   child                    ChildProfile        @relation(fields: [childId], references: [id], onDelete: Cascade)
 
   @@map("engagement_profiles")
+}
+
+// S10-04: Parent Guidance — per-child parental controls consumed by the content
+// pipeline at generation time. 1:1 with ChildProfile.
+// - `topicFocus` / `topicAvoid` are JSON string arrays of topic/tag names.
+//   `topicFocus` biases decomposition + card generation TOWARD these topics;
+//   `topicAvoid` is a hard filter (the pipeline drops or skips concepts that
+//   match).
+// - `difficultyOffset` is clamped to [-2, +2] at the service layer; it is
+//   added to the model's baseline difficulty estimate for the child's age.
+// - `contentBoundaries` is a JSON blob with optional `disallowedKeywords`
+//   (string[]) and `allowedTags` (string[]) so we can extend without a
+//   migration. Not encrypted — these are parent preferences, not child
+//   behavioral data.
+// - `dailySessionLimitMinutes` / `singleSessionLimitMinutes` are nullable;
+//   null means "no limit set".
+// - `updatedByUserId` tracks which parent made the last change (audit trail).
+model ParentGuidance {
+  id                       String              @id @default(uuid())
+  childId                  String              @unique
+  topicFocus               String              @default("[]") // JSON array of strings
+  topicAvoid               String              @default("[]") // JSON array of strings
+  difficultyOffset         Int                 @default(0)    // clamped -2..+2 by service layer
+  contentBoundaries        String              @default("{}") // JSON { disallowedKeywords?: string[]; allowedTags?: string[] }
+  dailySessionLimitMinutes Int?
+  singleSessionLimitMinutes Int?
+  updatedByUserId          String              // audit trail: which parent last touched this
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+
+  // Relations
+  child                    ChildProfile        @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([updatedByUserId])
+  @@map("parent_guidance")
 }
 
 model Subscription {

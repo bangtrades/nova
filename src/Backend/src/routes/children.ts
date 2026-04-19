@@ -3,10 +3,32 @@ import { z } from 'zod';
 import { getPrismaClient } from '@db/client';
 import { validateBody, validateParams } from '@middleware/validate';
 
+/**
+ * S10-05: validate an IANA timezone via Intl itself. Anything Intl can't
+ * parse is not a real zone — no hand-rolled allowlist that falls behind tzdata.
+ */
+const ianaTimezoneSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .refine(
+    (tz) => {
+      try {
+        // eslint-disable-next-line no-new
+        new Intl.DateTimeFormat('en-US', { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Invalid IANA timezone (e.g. use "America/New_York")' }
+  );
+
 const createChildSchema = z.object({
   name: z.string().min(1).max(255),
   birthDate: z.string().datetime(),
   avatarUrl: z.string().url().optional(),
+  ianaTimezone: ianaTimezoneSchema.optional(),
 });
 
 const updateChildSchema = z.object({
@@ -14,6 +36,7 @@ const updateChildSchema = z.object({
   birthDate: z.string().datetime().optional(),
   avatarUrl: z.string().url().optional(),
   currentStage: z.number().int().min(1).max(10).optional(),
+  ianaTimezone: ianaTimezoneSchema.optional(),
 });
 
 const childParamsSchema = z.object({
@@ -37,7 +60,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       const prisma = getPrismaClient();
-      const children = await prisma.childProfile.findMany({
+      const children = await (prisma as any).childProfile.findMany({
         where: { userId: request.userId },
         select: {
           id: true,
@@ -45,6 +68,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
           birthDate: true,
           avatarUrl: true,
           currentStage: true,
+          ianaTimezone: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -81,16 +105,17 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
-        const { name, birthDate, avatarUrl } = request.body;
+        const { name, birthDate, avatarUrl, ianaTimezone } = request.body;
         const prisma = getPrismaClient();
 
-        const child = await prisma.childProfile.create({
+        const child = await (prisma as any).childProfile.create({
           data: {
             userId: request.userId,
             name,
             birthDate: new Date(birthDate),
             avatarUrl,
             currentStage: 1,
+            ...(ianaTimezone ? { ianaTimezone } : {}),
           },
           select: {
             id: true,
@@ -98,6 +123,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
             birthDate: true,
             avatarUrl: true,
             currentStage: true,
+            ianaTimezone: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -134,7 +160,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
         const { id } = request.params;
         const prisma = getPrismaClient();
 
-        const child = await prisma.childProfile.findUnique({
+        const child = await (prisma as any).childProfile.findUnique({
           where: { id },
           select: {
             id: true,
@@ -143,6 +169,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
             birthDate: true,
             avatarUrl: true,
             currentStage: true,
+            ianaTimezone: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -196,7 +223,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         const { id } = request.params;
-        const { name, birthDate, avatarUrl, currentStage } = request.body;
+        const { name, birthDate, avatarUrl, currentStage, ianaTimezone } = request.body;
         const prisma = getPrismaClient();
 
         // Verify ownership
@@ -221,13 +248,14 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
-        const updated = await prisma.childProfile.update({
+        const updated = await (prisma as any).childProfile.update({
           where: { id },
           data: {
             ...(name && { name }),
             ...(birthDate && { birthDate: new Date(birthDate) }),
             ...(avatarUrl && { avatarUrl }),
             ...(currentStage && { currentStage }),
+            ...(ianaTimezone && { ianaTimezone }),
           },
           select: {
             id: true,
@@ -235,6 +263,7 @@ export async function childrenRoutes(fastify: FastifyInstance): Promise<void> {
             birthDate: true,
             avatarUrl: true,
             currentStage: true,
+            ianaTimezone: true,
             createdAt: true,
             updatedAt: true,
           },

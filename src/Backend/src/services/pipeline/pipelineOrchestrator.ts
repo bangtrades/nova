@@ -21,11 +21,27 @@ import { getPrismaClient } from '@db/client';
 import { scrapeUrl } from './scraper';
 import { analyzeContent } from './contentAnalyzer';
 import { decomposeConcepts, type ConceptDecomposition } from './conceptDecomposer';
-import { generateCards } from './cardGenerator';
+import {
+  generateCards,
+  generateCardsWithSkills,
+  isSkillEngineStage4Enabled,
+  type GeneratedCard,
+} from './cardGenerator';
 import { runQualityGate, type QualityReport } from './qualityGate';
 import { processLessonAssets } from '../assets/assetJobProcessor';
 import { getConfig } from '@config';
 import { runStage, errMsg, type RunStageOptions } from './pipelineUtils';
+import {
+  getGuidanceOrDefault,
+  type ParentGuidanceView,
+} from '@services/guidance/parentGuidance';
+import {
+  buildSessionContext,
+  type SessionContext,
+} from '@services/context/sessionContext';
+import { buildChildContext } from './childContextBuilder';
+import type { ChildContext } from '@services/skills/types';
+import type { AtomTrace, SkipReason } from './skillRouter';
 import type { Prisma } from '@prisma/client';
 
 export interface PipelineResult {
@@ -36,6 +52,12 @@ export interface PipelineResult {
   message: string;
   regeneratedCardIndexes?: number[];
   qualityScore?: number;
+  /** S10-12 · R5 — whether the skill engine ran at Stage 4. */
+  skillEngineUsed?: boolean;
+  /** Atoms the skill engine couldn't handle (mapping missing / validator failed). */
+  skillSkippedAtoms?: Array<{ atomId: string; reason: SkipReason }>;
+  /** Full per-atom trace for Dev Console (R7). Present only when skill engine ran. */
+  skillTraces?: AtomTrace[];
 }
 
 export interface PipelineStepResult {
@@ -64,6 +86,12 @@ export interface PipelineOptions {
   pipelineTimeoutMs?: number;
   maxAttempts?: number;
   skipQualityGate?: boolean;
+  /**
+   * S10-04 / S10-05: when set, the orchestrator pulls the child's parent
+   * guidance + session context and injects them into every LLM prompt.
+   * Without a childId the pipeline behaves as before (generic prompts).
+   */
+  childId?: string;
 }
 
 /**
@@ -89,6 +117,58 @@ export async function runPipeline(
     const ingest = await prisma.urlIngest.findUnique({ where: { id: ingestId } });
     if (!ingest) throw new Error('Ingest not found');
     if (ingest.userId !== userId) throw new Error('Unauthorized');
+
+    // S10-04 / S10-05: fetch parent guidance + session context once up-front so
+    // every downstream LLM stage sees the same view. Failures here must NEVER
+    // take down the pipeline — a missing guidance row or a timezone lookup
+    // error degrades to "no preamble", which is the existing Sprint 9 behavior.
+    let guidance: ParentGuidanceView | null = null;
+    let sessionContext: SessionContext | null = null;
+    let childContext: ChildContext | null = null;
+    if (opts.childId) {
+      try {
+        // Verify the caller actually owns the child before we read its profile.
+        const child = await prisma.childProfile.findUnique({
+          where: { id: opts.childId },
+          select: { userId: true },
+        });
+        if (child?.userId === userId) {
+          guidance = await getGuidanceOrDefault(opts.childId);
+          sessionContext = await buildSessionContext(opts.childId);
+        } else if (child) {
+          console.warn(
+            `[Pipeline] childId=${opts.childId} not owned by userId=${userId} — skipping guidance/context`
+          );
+        } else {
+          console.warn(`[Pipeline] childId=${opts.childId} not found — skipping guidance/context`);
+        }
+      } catch (err) {
+        console.warn(`[Pipeline] Failed to load guidance/context: ${errMsg(err)}`);
+      }
+
+      // S10-12 · R5 — assemble the ChildContext the skill engine wants.
+      // Pass the already-loaded guidance/sessionContext to avoid a duplicate
+      // DB hit. A build failure here must never kill the pipeline; we just
+      // skip the skill path and fall back to the legacy generator.
+      try {
+        const built = await buildChildContext({
+          userId,
+          childId: opts.childId,
+          guidance,
+          sessionContext,
+          strict: false,
+        });
+        if (built.degradedReason === 'ok' && built.childOwned) {
+          childContext = built.ctx;
+        } else {
+          console.warn(
+            `[Pipeline] childContextBuilder degraded: ${built.degradedReason} — skill engine disabled for this run`
+          );
+        }
+      } catch (err) {
+        console.warn(`[Pipeline] Failed to build child context: ${errMsg(err)}`);
+      }
+    }
 
     // Stage 1: Scrape ────────────────────────────────────────────────────
     const scraped = await runStage('scrape', () => scrapeUrl(ingest.url), stageOpts).catch(
@@ -139,7 +219,7 @@ export async function runPipeline(
     try {
       decomposition = await runStage(
         'decompose',
-        () => decomposeConcepts(userId, analysis, scraped),
+        () => decomposeConcepts(userId, analysis, scraped, guidance, sessionContext),
         stageOpts
       );
     } catch (err) {
@@ -149,15 +229,60 @@ export async function runPipeline(
     }
 
     // Stage 4: Card generation ───────────────────────────────────────────
+    // S10-12 · R4/R5 — when we have a valid ChildContext AND a decomposition
+    // AND the feature flag is on, route per-atom through the skill engine
+    // (story-writer / quiz-maker) with Zod-validated outputs. Atoms the engine
+    // can't handle (no mapping, validator exhausted, etc.) fall back to the
+    // legacy monolithic generator inside `generateCardsWithSkills`.
     await updateIngestStatus(ingestId, 'generating');
-    let cards = await runStage(
-      'generate',
-      () => generateCards(userId, analysis, scraped, decomposition),
-      stageOpts
-    ).catch(async (err) => {
-      await updateIngestStatus(ingestId, 'failed');
-      throw new Error(`Card generation failed: ${errMsg(err)}`);
-    });
+    let cards: GeneratedCard[];
+    let skillEngineUsed = false;
+    let skillTraces: AtomTrace[] | undefined;
+    let skillSkippedAtoms: Array<{ atomId: string; reason: SkipReason }> | undefined;
+
+    const useSkillEngine =
+      !!opts.childId &&
+      !!childContext &&
+      !!decomposition &&
+      isSkillEngineStage4Enabled();
+
+    if (useSkillEngine && childContext && decomposition) {
+      const skillResult = await runStage(
+        'generate',
+        () =>
+          generateCardsWithSkills(
+            userId,
+            analysis,
+            scraped,
+            decomposition!,
+            childContext!,
+            guidance,
+            sessionContext
+          ),
+        stageOpts
+      ).catch(async (err) => {
+        await updateIngestStatus(ingestId, 'failed');
+        throw new Error(`Card generation failed: ${errMsg(err)}`);
+      });
+      cards = skillResult.cards;
+      skillEngineUsed = true;
+      skillTraces = skillResult.traces;
+      skillSkippedAtoms = skillResult.skipped.length > 0 ? skillResult.skipped : undefined;
+      if (skillResult.usedLegacyFallback) {
+        console.warn(
+          `[Pipeline] Skill engine produced ${skillResult.cards.length} cards; legacy fallback was invoked for ${skillResult.skipped.length} skipped atom(s).`
+        );
+      }
+    } else {
+      cards = await runStage(
+        'generate',
+        () => generateCards(userId, analysis, scraped, decomposition, guidance, sessionContext),
+        stageOpts
+      ).catch(async (err) => {
+        await updateIngestStatus(ingestId, 'failed');
+        throw new Error(`Card generation failed: ${errMsg(err)}`);
+      });
+    }
 
     // Stage 6: Quality gate (S9-09) ──────────────────────────────────────
     let qualityReport: QualityReport | undefined;
@@ -167,7 +292,7 @@ export async function runPipeline(
       try {
         const gateResult = await runStage(
           'quality_gate',
-          () => runQualityGate(userId, analysis, cards),
+          () => runQualityGate(userId, analysis, cards, guidance, sessionContext),
           stageOpts
         );
         cards = gateResult.cards;
@@ -180,10 +305,20 @@ export async function runPipeline(
     }
 
     // Persist the lesson + cards ────────────────────────────────────────
+    // S10-12 · R8 — when the skill engine ran, stash the per-atom trace and
+    // skip list into aiAnalysis so the Dev Console (R7) can rebuild the view
+    // for any lesson without needing a separate table.
     const aiMeta = {
       ...analysis,
       decomposition: decomposition ?? null,
       qualityReport: qualityReport ?? null,
+      skillEngine: skillEngineUsed
+        ? {
+            used: true,
+            traces: skillTraces ?? [],
+            skipped: skillSkippedAtoms ?? [],
+          }
+        : null,
     };
 
     const lesson = await prisma.lesson.create({
@@ -245,9 +380,12 @@ export async function runPipeline(
       status: 'completed',
       message: `Successfully created lesson with ${cards.length} cards${
         regeneratedIndexes.length ? ` (${regeneratedIndexes.length} regenerated by quality gate)` : ''
-      }`,
+      }${skillEngineUsed ? ' [skill-engine]' : ''}`,
       regeneratedCardIndexes: regeneratedIndexes,
       qualityScore: qualityReport?.overallScore,
+      skillEngineUsed,
+      skillSkippedAtoms,
+      skillTraces,
     };
   } catch (error) {
     try {
