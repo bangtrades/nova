@@ -46,3 +46,4 @@ Thumbs.db
 # Prisma
 prisma/migrations/
 .prisma/
+public/assets/assets/
