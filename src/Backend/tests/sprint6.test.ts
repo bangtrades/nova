@@ -182,9 +182,12 @@ describe('Entitlement Engine', () => {
     });
 
     it('free tier should have limited features', () => {
+      // Free tier shape = "bounded trial", not "zero LLM".
+      // Single source of truth: src/services/entitlement/entitlementEngine.ts.
+      // If the product dial moves back to zero-LLM, flip both of these to 0.
       expect(TIER_LIMITS.free.lessons).toBe(3);
-      expect(TIER_LIMITS.free.aiGenerations).toBe(0);
-      expect(TIER_LIMITS.free.voiceChats).toBe(0);
+      expect(TIER_LIMITS.free.aiGenerations).toBe(5);
+      expect(TIER_LIMITS.free.voiceChats).toBe(5);
       expect(TIER_LIMITS.free.children).toBe(1);
     });
 

@@ -363,8 +363,9 @@ describe('Image Generator', () => {
 describe('Asset Uploader', () => {
   const mockBuffer = Buffer.from('fake audio data');
 
-  it('should return mock URL in dev mode', async () => {
-    // Mock config to have no R2 credentials
+  it('should return dev-mode URL when R2 creds are missing', async () => {
+    // Mock config to have no R2 credentials — uploader falls back to the local
+    // /dev/assets/ route served by the Fastify public static handler.
     vi.doMock('@config', () => ({
       getConfig: () => ({
         R2_ACCESS_KEY_ID: undefined,
@@ -375,7 +376,9 @@ describe('Asset Uploader', () => {
 
     const url = await uploadToR2(mockBuffer, 'test.mp3', 'audio/mpeg');
 
-    expect(url).toContain('mock');
+    // Dev-mode URL scheme is `http://localhost:{PORT}/dev/assets/{filename}` —
+    // see assetUploader.ts `localUrl` branch. The old 'mock://' scheme is gone.
+    expect(url).toContain('/dev/assets/');
     expect(url).toContain('test.mp3');
   });
 

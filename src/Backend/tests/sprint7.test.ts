@@ -193,7 +193,7 @@ describe('Feature Flags Service (NOVA-300)', () => {
 
 describe('Rate Limiter Middleware (NOVA-305)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Token Bucket Algorithm', () => {
@@ -209,9 +209,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       // First request should pass
@@ -231,9 +231,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       // Consume the token
@@ -256,9 +256,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       await limiter(mockRequest, mockReply);
@@ -279,9 +279,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       await limiter(mockRequest, mockReply);
@@ -302,15 +302,15 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       const request2 = { ip: '192.168.1.2', userId: undefined } as any;
 
       const reply1 = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       const reply2 = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       // Both should succeed as they have different IPs
@@ -334,9 +334,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       await limiter(mockRequest, mockReply);
@@ -377,9 +377,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       await limiter(mockRequest, mockReply);
@@ -405,9 +405,9 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
       } as any;
 
       const mockReply = {
-        status: jest.fn().mockReturnThis(),
-        header: jest.fn().mockReturnThis(),
-        send: jest.fn(),
+        status: vi.fn().mockReturnThis(),
+        header: vi.fn().mockReturnThis(),
+        send: vi.fn(),
       } as any;
 
       await limiter(mockRequest, mockReply);

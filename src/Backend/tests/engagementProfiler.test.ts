@@ -23,16 +23,23 @@ import {
 // don't require the ENCRYPTION_KEY env var.
 // ============================================================
 
-/** Factory for a deterministic InteractionEvent — reduces test boilerplate. */
+/**
+ * Factory for a deterministic InteractionEvent — reduces test boilerplate.
+ *
+ * NOTE: we use `'key' in overrides` instead of `overrides.key ?? default`
+ * because nullish-coalescing silently converts explicit `null` / `false`
+ * overrides back to the default (e.g. `evt({ domain: null })` would otherwise
+ * become `domain: 'computers'`, invalidating the null-domain skip test).
+ */
 function evt(overrides: Partial<InteractionEvent> = {}): InteractionEvent {
   return {
-    cardId: overrides.cardId ?? 'card-1',
-    cardType: overrides.cardType ?? 'quiz',
-    conceptId: overrides.conceptId ?? 'comp-01',
-    domain: overrides.domain ?? 'computers',
-    action: overrides.action ?? 'answer',
-    durationMs: overrides.durationMs ?? 5000,
-    isCorrect: overrides.isCorrect ?? true,
+    cardId: 'cardId' in overrides ? (overrides.cardId as string) : 'card-1',
+    cardType: 'cardType' in overrides ? (overrides.cardType as InteractionEvent['cardType']) : 'quiz',
+    conceptId: 'conceptId' in overrides ? (overrides.conceptId as string) : 'comp-01',
+    domain: 'domain' in overrides ? (overrides.domain as InteractionEvent['domain']) : 'computers',
+    action: 'action' in overrides ? (overrides.action as InteractionEvent['action']) : 'answer',
+    durationMs: 'durationMs' in overrides ? (overrides.durationMs as number) : 5000,
+    isCorrect: 'isCorrect' in overrides ? (overrides.isCorrect as InteractionEvent['isCorrect']) : true,
     timestamp: overrides.timestamp,
   };
 }

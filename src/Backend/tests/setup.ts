@@ -37,5 +37,11 @@ export function verifyTestToken(token: string): TokenPayload | null {
   }
 }
 
-export const TEST_USER_ID = 'test-user-uuid-123';
-export const TEST_CHILD_ID = 'test-child-uuid-456';
+// Route schemas (e.g. src/routes/analytics.ts, src/routes/dataRights.ts)
+// enforce z.string().uuid() on :childId and similar params, so these test
+// constants MUST be valid UUIDv4 literals — otherwise Zod rejects the request
+// with 400 before the handler runs.
+// The leading "test-" is gone; we reserve a deterministic UUID range starting
+// with 00000000 so they remain trivially greppable in logs and stack traces.
+export const TEST_USER_ID = '00000000-0000-4000-8000-000000000123';
+export const TEST_CHILD_ID = '00000000-0000-4000-8000-000000000456';

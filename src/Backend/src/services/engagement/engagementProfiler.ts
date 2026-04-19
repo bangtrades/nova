@@ -137,7 +137,14 @@ export function mergeCardTypeStats(
   return next;
 }
 
-/** Merge topic (domain) affinities from a batch. Cards without a domain are skipped. */
+/**
+ * Merge topic (domain) affinities from a batch. Cards without a domain are skipped.
+ *
+ * IMPORTANT: this function must never mutate `current` or any slot inside it —
+ * callers may hold a reference to the prior snapshot (e.g. ingestInteractions
+ * compares pre/post affinities to detect drift). We shallow-clone `current`
+ * AND clone each slot before incrementing so the input is preserved byte-for-byte.
+ */
 export function mergeTopicAffinities(
   current: TopicAffinities,
   events: InteractionEvent[]
@@ -146,7 +153,11 @@ export function mergeTopicAffinities(
   for (const ev of events) {
     if (!ev.domain) continue;
     const key = ev.domain as DomainKey;
-    const slot = next[key] ?? { count: 0, totalDurationMs: 0 };
+    const existing = next[key];
+    // Clone the slot so we never mutate the one stored in `current`.
+    const slot = existing
+      ? { count: existing.count, totalDurationMs: existing.totalDurationMs }
+      : { count: 0, totalDurationMs: 0 };
     slot.count += 1;
     slot.totalDurationMs += Math.max(0, ev.durationMs | 0);
     next[key] = slot;
