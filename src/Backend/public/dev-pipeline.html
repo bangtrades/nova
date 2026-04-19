@@ -1370,6 +1370,10 @@
     <button class="tab-btn" data-tab="knowledge" role="tab" onclick="switchTab('knowledge')">Knowledge Graph</button>
     <button class="tab-btn" data-tab="engagement" role="tab" onclick="switchTab('engagement')">Engagement</button>
     <button class="tab-btn" data-tab="mastery" role="tab" onclick="switchTab('mastery')">Mastery</button>
+    <button class="tab-btn" data-tab="guidance" role="tab" onclick="switchTab('guidance')">Guidance</button>
+    <button class="tab-btn" data-tab="context" role="tab" onclick="switchTab('context')">Session Context</button>
+    <button class="tab-btn" data-tab="strategy" role="tab" onclick="switchTab('strategy')">Strategy</button>
+    <button class="tab-btn" data-tab="skills" role="tab" onclick="switchTab('skills')">Skills</button>
     <button class="tab-btn" data-tab="inspector" role="tab" onclick="switchTab('inspector')">Progress Inspector</button>
     <button class="tab-btn" data-tab="cost" role="tab" onclick="switchTab('cost')">Cost / LLM</button>
   </nav>
@@ -1512,6 +1516,22 @@
       </div>
     </div>
 
+    <!-- Skill Engine trace (S10-12 · R7) -->
+    <div class="panel full">
+      <div class="panel-header">
+        Skill Engine
+        <span class="tag" style="background:#6b46c122;color:#c4b5fd;border:1px solid #6b46c144;">S10-12</span>
+        <span id="skillEngineBadge" style="margin-left:8px;font-family:var(--mono);font-size:10px;color:var(--text-muted);"></span>
+        <button class="btn btn-secondary" onclick="refreshSkillTrace()" style="padding:5px 14px;margin-left:auto;font-size:10px;">Refresh</button>
+      </div>
+      <div class="panel-body" id="skillEnginePanel" style="max-height:460px;">
+        <div class="empty-state">
+          <div class="empty-icon">✦</div>
+          Run a pipeline with a childId to see per-atom skill traces
+        </div>
+      </div>
+    </div>
+
     <!-- Log -->
     <div class="panel full">
       <div class="panel-header">Activity Log</div>
@@ -1601,6 +1621,351 @@
 
   </section>
   <!-- ===================== /MASTERY TAB ===================== -->
+
+  <!-- ===================== GUIDANCE TAB (S10-04) ===================== -->
+  <section class="tab-pane" id="tab-guidance" role="tabpanel">
+
+    <div class="dc-controls">
+      <button class="dc-toggle active" id="guidanceRefreshBtn" onclick="NovaDevConsole.loadGuidance()">Refresh</button>
+      <button class="dc-toggle" id="guidanceSaveBtn" onclick="NovaDevConsole.saveGuidance()">Save</button>
+      <button class="dc-toggle dim" id="guidanceResetBtn" onclick="NovaDevConsole.resetGuidance()">Reset (DELETE)</button>
+      <span class="dc-child-meta" id="guidanceMeta"></span>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Child timezone (IANA) <span class="spacer"></span><span id="guidanceTzBadge" style="font-size:10px;color:var(--text-muted)"></span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="guidanceTzInput" placeholder="America/New_York"
+          style="flex:1;min-width:240px;padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+        <button class="dc-toggle" onclick="NovaDevConsole.saveChildTimezone()">Save tz</button>
+        <button class="dc-toggle dim" onclick="NovaDevConsole.suggestTz('America/New_York')">NYC</button>
+        <button class="dc-toggle dim" onclick="NovaDevConsole.suggestTz('America/Los_Angeles')">LA</button>
+        <button class="dc-toggle dim" onclick="NovaDevConsole.suggestTz('Europe/London')">London</button>
+        <button class="dc-toggle dim" onclick="NovaDevConsole.suggestTz('Asia/Tokyo')">Tokyo</button>
+        <button class="dc-toggle dim" onclick="NovaDevConsole.suggestTz('UTC')">UTC</button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.4;">
+        The timezone drives time-of-day buckets in the Session Context preamble. Intl.DateTimeFormat validates the zone server-side; DST transitions are handled correctly (spring-forward gap and fall-back overlap).
+      </div>
+    </div>
+
+    <div class="dc-grid-2">
+      <div class="dc-panel">
+        <div class="dc-panel-title">Difficulty offset</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="range" id="guidanceDifficulty" min="-2" max="2" step="1" value="0"
+            style="flex:1;" oninput="document.getElementById('guidanceDifficultyVal').textContent = this.value" />
+          <span id="guidanceDifficultyVal" style="font-family:var(--mono);min-width:24px;text-align:right;">0</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">-2 much simpler · -1 simpler · 0 normal · +1 harder · +2 much harder</div>
+      </div>
+
+      <div class="dc-panel">
+        <div class="dc-panel-title">Session limits (minutes)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <label style="font-size:11px;color:var(--text-muted);">
+            Daily cap
+            <input type="number" id="guidanceDailyLimit" min="0" max="1440" placeholder="—"
+              style="width:100%;padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+          </label>
+          <label style="font-size:11px;color:var(--text-muted);">
+            Single-session cap
+            <input type="number" id="guidanceSingleLimit" min="0" max="1440" placeholder="—"
+              style="width:100%;padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+          </label>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">0 or empty = no limit</div>
+      </div>
+    </div>
+
+    <div class="dc-grid-2">
+      <div class="dc-panel">
+        <div class="dc-panel-title">Topic focus (comma-separated, max 32)</div>
+        <textarea id="guidanceTopicFocus" rows="3" placeholder="dinosaurs, robots, space"
+          style="width:100%;padding:8px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+      </div>
+      <div class="dc-panel">
+        <div class="dc-panel-title">Topic avoid (comma-separated, max 32)</div>
+        <textarea id="guidanceTopicAvoid" rows="3" placeholder="war, scary animals"
+          style="width:100%;padding:8px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div class="dc-grid-2">
+      <div class="dc-panel">
+        <div class="dc-panel-title">Disallowed keywords</div>
+        <textarea id="guidanceDisallowed" rows="3" placeholder="violence, weapons, politics"
+          style="width:100%;padding:8px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+      </div>
+      <div class="dc-panel">
+        <div class="dc-panel-title">Allowed tags</div>
+        <textarea id="guidanceAllowedTags" rows="3" placeholder="nature, animals, science"
+          style="width:100%;padding:8px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Status</div>
+      <div id="guidanceStatus" style="font-family:var(--mono);font-size:12px;color:var(--text-muted);">Pick a child to load guidance.</div>
+    </div>
+
+  </section>
+  <!-- ===================== /GUIDANCE TAB ===================== -->
+
+  <!-- ===================== SESSION CONTEXT TAB (S10-05) ===================== -->
+  <section class="tab-pane" id="tab-context" role="tabpanel">
+
+    <div class="dc-controls">
+      <button class="dc-toggle active" id="contextRefreshBtn" onclick="NovaDevConsole.loadContext()">Refresh</button>
+      <button class="dc-toggle dim" id="contextAutoBtn" onclick="NovaDevConsole.toggleContextAuto()">Auto-refresh (off)</button>
+      <span class="dc-child-meta" id="contextMeta"></span>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Wall-clock (DST-safe via Intl + IANA)</div>
+      <div class="dc-stat-strip" id="contextWallClock">
+        <div class="dc-empty">Pick a child to load context.</div>
+      </div>
+    </div>
+
+    <div class="dc-grid-2">
+      <div class="dc-panel">
+        <div class="dc-panel-title">Session & streak</div>
+        <div id="contextSession"><div class="dc-empty">—</div></div>
+      </div>
+      <div class="dc-panel">
+        <div class="dc-panel-title">Recent quiz results (newest first)</div>
+        <div id="contextRecent"><div class="dc-empty">—</div></div>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Full preamble (as sent to LLM)</div>
+      <pre id="contextPreamble" style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px;color:var(--text);background:var(--bg-dark);padding:12px;border-radius:4px;max-height:320px;overflow:auto;margin:0;">—</pre>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Raw JSON response</div>
+      <pre id="contextRaw" style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg-dark);padding:12px;border-radius:4px;max-height:320px;overflow:auto;margin:0;">—</pre>
+    </div>
+
+  </section>
+  <!-- ===================== /SESSION CONTEXT TAB ===================== -->
+
+  <!-- ===================== STRATEGY TAB (S10-11) ===================== -->
+  <section class="tab-pane" id="tab-strategy" role="tabpanel">
+
+    <div class="dc-controls">
+      <button class="dc-toggle active" id="strategyRefreshBtn" onclick="NovaDevConsole.loadStrategy()">Refresh</button>
+      <span id="strategyChildCtxLabel" class="dc-subtle">no child selected</span>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Ranker sandbox</div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Concept type</span>
+          <select id="strategyConceptType" onchange="NovaDevConsole.loadStrategy()" class="dc-input">
+            <option value="vocabulary">vocabulary</option>
+            <option value="abstract">abstract</option>
+            <option value="process">process</option>
+            <option value="comparison">comparison</option>
+            <option value="causeEffect">causeEffect</option>
+            <option value="factual">factual</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Modality</span>
+          <select id="strategyModality" onchange="NovaDevConsole.loadStrategy()" class="dc-input">
+            <option value="">(from child)</option>
+            <option value="visual">visual</option>
+            <option value="auditory">auditory</option>
+            <option value="kinesthetic">kinesthetic</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Difficulty offset</span>
+          <input type="range" id="strategyDifficulty" min="-2" max="2" step="1" value="0" oninput="NovaDevConsole.onStrategyDifficultyInput(this.value)" onchange="NovaDevConsole.loadStrategy()" />
+          <span id="strategyDifficultyLabel" style="font-family:var(--mono);color:var(--text);">0</span>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Engagement override</span>
+          <select id="strategyEngagementOverride" onchange="NovaDevConsole.loadStrategy()" class="dc-input">
+            <option value="">(use child)</option>
+            <option value="story">story top</option>
+            <option value="concept">concept top</option>
+            <option value="experiment">experiment top</option>
+            <option value="quiz">quiz top</option>
+            <option value="voice">voice top</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="strategyRankingPanel" style="background:var(--bg-dark);padding:12px;border-radius:4px;font-family:var(--mono);font-size:12px;">
+        Loading…
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Full matrix (6 concept types × 3 modalities)</div>
+      <div id="strategyMatrixPanel" style="overflow-x:auto;">
+        <div style="color:var(--text-muted);font-size:12px;">Loading…</div>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Raw JSON</div>
+      <pre id="strategyRaw" style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg-dark);padding:12px;border-radius:4px;max-height:320px;overflow:auto;margin:0;">—</pre>
+    </div>
+
+  </section>
+  <!-- ===================== /STRATEGY TAB ===================== -->
+
+  <!-- ===================== SKILLS TAB (S10-06 / S10-07) ===================== -->
+  <section class="tab-pane" id="tab-skills" role="tabpanel">
+
+    <div class="dc-controls">
+      <button class="dc-toggle active" id="skillsRefreshBtn" onclick="NovaDevConsole.loadSkills()">Refresh</button>
+      <button class="dc-toggle" id="skillsRenderBtn" onclick="NovaDevConsole.renderSkill()">Render dry-run</button>
+      <button class="dc-toggle dim" id="skillsReloadBtn" onclick="NovaDevConsole.reloadSkill()">Hot-reload selected (dev)</button>
+      <span class="dc-child-meta" id="skillsMeta">no skill selected</span>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Skill registry</div>
+      <div style="display:grid;grid-template-columns:minmax(220px,260px) 1fr;gap:12px;">
+        <div>
+          <label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">Skill</label>
+          <select id="skillsPicker" onchange="NovaDevConsole.onSkillSelect()" class="dc-input" style="width:100%;"></select>
+          <div id="skillsList" style="margin-top:8px;max-height:280px;overflow:auto;font-family:var(--mono);font-size:11px;color:var(--text-muted);border:1px solid var(--border);border-radius:4px;padding:6px;background:var(--bg-dark);">
+            Loading…
+          </div>
+        </div>
+        <div>
+          <div id="skillsManifest" style="font-family:var(--mono);font-size:12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;padding:10px;min-height:200px;color:var(--text-muted);">
+            Pick a skill to see its manifest.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Render inputs &amp; context overrides <span class="spacer"></span><span id="skillsModeBadge" style="font-size:10px;color:var(--text-muted);">mode: synthetic</span></div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Mode</span>
+          <select id="skillsMode" class="dc-input" onchange="NovaDevConsole.onSkillsModeChange()">
+            <option value="synthetic">Synthetic</option>
+            <option value="realChild">Use selected child (childId)</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Age years</span>
+          <input type="number" id="skillsAge" min="2" max="18" step="1" value="6" class="dc-input" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Progression Δ (−1.5..+1.5)</span>
+          <input type="range" id="skillsProgDelta" min="-1.5" max="1.5" step="0.1" value="0" oninput="document.getElementById('skillsProgDeltaVal').textContent = Number(this.value).toFixed(1)" />
+          <span id="skillsProgDeltaVal" style="font-family:var(--mono);color:var(--text);">0.0</span>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Difficulty offset (−2..+2)</span>
+          <input type="range" id="skillsDiffOffset" min="-2" max="2" step="1" value="0" oninput="document.getElementById('skillsDiffOffsetVal').textContent = this.value" />
+          <span id="skillsDiffOffsetVal" style="font-family:var(--mono);color:var(--text);">0</span>
+        </label>
+      </div>
+
+      <!-- S10-07 R5 — teaching-strategy dials. Let the operator flip modality
+           / conceptType to preview how the modalityNote partial branches
+           for a given child, without editing the inputs JSON. -->
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Modality (teachingStrategy)</span>
+          <select id="skillsModality" class="dc-input">
+            <option value="">(default: auditory)</option>
+            <option value="visual">visual</option>
+            <option value="auditory">auditory</option>
+            <option value="kinesthetic">kinesthetic</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Concept type (teachingStrategy)</span>
+          <select id="skillsConceptType" class="dc-input">
+            <option value="">(default: abstract)</option>
+            <option value="vocabulary">vocabulary</option>
+            <option value="abstract">abstract</option>
+            <option value="process">process</option>
+            <option value="comparison">comparison</option>
+            <option value="causeEffect">causeEffect</option>
+            <option value="factual">factual</option>
+          </select>
+        </label>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Output validator</span>
+          <span id="skillsValidatorChip" style="font-family:var(--mono);color:var(--text-muted);padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-dark);">—</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--text-muted);">
+          <span>Seed template</span>
+          <button class="dc-toggle" id="skillsReseedBtn" onclick="NovaDevConsole.reseedInputsForSkill()" style="width:100%;">Re-seed inputs for selected skill</button>
+        </div>
+      </div>
+
+      <div class="dc-grid-2">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Inputs (JSON)</div>
+          <textarea id="skillsInputsJson" rows="5" placeholder='{"topic":"how seeds grow"}' class="dc-input" style="width:100%;font-family:var(--mono);font-size:12px;resize:vertical;">{"topic":"how seeds grow"}</textarea>
+          <div id="skillsInputsError" style="font-size:11px;color:var(--red);margin-top:4px;min-height:14px;"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Interest topics (comma-sep, optional)</div>
+          <textarea id="skillsInterestTopics" rows="2" placeholder="origami, sea creatures" class="dc-input" style="width:100%;font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;margin-bottom:4px;">Parent topicAvoid (comma-sep)</div>
+          <textarea id="skillsParentAvoid" rows="2" placeholder="monsters, thunderstorms" class="dc-input" style="width:100%;font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Render meta <span class="spacer"></span><span id="skillsRenderStatus" style="font-size:11px;color:var(--text-muted);"></span></div>
+      <div id="skillsMetaGrid" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-family:var(--mono);font-size:12px;">
+        <div><span style="color:var(--text-muted);">age profile:</span> <span id="skillsMetaAge">—</span></div>
+        <div><span style="color:var(--text-muted);">effective age:</span> <span id="skillsMetaEffAge">—</span></div>
+        <div><span style="color:var(--text-muted);">progression Δ:</span> <span id="skillsMetaDelta">—</span></div>
+        <div><span style="color:var(--text-muted);">difficulty:</span> <span id="skillsMetaDiff">—</span></div>
+        <div><span style="color:var(--text-muted);">model hint:</span> <span id="skillsMetaModel">—</span></div>
+        <div><span style="color:var(--text-muted);">temp hint:</span> <span id="skillsMetaTemp">—</span></div>
+        <div><span style="color:var(--text-muted);">version:</span> <span id="skillsMetaVersion">—</span></div>
+        <div><span style="color:var(--text-muted);">childId:</span> <span id="skillsMetaChildId">—</span></div>
+        <!-- S10-07 R5 — validator + option-count hints at render time. -->
+        <div><span style="color:var(--text-muted);">validator:</span> <span id="skillsMetaValidator">—</span></div>
+        <div><span style="color:var(--text-muted);">opts (expected):</span> <span id="skillsMetaOpts">—</span></div>
+      </div>
+    </div>
+
+    <div class="dc-grid-2">
+      <div class="dc-panel">
+        <div class="dc-panel-title">System prompt</div>
+        <pre id="skillsSystem" style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px;color:var(--text);background:var(--bg-dark);padding:10px;border-radius:4px;max-height:420px;overflow:auto;margin:0;">—</pre>
+      </div>
+      <div class="dc-panel">
+        <div class="dc-panel-title">User prompt</div>
+        <pre id="skillsUser" style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px;color:var(--text);background:var(--bg-dark);padding:10px;border-radius:4px;max-height:420px;overflow:auto;margin:0;">—</pre>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Progression breakdown</div>
+      <div id="skillsProgBreakdown" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg-dark);padding:10px;border-radius:4px;">—</div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Raw JSON</div>
+      <pre id="skillsRaw" style="white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11px;color:var(--text-muted);background:var(--bg-dark);padding:10px;border-radius:4px;max-height:320px;overflow:auto;margin:0;">—</pre>
+    </div>
+
+  </section>
+  <!-- ===================== /SKILLS TAB ===================== -->
 
   <!-- ===================== PROGRESS INSPECTOR TAB (DC-04) ===================== -->
   <section class="tab-pane" id="tab-inspector" role="tabpanel">
@@ -1806,6 +2171,20 @@ async function generateCards() {
       // Start polling for asset generation (images + TTS running in background)
       startAssetPolling(data.lessonId);
 
+      // S10-12 · R7 — Pull per-atom skill trace into the Skill Engine panel.
+      // `startAssetPolling` already set currentLessonId for us. The response
+      // from /pipeline/generate carries `skillEngineUsed` so we can render a
+      // fast preliminary badge before the trace fetch lands.
+      if (data.skillEngineUsed) {
+        const skipCount = Array.isArray(data.skillSkippedAtoms) ? data.skillSkippedAtoms.length : 0;
+        const badge = document.getElementById('skillEngineBadge');
+        if (badge) badge.textContent = skipCount ? `used · ${skipCount} skipped` : 'used';
+      } else {
+        const badge = document.getElementById('skillEngineBadge');
+        if (badge) badge.textContent = 'legacy';
+      }
+      refreshSkillTrace();
+
       // Refresh cost tracker (pipeline text calls are done)
       setTimeout(refreshCosts, 1000);
     } else {
@@ -1984,6 +2363,175 @@ function renderCards(cards) {
         ${audioHtml}
       </div>`;
   }).join('');
+}
+
+// --- S10-12 · R7: Skill Engine trace ---
+//
+// Fetches GET /api/v1/dev/pipeline/trace/:lessonId and renders a per-atom
+// table into #skillEnginePanel. Triggered automatically after every
+// successful pipeline run (see generateCards) and manually via the
+// "Refresh" button on the panel header. Handles three empty states:
+//   1. No lessonId yet     → "Run a pipeline…"
+//   2. Lesson has no trace → "Skill engine did not run for this lesson"
+//   3. Parse error         → shows the parse message in red
+async function refreshSkillTrace() {
+  const panel = document.getElementById('skillEnginePanel');
+  const badge = document.getElementById('skillEngineBadge');
+  if (!panel) return;
+
+  if (!currentLessonId) {
+    panel.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✦</div>
+        Run a pipeline with a childId to see per-atom skill traces
+      </div>`;
+    if (badge) badge.textContent = '';
+    return;
+  }
+
+  panel.innerHTML = '<div class="empty-state"><div class="spinner"></div>Loading skill trace…</div>';
+
+  try {
+    const res = await fetch(`${API}/dev/pipeline/trace/${currentLessonId}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      panel.innerHTML = `<div class="empty-state"><div class="empty-icon">✗</div>Trace load failed (${res.status}): ${escHtml(body.message || res.statusText)}</div>`;
+      if (badge) badge.textContent = 'error';
+      return;
+    }
+    const json = await res.json();
+    renderSkillTrace(json.data || {});
+  } catch (e) {
+    panel.innerHTML = `<div class="empty-state"><div class="empty-icon">✗</div>Trace network error: ${escHtml(e.message)}</div>`;
+    if (badge) badge.textContent = 'error';
+  }
+}
+
+function renderSkillTrace(d) {
+  const panel = document.getElementById('skillEnginePanel');
+  const badge = document.getElementById('skillEngineBadge');
+  if (!panel) return;
+
+  if (d.parseError) {
+    panel.innerHTML = `<div class="empty-state" style="color:var(--red);"><div class="empty-icon">✗</div>aiAnalysis JSON parse error: ${escHtml(d.parseError)}</div>`;
+    if (badge) badge.textContent = 'parse-error';
+    return;
+  }
+
+  const se = d.skillEngine;
+  if (!se || !se.used) {
+    panel.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">○</div>
+        Skill engine did not run for this lesson (legacy path or flag off)
+      </div>`;
+    if (badge) badge.textContent = 'legacy';
+    return;
+  }
+
+  const traces = Array.isArray(se.traces) ? se.traces : [];
+  const skipped = Array.isArray(se.skipped) ? se.skipped : [];
+
+  // Cross-reference decomposition atoms so we can show description + recommended cardType.
+  const atoms = (d.decomposition && Array.isArray(d.decomposition.atoms)) ? d.decomposition.atoms : [];
+  const atomById = {};
+  for (const a of atoms) atomById[a.id || a.atomId] = a;
+
+  // Aggregate counts for the badge.
+  const counts = { ok: 0, 'retry-ok': 0, 'retry-failed': 0, skipped: 0 };
+  for (const t of traces) {
+    counts[t.validatorStatus] = (counts[t.validatorStatus] || 0) + 1;
+  }
+  const totalTokens = traces.reduce((acc, t) => {
+    const tot = t.tokens && typeof t.tokens.total === 'number' ? t.tokens.total : 0;
+    return acc + tot;
+  }, 0);
+
+  if (badge) {
+    const parts = [`${traces.length} atoms`];
+    if (counts['retry-ok']) parts.push(`${counts['retry-ok']} retry-ok`);
+    if (counts['retry-failed']) parts.push(`${counts['retry-failed']} retry-failed`);
+    if (skipped.length) parts.push(`${skipped.length} skipped`);
+    if (totalTokens > 0) parts.push(`${totalTokens} tok`);
+    badge.textContent = 'used · ' + parts.join(' · ');
+  }
+
+  // Render empty list guard.
+  if (traces.length === 0) {
+    panel.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">○</div>
+        Skill engine ran but emitted no traces (decomposition was empty?)
+      </div>`;
+    return;
+  }
+
+  const pillColor = {
+    'ok':           { bg: '#16a34a22', fg: '#86efac', bd: '#16a34a55' },
+    'retry-ok':     { bg: '#f59e0b22', fg: '#fcd34d', bd: '#f59e0b55' },
+    'retry-failed': { bg: '#dc262622', fg: '#fca5a5', bd: '#dc262655' },
+    'skipped':      { bg: '#6b728022', fg: '#cbd5e1', bd: '#6b728055' },
+  };
+
+  const rows = traces.map((t, i) => {
+    const atom = atomById[t.atomId] || {};
+    const atomName = t.atomName || atom.name || atom.title || `atom-${i + 1}`;
+    const description = atom.description || atom.summary || '';
+    const statusStyle = pillColor[t.validatorStatus] || pillColor['skipped'];
+    const skillName = t.skillName || '—';
+    const retryBadge = t.retryCount > 0
+      ? `<span style="display:inline-block;padding:1px 6px;margin-left:6px;border-radius:3px;background:#f59e0b22;color:#fcd34d;font-size:10px;font-family:var(--mono);">retry×${t.retryCount}</span>`
+      : '';
+    const tokenCell = t.tokens
+      ? `<span style="font-family:var(--mono);color:var(--text-dim);">${t.tokens.total || 0} tok</span>`
+      : `<span style="font-family:var(--mono);color:var(--text-muted);">—</span>`;
+    const effAge = typeof t.effectiveAgeYears === 'number' ? t.effectiveAgeYears.toFixed(1) : '—';
+    const deltaStr = typeof t.progressionDelta === 'number'
+      ? (t.progressionDelta > 0 ? `+${t.progressionDelta.toFixed(1)}` : t.progressionDelta.toFixed(1))
+      : '';
+    const skipBlock = t.skipReason
+      ? `<div style="margin-top:6px;padding:6px 8px;background:#dc262611;border-left:3px solid #dc2626;border-radius:4px;font-size:11px;color:#fca5a5;">
+           skipped: <span style="font-family:var(--mono);">${escHtml(t.skipReason)}</span>
+         </div>`
+      : '';
+    const errBlock = t.error
+      ? `<div style="margin-top:6px;padding:6px 8px;background:#dc262611;border-left:3px solid #dc2626;border-radius:4px;font-size:11px;color:#fca5a5;font-family:var(--mono);white-space:pre-wrap;">${escHtml(String(t.error).slice(0, 400))}</div>`
+      : '';
+
+    return `
+      <div class="skill-trace-row" style="padding:10px 12px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-family:var(--mono);color:var(--text-dim);font-size:10px;">#${i + 1}</span>
+          <span style="font-weight:600;font-size:13px;">${escHtml(atomName)}</span>
+          <span class="card-type-badge ${escHtml(t.cardType || 'concept')}" style="margin-left:4px;">${escHtml(t.cardType || '—')}</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">→ ${escHtml(skillName)}</span>
+          <span style="display:inline-block;padding:2px 8px;margin-left:auto;border-radius:10px;background:${statusStyle.bg};color:${statusStyle.fg};border:1px solid ${statusStyle.bd};font-size:10px;font-family:var(--mono);">${escHtml(t.validatorStatus)}</span>
+          ${retryBadge}
+        </div>
+        ${description ? `<div style="margin-top:4px;font-size:11px;color:var(--text-dim);">${escHtml(description)}</div>` : ''}
+        <div style="margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);">
+          <span><span style="color:var(--text-muted);">modality:</span> <span style="font-family:var(--mono);color:var(--text-dim);">${escHtml(t.modality || '—')}</span></span>
+          <span><span style="color:var(--text-muted);">concept:</span> <span style="font-family:var(--mono);color:var(--text-dim);">${escHtml(t.conceptType || '—')}</span></span>
+          <span><span style="color:var(--text-muted);">eff age:</span> <span style="font-family:var(--mono);color:var(--text-dim);">${effAge}${deltaStr ? ` (${deltaStr})` : ''}</span></span>
+          <span>${tokenCell}</span>
+        </div>
+        ${skipBlock}
+        ${errBlock}
+      </div>`;
+  }).join('');
+
+  // A tiny summary strip at the top lets the user scan health at a glance.
+  const summary = `
+    <div style="padding:8px 12px;background:var(--bg-alt, #0f0f12);border-bottom:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;font-size:11px;font-family:var(--mono);">
+      <span style="color:var(--text-muted);">lesson ${escHtml((d.lessonId || '').slice(0, 8))}…</span>
+      <span style="color:#86efac;">✓ ${counts.ok || 0} ok</span>
+      ${counts['retry-ok'] ? `<span style="color:#fcd34d;">↻ ${counts['retry-ok']} retry-ok</span>` : ''}
+      ${counts['retry-failed'] ? `<span style="color:#fca5a5;">✗ ${counts['retry-failed']} retry-failed</span>` : ''}
+      ${counts.skipped ? `<span style="color:#cbd5e1;">○ ${counts.skipped} skipped</span>` : ''}
+      <span style="color:var(--text-dim);margin-left:auto;">${totalTokens} total tokens</span>
+    </div>`;
+
+  panel.innerHTML = summary + rows;
 }
 
 // --- Sparky Chat ---
@@ -2258,7 +2806,7 @@ const KG_STATE = {
   domain: 'all',      // active filter
 };
 
-const VALID_TABS = new Set(['pipeline', 'knowledge', 'engagement', 'mastery', 'inspector', 'cost']);
+const VALID_TABS = new Set(['pipeline', 'knowledge', 'engagement', 'mastery', 'guidance', 'context', 'strategy', 'skills', 'inspector', 'cost']);
 
 function switchTab(name) {
   if (!VALID_TABS.has(name)) return;
@@ -2281,6 +2829,14 @@ function switchTab(name) {
     NovaDevConsole.loadEngagement();
   } else if (name === 'mastery') {
     NovaDevConsole.loadMastery();
+  } else if (name === 'guidance') {
+    NovaDevConsole.loadGuidance();
+  } else if (name === 'context') {
+    NovaDevConsole.loadContext();
+  } else if (name === 'strategy') {
+    NovaDevConsole.loadStrategy();
+  } else if (name === 'skills') {
+    NovaDevConsole.loadSkills();
   } else if (name === 'inspector') {
     NovaDevConsole.loadInspector();
   } else if (name === 'cost') {
@@ -2482,6 +3038,9 @@ const NovaDevConsole = (() => {
       pipe: [],
     },
     cost: { loading: false, days: 30, aggregate: null, pipeRing: [] },
+    guidance: { loading: false, view: null, childIanaTimezone: 'UTC' },
+    context: { loading: false, view: null, autoTimer: null },
+    strategy: { loading: false, view: null },
   };
 
   const CONCEPT_CACHE = { loaded: false, byId: new Map() };
@@ -2527,6 +3086,53 @@ const NovaDevConsole = (() => {
     const res = await fetch(`${API}${path}`, { method: 'POST' });
     if (!res.ok) throw new Error(`HTTP ${res.status} on ${path}`);
     return res.json();
+  }
+  async function putJson(path, body) {
+    const res = await fetch(`${API}${path}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status} on ${path}`;
+      try { const j = await res.json(); if (j && j.message) msg += ` — ${j.message}`; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+  async function patchJson(path, body) {
+    const res = await fetch(`${API}${path}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status} on ${path}`;
+      try { const j = await res.json(); if (j && j.message) msg += ` — ${j.message}`; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+  async function postJson(path, body) {
+    const res = await fetch(`${API}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status} on ${path}`;
+      try { const j = await res.json(); if (j && j.message) msg += ` — ${j.message}`; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+  async function del(path) {
+    const res = await fetch(`${API}${path}`, { method: 'DELETE' });
+    // 204 = no body — treat as success with empty payload
+    if (!res.ok && res.status !== 204) {
+      throw new Error(`HTTP ${res.status} on ${path}`);
+    }
+    return { ok: true };
   }
 
   function fmtMs(ms) {
@@ -3059,6 +3665,728 @@ const NovaDevConsole = (() => {
     `;
   }
 
+  // ============================================================
+  // S10-04 — Guidance tab
+  // ============================================================
+  async function loadGuidance() {
+    const statusEl = document.getElementById('guidanceStatus');
+    const metaEl = document.getElementById('guidanceMeta');
+    if (!STATE.childId) {
+      statusEl.textContent = 'Pick a child to load guidance.';
+      metaEl.textContent = '';
+      return;
+    }
+    STATE.guidance.loading = true;
+    statusEl.textContent = 'Loading…';
+    try {
+      // Fetch child (for timezone) + guidance in parallel.
+      const [child, guidance] = await Promise.all([
+        get(`/children/${STATE.childId}`),
+        get(`/children/${STATE.childId}/guidance`),
+      ]);
+      STATE.guidance.view = guidance.data || guidance;
+      STATE.guidance.childIanaTimezone = (child && child.ianaTimezone) || 'UTC';
+
+      // Populate form fields
+      const v = STATE.guidance.view || {};
+      document.getElementById('guidanceTzInput').value = STATE.guidance.childIanaTimezone;
+      document.getElementById('guidanceTzBadge').textContent = `current: ${STATE.guidance.childIanaTimezone}`;
+      document.getElementById('guidanceDifficulty').value = Number(v.difficultyOffset || 0);
+      document.getElementById('guidanceDifficultyVal').textContent = String(Number(v.difficultyOffset || 0));
+      document.getElementById('guidanceTopicFocus').value = (v.topicFocus || []).join(', ');
+      document.getElementById('guidanceTopicAvoid').value = (v.topicAvoid || []).join(', ');
+      const boundaries = v.contentBoundaries || {};
+      document.getElementById('guidanceDisallowed').value = (boundaries.disallowedKeywords || []).join(', ');
+      document.getElementById('guidanceAllowedTags').value = (boundaries.allowedTags || []).join(', ');
+      document.getElementById('guidanceDailyLimit').value = v.dailySessionLimitMinutes == null ? '' : v.dailySessionLimitMinutes;
+      document.getElementById('guidanceSingleLimit').value = v.singleSessionLimitMinutes == null ? '' : v.singleSessionLimitMinutes;
+
+      const hasGuidance = v.hasGuidance !== false && v.childId;
+      statusEl.innerHTML = hasGuidance
+        ? `✓ Loaded guidance for <b>${escHtml(child.name || '')}</b>. <span style="color:var(--text-muted)">updatedAt: ${escHtml(v.updatedAt || '—')}</span>`
+        : `No guidance row yet — fields show zero-state defaults. Click <b>Save</b> to create one.`;
+      metaEl.textContent = `${child.name} · tz ${STATE.guidance.childIanaTimezone}`;
+    } catch (e) {
+      statusEl.innerHTML = `<span style="color:var(--red)">✗ ${escHtml(e.message)}</span>`;
+    } finally {
+      STATE.guidance.loading = false;
+    }
+  }
+
+  function parseCsvList(raw) {
+    return String(raw || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }
+
+  async function saveGuidance() {
+    const statusEl = document.getElementById('guidanceStatus');
+    if (!STATE.childId) {
+      statusEl.textContent = 'Pick a child first.';
+      return;
+    }
+    const difficultyOffset = Number(document.getElementById('guidanceDifficulty').value) || 0;
+    const topicFocus = parseCsvList(document.getElementById('guidanceTopicFocus').value);
+    const topicAvoid = parseCsvList(document.getElementById('guidanceTopicAvoid').value);
+    const disallowedKeywords = parseCsvList(document.getElementById('guidanceDisallowed').value);
+    const allowedTags = parseCsvList(document.getElementById('guidanceAllowedTags').value);
+    const dailyRaw = document.getElementById('guidanceDailyLimit').value;
+    const singleRaw = document.getElementById('guidanceSingleLimit').value;
+    const dailySessionLimitMinutes = dailyRaw === '' ? null : Number(dailyRaw);
+    const singleSessionLimitMinutes = singleRaw === '' ? null : Number(singleRaw);
+
+    const body = {
+      difficultyOffset,
+      topicFocus,
+      topicAvoid,
+      contentBoundaries: {
+        ...(disallowedKeywords.length ? { disallowedKeywords } : {}),
+        ...(allowedTags.length ? { allowedTags } : {}),
+      },
+      dailySessionLimitMinutes,
+      singleSessionLimitMinutes,
+    };
+
+    statusEl.textContent = 'Saving…';
+    try {
+      await putJson(`/children/${STATE.childId}/guidance`, body);
+      statusEl.innerHTML = `<span style="color:var(--green)">✓ Saved guidance.</span>`;
+      await loadGuidance();
+    } catch (e) {
+      statusEl.innerHTML = `<span style="color:var(--red)">✗ Save failed: ${escHtml(e.message)}</span>`;
+    }
+  }
+
+  async function resetGuidance() {
+    const statusEl = document.getElementById('guidanceStatus');
+    if (!STATE.childId) {
+      statusEl.textContent = 'Pick a child first.';
+      return;
+    }
+    if (!confirm('Delete parent guidance for this child and reset to zero-state?')) return;
+    statusEl.textContent = 'Deleting…';
+    try {
+      await del(`/children/${STATE.childId}/guidance`);
+      statusEl.innerHTML = `<span style="color:var(--green)">✓ Guidance reset to zero-state.</span>`;
+      await loadGuidance();
+    } catch (e) {
+      statusEl.innerHTML = `<span style="color:var(--red)">✗ Delete failed: ${escHtml(e.message)}</span>`;
+    }
+  }
+
+  async function saveChildTimezone() {
+    const statusEl = document.getElementById('guidanceStatus');
+    if (!STATE.childId) {
+      statusEl.textContent = 'Pick a child first.';
+      return;
+    }
+    const ianaTimezone = document.getElementById('guidanceTzInput').value.trim();
+    if (!ianaTimezone) {
+      statusEl.innerHTML = `<span style="color:var(--red)">✗ Enter an IANA timezone (e.g. America/New_York).</span>`;
+      return;
+    }
+    statusEl.textContent = 'Updating timezone…';
+    try {
+      const updated = await patchJson(`/children/${STATE.childId}`, { ianaTimezone });
+      STATE.guidance.childIanaTimezone = updated.ianaTimezone || ianaTimezone;
+      document.getElementById('guidanceTzBadge').textContent = `current: ${STATE.guidance.childIanaTimezone}`;
+      statusEl.innerHTML = `<span style="color:var(--green)">✓ Timezone set to <b>${escHtml(STATE.guidance.childIanaTimezone)}</b>.</span>`;
+      // If the Session Context tab is open, refresh it too.
+      if (document.getElementById('tab-context').classList.contains('active')) {
+        loadContext();
+      }
+    } catch (e) {
+      statusEl.innerHTML = `<span style="color:var(--red)">✗ Timezone update failed: ${escHtml(e.message)}</span>`;
+    }
+  }
+
+  function suggestTz(tz) {
+    document.getElementById('guidanceTzInput').value = tz;
+  }
+
+  // ============================================================
+  // S10-05 — Session Context tab
+  // ============================================================
+  async function loadContext() {
+    const wcEl = document.getElementById('contextWallClock');
+    const metaEl = document.getElementById('contextMeta');
+    if (!STATE.childId) {
+      wcEl.innerHTML = '<div class="dc-empty">Pick a child to load context.</div>';
+      metaEl.textContent = '';
+      document.getElementById('contextSession').innerHTML = '<div class="dc-empty">—</div>';
+      document.getElementById('contextRecent').innerHTML = '<div class="dc-empty">—</div>';
+      document.getElementById('contextPreamble').textContent = '—';
+      document.getElementById('contextRaw').textContent = '—';
+      return;
+    }
+    STATE.context.loading = true;
+    wcEl.innerHTML = '<div class="dc-empty">Loading…</div>';
+    try {
+      const resp = await get(`/dev/session-context/${STATE.childId}`);
+      STATE.context.view = resp.data || null;
+      renderContext();
+      const active = STATE.children.find((c) => c.id === STATE.childId);
+      if (active) metaEl.textContent = `${active.name} · tz ${STATE.context.view?.sessionContext?.ianaTimezone || '—'}`;
+    } catch (e) {
+      wcEl.innerHTML = `<div class="dc-empty" style="color:var(--red)">✗ Context load failed: ${escHtml(e.message)}</div>`;
+    } finally {
+      STATE.context.loading = false;
+    }
+  }
+
+  function renderContext() {
+    const v = STATE.context.view;
+    if (!v) return;
+    const ctx = v.sessionContext || {};
+    const wc = document.getElementById('contextWallClock');
+    const bucketColor = {
+      earlyMorning: 'var(--blue)',
+      morning: 'var(--green)',
+      afternoon: 'var(--yellow, #d4a24a)',
+      evening: 'var(--orange, #d27a3d)',
+      night: 'var(--purple, #7c6bc0)',
+    }[ctx.timeOfDay] || 'var(--text)';
+
+    wc.innerHTML = `
+      <div class="dc-stat"><div class="label">Clock</div><div class="value" style="font-family:var(--mono);">${escHtml(ctx.localClock || '—')}</div></div>
+      <div class="dc-stat"><div class="label">Day</div><div class="value">${escHtml(ctx.localDayOfWeek || '—')}</div></div>
+      <div class="dc-stat"><div class="label">Bucket</div><div class="value" style="color:${bucketColor};">${escHtml(ctx.timeOfDay || '—')}</div></div>
+      <div class="dc-stat"><div class="label">Timezone</div><div class="value" style="font-family:var(--mono);font-size:11px;">${escHtml(ctx.ianaTimezone || '—')}</div></div>
+      <div class="dc-stat"><div class="label">Computed</div><div class="value" style="font-family:var(--mono);font-size:10px;">${escHtml((ctx.computedAt || '').slice(11, 19))}Z</div></div>
+    `;
+
+    const sess = document.getElementById('contextSession');
+    sess.innerHTML = `
+      <div class="dc-stat-strip">
+        <div class="dc-stat"><div class="label">Session min</div><div class="value">${ctx.currentSessionMinutes == null ? '—' : ctx.currentSessionMinutes}</div></div>
+        <div class="dc-stat"><div class="label">Lessons today</div><div class="value">${ctx.lessonsCompletedToday ?? 0}</div></div>
+        <div class="dc-stat"><div class="label">Current streak</div><div class="value">${ctx.currentStreak ?? 0}</div></div>
+      </div>
+    `;
+
+    const recent = document.getElementById('contextRecent');
+    const rs = Array.isArray(ctx.recentQuizResults) ? ctx.recentQuizResults : [];
+    if (rs.length === 0) {
+      recent.innerHTML = '<div class="dc-empty">No quiz interactions yet.</div>';
+    } else {
+      recent.innerHTML = `
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${rs.map((r) => `
+            <span title="${escAttr(r.at)} · ${r.durationMinutes}m"
+              style="display:inline-block;padding:3px 8px;border-radius:3px;font-family:var(--mono);font-size:11px;background:${r.outcome === 'correct' ? 'rgba(71,197,124,0.15)' : 'rgba(230,88,88,0.15)'};color:${r.outcome === 'correct' ? 'var(--green)' : 'var(--red)'};">
+              ${r.outcome === 'correct' ? '✓' : '✗'} ${r.durationMinutes}m
+            </span>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    document.getElementById('contextPreamble').textContent = v.preamble || '(empty preamble — guidance + context both zero-state)';
+    document.getElementById('contextRaw').textContent = JSON.stringify(v, null, 2);
+  }
+
+  function toggleContextAuto() {
+    const btn = document.getElementById('contextAutoBtn');
+    if (STATE.context.autoTimer) {
+      clearInterval(STATE.context.autoTimer);
+      STATE.context.autoTimer = null;
+      btn.classList.remove('active');
+      btn.classList.add('dim');
+      btn.textContent = 'Auto-refresh (off)';
+    } else {
+      STATE.context.autoTimer = setInterval(() => {
+        if (document.getElementById('tab-context').classList.contains('active')) {
+          loadContext();
+        }
+      }, 5000);
+      btn.classList.add('active');
+      btn.classList.remove('dim');
+      btn.textContent = 'Auto-refresh (5s)';
+      loadContext();
+    }
+  }
+
+  // ============================================================
+  // S10-11 — Strategy tab (Teaching Strategy Matrix inspection)
+  // ============================================================
+  function onStrategyDifficultyInput(value) {
+    const lbl = document.getElementById('strategyDifficultyLabel');
+    if (lbl) {
+      const n = Number(value);
+      const tag = n > 0 ? `+${n} (harder)` : n < 0 ? `${n} (easier)` : '0 (neutral)';
+      lbl.textContent = tag;
+    }
+  }
+
+  async function loadStrategy() {
+    const ranking = document.getElementById('strategyRankingPanel');
+    const matrixEl = document.getElementById('strategyMatrixPanel');
+    const rawEl = document.getElementById('strategyRaw');
+    const ctxLbl = document.getElementById('strategyChildCtxLabel');
+    if (!ranking || !matrixEl) return;
+
+    STATE.strategy.loading = true;
+    ranking.textContent = 'Loading…';
+
+    // Build query
+    const qp = new URLSearchParams();
+    const conceptType = document.getElementById('strategyConceptType')?.value || 'vocabulary';
+    const modality = document.getElementById('strategyModality')?.value || '';
+    const difficulty = document.getElementById('strategyDifficulty')?.value ?? '0';
+    const engagementOverride = document.getElementById('strategyEngagementOverride')?.value || '';
+    qp.set('conceptType', conceptType);
+    if (modality) qp.set('modality', modality);
+    qp.set('difficultyOffset', String(difficulty));
+    if (engagementOverride) qp.set('engagementOverride', engagementOverride);
+    if (STATE.childId) qp.set('childId', STATE.childId);
+
+    // Sync slider label
+    onStrategyDifficultyInput(difficulty);
+
+    try {
+      const resp = await get(`/dev/teaching-strategy?${qp.toString()}`);
+      STATE.strategy.view = resp.data || resp;
+      renderStrategy();
+
+      // Update context label
+      if (ctxLbl) {
+        const childCtx = STATE.strategy.view?.childContext;
+        if (childCtx) {
+          const active = STATE.children.find((c) => c.id === childCtx.childId);
+          const name = active?.name || 'child';
+          ctxLbl.textContent = `${name} · age ${childCtx.ageYears ?? '—'} · inferred modality ${childCtx.inferredModality || 'visual'}`;
+        } else {
+          ctxLbl.textContent = 'no child selected — showing base matrix';
+        }
+      }
+    } catch (e) {
+      ranking.innerHTML = `<span style="color:var(--red)">✗ Strategy load failed: ${escHtml(e.message)}</span>`;
+      matrixEl.innerHTML = '';
+      rawEl.textContent = '—';
+    } finally {
+      STATE.strategy.loading = false;
+    }
+  }
+
+  function renderStrategy() {
+    const v = STATE.strategy.view;
+    if (!v) return;
+    const ranking = document.getElementById('strategyRankingPanel');
+    const matrixEl = document.getElementById('strategyMatrixPanel');
+    const rawEl = document.getElementById('strategyRaw');
+
+    const focus = v.focus || {};
+    const rows = Array.isArray(focus.ranking) ? focus.ranking : [];
+
+    // --- Ranking panel (the focused cell's ordered card types) ---
+    const headerBits = [
+      `<span style="color:var(--text);font-weight:600;">${escHtml(focus.conceptType || '?')} × ${escHtml(focus.modality || '?')}</span>`,
+      `<span style="color:var(--text-muted);">diff ${focus.difficultyOffset >= 0 ? '+' : ''}${focus.difficultyOffset ?? 0}</span>`,
+      `<span style="color:var(--text-muted);">age ${focus.ageYears ?? '—'}</span>`,
+    ];
+    if (focus.engagementOverride) {
+      headerBits.push(`<span style="color:var(--yellow,#d4a24a);">override:${escHtml(focus.engagementOverride)}</span>`);
+    }
+
+    if (rows.length === 0) {
+      ranking.innerHTML = `<div style="margin-bottom:8px;">${headerBits.join(' · ')}</div><div style="color:var(--text-muted);">(no ranking)</div>`;
+    } else {
+      const maxScore = Math.max(...rows.map((r) => r.score || 0), 1);
+      const rowsHtml = rows.map((r, i) => {
+        const pct = Math.max(0, Math.min(100, Math.round(((r.score || 0) / maxScore) * 100)));
+        const label = i === 0 ? '★' : `${i + 1}.`;
+        const bonuses = [];
+        if (r.engagementBonus) bonuses.push(`eng ${r.engagementBonus >= 0 ? '+' : ''}${r.engagementBonus.toFixed(2)}`);
+        if (r.difficultyBonus) bonuses.push(`diff ${r.difficultyBonus >= 0 ? '+' : ''}${r.difficultyBonus.toFixed(2)}`);
+        if (r.ageBonus) bonuses.push(`age ${r.ageBonus >= 0 ? '+' : ''}${r.ageBonus.toFixed(2)}`);
+        const bonusLine = bonuses.length ? `<span style="color:var(--text-muted);font-size:10px;"> · ${bonuses.join(' · ')}</span>` : '';
+        return `
+          <div style="display:grid;grid-template-columns:24px 96px 1fr 72px;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--border);">
+            <span style="color:${i === 0 ? 'var(--green)' : 'var(--text-muted)'};">${label}</span>
+            <span style="color:var(--text);">${escHtml(r.cardType)}</span>
+            <span style="height:6px;background:var(--bg-dark);border-radius:3px;position:relative;overflow:hidden;">
+              <span style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${i === 0 ? 'var(--green)' : 'var(--blue)'};"></span>
+            </span>
+            <span style="color:var(--text-muted);text-align:right;">${(r.score || 0).toFixed(2)}${bonusLine}</span>
+          </div>
+        `;
+      }).join('');
+      ranking.innerHTML = `<div style="margin-bottom:8px;">${headerBits.join(' · ')}</div>${rowsHtml}`;
+    }
+
+    // --- Full matrix grid (6 × 3) ---
+    const conceptTypes = Array.isArray(v.conceptTypes) ? v.conceptTypes : [];
+    const modalities = Array.isArray(v.modalities) ? v.modalities : [];
+    const matrix = v.matrix || {};
+    if (conceptTypes.length === 0 || modalities.length === 0) {
+      matrixEl.innerHTML = '<div style="color:var(--text-muted);">(matrix empty)</div>';
+    } else {
+      const head = `
+        <tr>
+          <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);">concept ↓ / modality →</th>
+          ${modalities.map((m) => `<th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text);border-bottom:1px solid var(--border);">${escHtml(m)}</th>`).join('')}
+        </tr>
+      `;
+      const focusKey = `${focus.conceptType}|${focus.modality}`;
+      const body = conceptTypes.map((ct) => {
+        const cells = modalities.map((md) => {
+          const order = (matrix[ct] && matrix[ct][md]) || [];
+          const key = `${ct}|${md}`;
+          const bg = key === focusKey ? 'background:rgba(71,197,124,0.10);' : '';
+          const ordered = order.map((t, i) => `<span style="color:${i === 0 ? 'var(--green)' : 'var(--text-muted)'};font-size:10px;">${i === 0 ? '★' : (i + 1) + '.'}${escHtml(t)}</span>`).join(' ');
+          return `<td style="padding:6px 8px;vertical-align:top;border-bottom:1px solid var(--border);${bg}font-family:var(--mono);font-size:11px;">${ordered}</td>`;
+        }).join('');
+        return `
+          <tr>
+            <th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--text);border-bottom:1px solid var(--border);">${escHtml(ct)}</th>
+            ${cells}
+          </tr>
+        `;
+      }).join('');
+      matrixEl.innerHTML = `<table style="width:100%;border-collapse:collapse;">${head}${body}</table>`;
+    }
+
+    // --- Raw JSON ---
+    rawEl.textContent = JSON.stringify(v, null, 2);
+  }
+
+  // ============================================================
+  // S10-06 / S10-07 — Skills tab (dry-run skill engine inspector)
+  // ============================================================
+  const SKILLS_STATE = {
+    list: [],        // [{name, version, description, modelHint, temperatureHint, ageProfiles, handlesConceptTypes, inputs}, …]
+    selected: null,  // manifest of picked skill
+    lastRender: null,
+  };
+
+  async function loadSkills() {
+    const listEl = document.getElementById('skillsList');
+    const picker = document.getElementById('skillsPicker');
+    listEl.textContent = 'Loading…';
+    try {
+      const res = await get('/dev/skills');
+      const rows = res.data || [];
+      SKILLS_STATE.list = rows;
+      // Populate picker
+      picker.innerHTML = '';
+      rows.forEach((r) => {
+        const opt = document.createElement('option');
+        opt.value = r.name;
+        opt.textContent = `${r.name} (v${r.version})`;
+        picker.appendChild(opt);
+      });
+      // Populate descriptive list
+      if (!rows.length) {
+        listEl.innerHTML = '<span style="color:var(--red)">No skills registered.</span>';
+      } else {
+        listEl.innerHTML = rows
+          .map((r) => {
+            const profiles = (r.ageProfiles || []).join(',');
+            const concepts = (r.handlesConceptTypes || []).join(',');
+            // S10-07 R5 — surface the "has Zod output validator" badge per row so
+            // operators can see at a glance which skills have strict structured
+            // output contracts vs free-form.
+            const valBadge = r.hasOutputSchema
+              ? ' <span style="color:var(--green);font-size:10px;border:1px solid var(--green);padding:0 4px;border-radius:3px;">val</span>'
+              : '';
+            return `<div style="padding:4px 0;border-bottom:1px dashed var(--border)"><b style="color:var(--text)">${escHtml(r.name)}</b> v${escHtml(r.version)} <span style="color:var(--green)">${escHtml(r.modelHint||'')}</span>${valBadge}
+ <span style="color:var(--text-muted)">ages=${escHtml(profiles)} · concepts=${escHtml(concepts)}</span><br/>
+ <span style="color:var(--text-muted)">${escHtml(r.description || '')}</span></div>`;
+          })
+          .join('');
+      }
+      if (rows.length) {
+        picker.value = rows[0].name;
+        onSkillSelect();
+      }
+    } catch (e) {
+      listEl.innerHTML = `<span style="color:var(--red)">✗ ${escHtml(e.message)}</span>`;
+    }
+  }
+
+  function onSkillSelect() {
+    const name = document.getElementById('skillsPicker').value;
+    const rec = SKILLS_STATE.list.find((r) => r.name === name);
+    SKILLS_STATE.selected = rec || null;
+    const metaEl = document.getElementById('skillsMeta');
+    const manifestEl = document.getElementById('skillsManifest');
+    const validatorChip = document.getElementById('skillsValidatorChip');
+    if (!rec) {
+      metaEl.textContent = 'no skill selected';
+      manifestEl.textContent = '—';
+      if (validatorChip) {
+        validatorChip.textContent = '—';
+        validatorChip.style.color = 'var(--text-muted)';
+      }
+      return;
+    }
+    metaEl.textContent = `${rec.name} v${rec.version} · ${rec.modelHint || '?'} · temp=${rec.temperatureHint ?? '?'}`;
+    // Pretty-print the manifest summary.
+    const lines = [];
+    lines.push(`name: ${rec.name}`);
+    lines.push(`version: ${rec.version}`);
+    lines.push(`description: ${rec.description || ''}`);
+    lines.push(`modelHint: ${rec.modelHint}`);
+    lines.push(`temperatureHint: ${rec.temperatureHint}`);
+    lines.push(`ageProfiles: [${(rec.ageProfiles || []).join(', ')}]`);
+    lines.push(`handlesConceptTypes: [${(rec.handlesConceptTypes || []).join(', ')}]`);
+    lines.push(`difficulties: [${(rec.difficulties || []).join(', ')}]`);
+    lines.push(`hasOutputSchema: ${rec.hasOutputSchema ? 'yes' : 'no'}`);
+    if (rec.inputs) {
+      lines.push(`inputs.requires: [${(rec.inputs.requires || []).join(', ')}]`);
+      lines.push(`inputs.optional: [${(rec.inputs.optional || []).join(', ')}]`);
+    }
+    manifestEl.innerHTML = lines.map((l) => escHtml(l)).join('<br/>');
+
+    // S10-07 R5 — validator chip: green "✓ attached" when a Zod output schema
+    // is wired, muted "none" otherwise.
+    if (validatorChip) {
+      if (rec.hasOutputSchema) {
+        validatorChip.textContent = '✓ attached';
+        validatorChip.style.color = 'var(--green)';
+      } else {
+        validatorChip.textContent = 'none';
+        validatorChip.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // Pre-seed inputs JSON for the newly-selected skill (only fills blanks; the
+    // operator's existing edits are preserved). `reseedInputsForSkill()` is the
+    // manual "overwrite with a fresh template" button.
+    seedSkillInputsIfBlank(rec);
+  }
+
+  /**
+   * Per-skill default input templates. Keep these close to the happy-path
+   * fixtures used in the engine/dev-route tests so a fresh session works
+   * end-to-end with one click. Fallback builds an object with empty strings
+   * from `rec.inputs.requires`.
+   */
+  const SKILL_INPUT_TEMPLATES = {
+    'story-writer': {
+      topic: 'how seeds grow',
+    },
+    'quiz-maker': {
+      concept: 'helium balloons float because they are lighter than air',
+      conceptType: 'causeEffect',
+    },
+  };
+
+  function buildSkillInputTemplate(rec) {
+    if (!rec) return {};
+    if (SKILL_INPUT_TEMPLATES[rec.name]) {
+      return { ...SKILL_INPUT_TEMPLATES[rec.name] };
+    }
+    const obj = {};
+    const reqs = (rec.inputs && Array.isArray(rec.inputs.requires)) ? rec.inputs.requires : [];
+    reqs.forEach((k) => { obj[k] = ''; });
+    return obj;
+  }
+
+  function seedSkillInputsIfBlank(rec) {
+    const inputsBox = document.getElementById('skillsInputsJson');
+    if (!inputsBox || !rec) return;
+    const template = buildSkillInputTemplate(rec);
+    try {
+      const existing = JSON.parse(inputsBox.value || '{}');
+      let dirty = false;
+      Object.keys(template).forEach((k) => {
+        if (!(k in existing) || existing[k] === '' || existing[k] == null) {
+          existing[k] = template[k];
+          dirty = true;
+        }
+      });
+      if (dirty) {
+        inputsBox.value = JSON.stringify(existing, null, 2);
+      }
+    } catch {
+      // Unparseable textarea — overwrite with the template so the user isn't
+      // stuck in a bad state after switching skills.
+      inputsBox.value = JSON.stringify(template, null, 2);
+    }
+  }
+
+  /**
+   * S10-07 R5 — operator-triggered full reseed. Overwrites the inputs JSON
+   * with the canonical template for the selected skill, clears the JSON
+   * error chip, and flashes a confirmation on the render-status strip.
+   */
+  function reseedInputsForSkill() {
+    const rec = SKILLS_STATE.selected;
+    const status = document.getElementById('skillsRenderStatus');
+    if (!rec) {
+      if (status) status.innerHTML = '<span style="color:var(--red)">Pick a skill first.</span>';
+      return;
+    }
+    const inputsBox = document.getElementById('skillsInputsJson');
+    const errEl = document.getElementById('skillsInputsError');
+    const template = buildSkillInputTemplate(rec);
+    inputsBox.value = JSON.stringify(template, null, 2);
+    if (errEl) errEl.textContent = '';
+    if (status) status.innerHTML = `<span style="color:var(--green)">✓ inputs re-seeded for ${escHtml(rec.name)}</span>`;
+  }
+
+  function onSkillsModeChange() {
+    const mode = document.getElementById('skillsMode').value;
+    document.getElementById('skillsModeBadge').textContent = `mode: ${mode}`;
+  }
+
+  function parseSkillsInputs() {
+    const raw = document.getElementById('skillsInputsJson').value.trim();
+    const errEl = document.getElementById('skillsInputsError');
+    if (!raw) {
+      errEl.textContent = '';
+      return {};
+    }
+    try {
+      const v = JSON.parse(raw);
+      if (typeof v !== 'object' || v === null || Array.isArray(v)) {
+        errEl.textContent = 'Inputs must be a JSON object.';
+        return null;
+      }
+      errEl.textContent = '';
+      return v;
+    } catch (e) {
+      errEl.textContent = 'Invalid JSON: ' + (e && e.message ? e.message : '');
+      return null;
+    }
+  }
+
+  async function renderSkill() {
+    const status = document.getElementById('skillsRenderStatus');
+    if (!SKILLS_STATE.selected) {
+      status.innerHTML = '<span style="color:var(--red)">Pick a skill first.</span>';
+      return;
+    }
+    const inputs = parseSkillsInputs();
+    if (inputs === null) return;
+
+    const mode = document.getElementById('skillsMode').value;
+    const ageYears = Number(document.getElementById('skillsAge').value) || 6;
+    const progressionDelta = Number(document.getElementById('skillsProgDelta').value) || 0;
+    const difficultyOffset = Number(document.getElementById('skillsDiffOffset').value) || 0;
+    const interestTopics = parseCsvList(document.getElementById('skillsInterestTopics').value);
+    const topicAvoid = parseCsvList(document.getElementById('skillsParentAvoid').value);
+    // S10-07 R5 — teaching-strategy dials (blank = let the route apply its
+    // defaults so we exercise the same path as child-bound rendering).
+    const modalityEl = document.getElementById('skillsModality');
+    const conceptTypeEl = document.getElementById('skillsConceptType');
+    const modality = modalityEl ? modalityEl.value : '';
+    const conceptType = conceptTypeEl ? conceptTypeEl.value : '';
+
+    const body = {
+      inputs,
+      ctxOverrides: {
+        ageYears,
+        progressionDelta,
+        difficultyOffset,
+        ...(interestTopics.length ? { interestTopics } : {}),
+        ...(topicAvoid.length ? { parentGuidance: { topicAvoid } } : {}),
+        ...(modality ? { modality } : {}),
+        ...(conceptType ? { conceptType } : {}),
+      },
+      includeProgressionBreakdown: true,
+    };
+    if (mode === 'realChild') {
+      const cid = (typeof STATE !== 'undefined' && STATE.childId) ? STATE.childId : null;
+      if (!cid) {
+        status.innerHTML = '<span style="color:var(--red)">Pick a child in the header first.</span>';
+        return;
+      }
+      body.childId = cid;
+    }
+
+    status.innerHTML = '<span style="color:var(--text-muted)">Rendering…</span>';
+    try {
+      const res = await postJson(`/dev/skills/${encodeURIComponent(SKILLS_STATE.selected.name)}/render`, body);
+      SKILLS_STATE.lastRender = res.data;
+      paintSkillRender(res.data);
+      status.innerHTML = '<span style="color:var(--green)">✓ rendered</span>';
+    } catch (e) {
+      status.innerHTML = `<span style="color:var(--red)">✗ ${escHtml(e.message)}</span>`;
+    }
+  }
+
+  function paintSkillRender(data) {
+    document.getElementById('skillsSystem').textContent = (data && data.system) || '—';
+    document.getElementById('skillsUser').textContent = (data && data.user) || '—';
+    const m = (data && data.meta) || {};
+    const c = (data && data.context) || {};
+    document.getElementById('skillsMetaAge').textContent = m.ageProfileUsed ?? '—';
+    document.getElementById('skillsMetaEffAge').textContent = c.effectiveAgeYears != null ? Number(c.effectiveAgeYears).toFixed(2) : '—';
+    document.getElementById('skillsMetaDelta').textContent = c.progressionDelta != null ? Number(c.progressionDelta).toFixed(2) : '—';
+    document.getElementById('skillsMetaDiff').textContent = `${m.difficultyUsed ?? '—'} (offset ${c.difficultyOffset ?? 0})`;
+    document.getElementById('skillsMetaModel').textContent = m.modelHint ?? '—';
+    document.getElementById('skillsMetaTemp').textContent = m.temperatureHint ?? '—';
+    document.getElementById('skillsMetaVersion').textContent = m.version ?? '—';
+    document.getElementById('skillsMetaChildId').textContent = c.childId ? `${String(c.childId).slice(0, 8)}…` : '—';
+
+    // S10-07 R5 — validator + expected option-count hints mirrored on the render
+    // meta grid. opts are derived from difficultyUsed per the quiz-maker
+    // difficulty-curve contract (easy=3, medium=4, hard=5). For skills without
+    // an output schema we render a dash.
+    const validatorEl = document.getElementById('skillsMetaValidator');
+    if (validatorEl) {
+      const has = !!(SKILLS_STATE.selected && SKILLS_STATE.selected.hasOutputSchema);
+      validatorEl.textContent = has ? '✓ attached' : 'none';
+      validatorEl.style.color = has ? 'var(--green)' : 'var(--text-muted)';
+    }
+    const optsEl = document.getElementById('skillsMetaOpts');
+    if (optsEl) {
+      const isQuiz = SKILLS_STATE.selected && SKILLS_STATE.selected.name === 'quiz-maker';
+      if (!isQuiz) {
+        optsEl.textContent = '—';
+      } else {
+        const diff = m.difficultyUsed;
+        const count = diff === 'easy' ? 3 : diff === 'hard' ? 5 : diff === 'medium' ? 4 : null;
+        optsEl.textContent = count != null ? String(count) : '—';
+      }
+    }
+
+    // Progression breakdown pretty-print.
+    const pb = data && data.progressionBreakdown;
+    const pbEl = document.getElementById('skillsProgBreakdown');
+    if (!pb) {
+      pbEl.textContent = '— (not included)';
+    } else {
+      const fmt = (n) => (n == null ? '—' : Number(n).toFixed(2));
+      const rows = [
+        ['mastery', pb.masteryContribution, pb.masterySignal],
+        ['quiz', pb.quizContribution, pb.quizSignal],
+        ['flow', pb.flowContribution, pb.flowSignal],
+        ['frustration', pb.frustrationContribution, pb.frustrationSignal],
+        ['parent offset', pb.parentOffsetContribution, pb.parentOffset],
+      ];
+      const html = rows
+        .map(([label, contrib, sig]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${escHtml(label)}</span><span>contrib=${fmt(contrib)} · signal=${fmt(sig)}</span></div>`)
+        .join('');
+      pbEl.innerHTML = html + `<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px"><b>delta</b> = ${fmt(pb.delta)}</div>`;
+    }
+
+    document.getElementById('skillsRaw').textContent = JSON.stringify(data, null, 2);
+  }
+
+  async function reloadSkill() {
+    const status = document.getElementById('skillsRenderStatus');
+    if (!SKILLS_STATE.selected) {
+      status.innerHTML = '<span style="color:var(--red)">Pick a skill first.</span>';
+      return;
+    }
+    status.innerHTML = '<span style="color:var(--text-muted)">Reloading from disk…</span>';
+    try {
+      const res = await postJson(`/dev/skills/${encodeURIComponent(SKILLS_STATE.selected.name)}/reload`, {});
+      status.innerHTML = `<span style="color:var(--green)">✓ reloaded ${escHtml(res.data.reloaded)} @ ${escHtml(res.data.at)}</span>`;
+      // Refresh manifest (in case the modelHint/description changed on disk).
+      await loadSkills();
+      const picker = document.getElementById('skillsPicker');
+      picker.value = res.data.reloaded;
+      onSkillSelect();
+    } catch (e) {
+      status.innerHTML = `<span style="color:var(--red)">✗ reload failed: ${escHtml(e.message)}</span>`;
+    }
+  }
+
   // --- Cross-tab sync ---
   document.addEventListener('nova:childChanged', () => {
     // Refresh whichever tabs are currently mounted. We guard with
@@ -3067,13 +4395,21 @@ const NovaDevConsole = (() => {
     if (!active) return;
     if (active.id === 'tab-engagement') loadEngagement();
     else if (active.id === 'tab-mastery') loadMastery();
+    else if (active.id === 'tab-guidance') loadGuidance();
+    else if (active.id === 'tab-context') loadContext();
+    else if (active.id === 'tab-strategy') loadStrategy();
     else if (active.id === 'tab-inspector' && STATE.inspector.childFilter) loadInspector();
+    // Skills tab in realChild mode will use the new child on the next manual Render click.
   });
 
   return {
     getChildId, getChildren, setChildren, setChildId,
     loadEngagement, toggleEngagementRaw,
     loadMastery, setMasteryView,
+    loadGuidance, saveGuidance, resetGuidance, saveChildTimezone, suggestTz,
+    loadContext, toggleContextAuto,
+    loadStrategy, onStrategyDifficultyInput,
+    loadSkills, onSkillSelect, onSkillsModeChange, renderSkill, reloadSkill, reseedInputsForSkill,
     loadInspector, toggleInspectorTail, toggleInspectorChildFilter, resetRings,
     loadCost, setCostWindow,
   };

@@ -23,6 +23,8 @@ import privacyRoutes from './privacy';
 import { knowledgeRoutes } from './knowledge';
 import { engagementRoutes } from './engagement';
 import { devConsoleRoutes } from './devConsole';
+import { devSkillsRoutes } from './devSkills';
+import { parentGuidanceRoutes } from './parentGuidance';
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   // Webhook routes (no auth required - called by Apple directly)
@@ -97,8 +99,15 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       // Engagement profile routes (require auth) - Sprint 10 (S10-03)
       await fastify.register(engagementRoutes, { prefix: '/engagement' });
 
+      // Parent Guidance routes (require auth) - Sprint 10 (S10-04)
+      // Nested under /children so URL is /api/v1/children/:childId/guidance
+      await fastify.register(parentGuidanceRoutes, { prefix: '/children' });
+
       // Dev console support routes (require auth) - Sprint 10 side-quest (DC-04)
       await fastify.register(devConsoleRoutes, { prefix: '/dev' });
+
+      // Dev console — Skill Engine routes (require auth) - Sprint 10 (S10-06/07)
+      await fastify.register(devSkillsRoutes, { prefix: '/dev' });
     },
     { prefix: '/api/v1' }
   );

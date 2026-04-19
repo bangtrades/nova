@@ -13,6 +13,11 @@ const ingestUrlSchema = z.object({
 const generateCardsSchema = z.object({
   ingestId: z.string().uuid(),
   pathId: z.string().uuid().optional(),
+  // S10-04 / S10-05: when set, the pipeline pulls the child's parent guidance
+  // + session context and injects them into every LLM prompt. The
+  // orchestrator itself re-verifies ownership, so passing a foreign childId
+  // is safe — it degrades to "no preamble".
+  childId: z.string().uuid().optional(),
 });
 
 const assetJobParamsSchema = z.object({
@@ -190,7 +195,7 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
-        const { ingestId, pathId } = request.body;
+        const { ingestId, pathId, childId } = request.body;
         const prisma = getPrismaClient();
 
         // Verify ingest ownership — pull url/title along with userId so we
@@ -218,18 +223,25 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
 
         // Run the full pipeline
         try {
-          const result = await runPipeline(request.userId, ingestId, pathId);
+          const result = await runPipeline(request.userId, ingestId, pathId, {
+            childId,
+          });
 
           // DC-04: record a pipeline run in the dev-console ring buffer.
+          // S10-12 · R7 — capture lessonId + skillEngineUsed so the Dev
+          // Console can deep-link to the per-atom trace view without a
+          // second lookup.
           recordPipelineEvent({
             userId: request.userId,
             ingestId: result.ingestId,
+            lessonId: result.lessonId || null,
             url: ingest.url,
             title: null,
             status: result.status,
             cardCount: result.cardCount ?? null,
             costCents: null, // Cost is aggregated separately; fetched from /monitoring/costs.
             durationMs: Date.now() - pipelineStartedAt,
+            skillEngineUsed: Boolean(result.skillEngineUsed),
           });
 
           return reply.status(200).send({
@@ -238,6 +250,15 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
             cardCount: result.cardCount,
             status: result.status,
             message: result.message,
+            // S10-12 · R7 — surface skill-engine fields so dev-pipeline.html
+            // can render the Skill Engine panel inline without a follow-up
+            // call to /dev/pipeline/trace. The `skillSkippedAtoms` list is
+            // kept short (skipped-only) so the wire payload stays small;
+            // full per-atom traces come from the trace endpoint.
+            skillEngineUsed: Boolean(result.skillEngineUsed),
+            skillSkippedAtoms: result.skillSkippedAtoms ?? null,
+            regeneratedCardIndexes: result.regeneratedCardIndexes,
+            qualityScore: result.qualityScore,
           });
         } catch (pipelineError) {
           fastify.log.error(`Pipeline error: ${pipelineError}`);
@@ -246,12 +267,14 @@ export async function pipelineRoutes(fastify: FastifyInstance): Promise<void> {
           recordPipelineEvent({
             userId: request.userId,
             ingestId,
+            lessonId: null,
             url: ingest.url,
             title: null,
             status: 'failed',
             cardCount: null,
             costCents: null,
             durationMs: Date.now() - pipelineStartedAt,
+            skillEngineUsed: false,
           });
 
           return reply.status(400).send({

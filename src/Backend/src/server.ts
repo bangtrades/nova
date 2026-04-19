@@ -11,6 +11,7 @@ import { authMiddleware } from '@middleware/auth';
 import { registerRoutes } from '@routes/index';
 import { initializeFlags } from '@services/featureFlags';
 import { registerGlobalRateLimiter } from '@middleware/rateLimiter';
+import { getSkillRegistry } from '@services/skills/registry';
 
 async function buildServer(): Promise<ReturnType<typeof Fastify>> {
   const config = getConfig();
@@ -127,6 +128,11 @@ async function start(): Promise<void> {
 
     // Initialize feature flags
     await initializeFlags();
+
+    // Eager-load the skill registry. A typo in any manifest fails here,
+    // at boot, rather than at first invocation. See
+    // docs/design-spikes/S10-06-07-skill-loader.md decision #4.
+    await getSkillRegistry().load();
 
     // Start server
     await fastify.listen({ host: config.HOST, port: config.PORT });
