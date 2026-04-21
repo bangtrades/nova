@@ -55,7 +55,7 @@ public struct FlipbookHeader: View {
                                 .foregroundStyle(
                                     index < lesson.difficulty
                                         ? NovaPalette.novaYellow
-                                        : Color.gray.opacity(0.3)
+                                        : NovaPalette.ink.opacity(0.3)
                                 )
                                 .accessibilityHidden(true)
                         }

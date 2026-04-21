@@ -22,7 +22,7 @@
 		1F7724623874BD2CD421D15C /* Sources/Views/Reports/WeeklyReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C738437CC449B84DC47A67EB /* Sources/Views/Reports/WeeklyReportView.swift */; };
 		236C65E7346FBEF4626EC34C /* Sources/Views/Flipbook/CardProgressDots.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70FA0BE404EAC27908DD1A0 /* Sources/Views/Flipbook/CardProgressDots.swift */; };
 		251DA17E071F13FB5F44B4A0 /* Sources/Views/Common/ParentalGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8625EFB88BD9F749D46B926 /* Sources/Views/Common/ParentalGateView.swift */; };
-		2721E5A43DE6D97F142565F1 /* Sources/Views/Flipbook/SparkyHintSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/SparkyHintSheet.swift */; };
+		2721E5A43DE6D97F142565F1 /* Sources/Views/Flipbook/DashyHintSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/DashyHintSheet.swift */; };
 		2F2421A1715D50703CEAD01B /* NovaAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 32A1016D67A7E20E7EA68929 /* NovaAuth */; };
 		3104E3E0251F6B83439D5E91 /* Sources/Views/Settings/LLMProviderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE3408517BC4D66C95A0DC /* Sources/Views/Settings/LLMProviderSettingsView.swift */; };
 		327818B02248A32266FBD200 /* Sources/Views/Children/ChildProfileCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFD31900FAB4E655CE674CD /* Sources/Views/Children/ChildProfileCard.swift */; };
@@ -75,7 +75,7 @@
 		8B7AC272B1859DA304E9FC1D /* Sources/Views/Home/FeaturedLessonCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CE8633863B93C675ED6BAD /* Sources/Views/Home/FeaturedLessonCard.swift */; };
 		8F4DA6594F3E3E12531DFD97 /* Sources/Views/Flipbook/ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93CC86935AFB6965EA4E2CC /* Sources/Views/Flipbook/ConfettiView.swift */; };
 		95859053271934129FBB4B2E /* Sources/Views/Children/ChildrenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F2D440B66663480A852502C /* Sources/Views/Children/ChildrenView.swift */; };
-		967A5727F7AB6B9C7C1964CD /* Sources/ViewModels/SparkyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591B8859205724FF6CB587E0 /* Sources/ViewModels/SparkyViewModel.swift */; };
+		967A5727F7AB6B9C7C1964CD /* Sources/ViewModels/DashyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591B8859205724FF6CB587E0 /* Sources/ViewModels/DashyViewModel.swift */; };
 		9730365FBF51D83CF3A6B084 /* Sources/Views/Flipbook/StoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C38E81B60274B118D63FC0 /* Sources/Views/Flipbook/StoryCardView.swift */; };
 		9736A682585E8B2FE2B3D6BD /* Sources/Views/Common/CompanionPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C623C3F4956BF5977F34BD8 /* Sources/Views/Common/CompanionPalette.swift */; };
 		A123EEA9A4B6A52D3CD422D4 /* Sources/Views/Flipbook/VoiceCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B80BCD897677409908C75 /* Sources/Views/Flipbook/VoiceCardView.swift */; };
@@ -102,7 +102,7 @@
 		E4C33088D43088B502A265BD /* Sources/ViewModels/OfflineSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BAE7CE27E4DB8B50C3D44E8 /* Sources/ViewModels/OfflineSyncManager.swift */; };
 		E9303123F5D0ED64ADFB3D94 /* Sources/Services/BackgroundTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D186BA9A8EFF285FEDF78A5B /* Sources/Services/BackgroundTaskManager.swift */; };
 		E9A49B24E61CFF82D697E805 /* Sources/Views/Editor/CardPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93EB5582A8D609A92873AF1 /* Sources/Views/Editor/CardPreviewView.swift */; };
-		EB515DD83F24B99C71610EB1 /* Sources/Views/Sparky/SparkyCharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Sparky/SparkyCharacterView.swift */; };
+		EB515DD83F24B99C71610EB1 /* Sources/Views/Dashy/DashyCharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Dashy/DashyCharacterView.swift */; };
 		F0B824C417762A6B295EB430 /* Sources/Views/Common/ShareSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C78AC991BE1CDF9D69BDAA2F /* Sources/Views/Common/ShareSheetView.swift */; };
 		F3AB4F1F4E70BB5F28675587 /* Sources/ViewModels/ChildProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB92730B7992AAB01EA3FC2 /* Sources/ViewModels/ChildProfileViewModel.swift */; };
 		F4BD278A6FD811111C6321A3 /* Sources/Views/Common/PerformanceOptimizers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99366EA94F6BE7853DB1733 /* Sources/Views/Common/PerformanceOptimizers.swift */; };
@@ -113,19 +113,23 @@
 		F85CBAABDEE1194967EFE542 /* Sources/Views/Progress/SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D1AA468D7048B9EB70E8C /* Sources/Views/Progress/SessionHistoryView.swift */; };
 		F9AFF746C2C2B8C76A90ED85 /* Sources/Views/Trophies/TrophiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 306A3ADD1172B9C030B3CF91 /* Sources/Views/Trophies/TrophiesView.swift */; };
 		FBDBF61FFE29AD1C581474E8 /* Sources/Views/Settings/SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48138F82BE647EED2EB2CD8 /* Sources/Views/Settings/SubscriptionView.swift */; };
-		FCAC8071E5F3BC1B24905CE0 /* Sources/Views/Flipbook/SparkyHintButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/SparkyHintButton.swift */; };
-		FEC8A3161DEBFF203FA093F7 /* Sources/Views/Sparky/SparkyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72031029B6E29935FC0046E3 /* Sources/Views/Sparky/SparkyView.swift */; };
+		FCAC8071E5F3BC1B24905CE0 /* Sources/Views/Flipbook/DashyHintButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/DashyHintButton.swift */; };
+		FEC8A3161DEBFF203FA093F7 /* Sources/Views/Dashy/DashyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72031029B6E29935FC0046E3 /* Sources/Views/Dashy/DashyView.swift */; };
 		FEFB5C6BD521DB2D111CD550 /* Sources/App/NovaCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C490ABC033D2FF49576124D8 /* Sources/App/NovaCompanionApp.swift */; };
+		DE51617100000011000000B1 /* Sources/Views/Common/DesignSystem/NovaCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C1 /* Sources/Views/Common/DesignSystem/NovaCard.swift */; };
+		DE51617100000011000000B2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		DE51617100000011000000C1 /* Sources/Views/Common/DesignSystem/NovaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaCard.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaButtonStyles.swift; sourceTree = "<group>"; };
 		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
 		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
 		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
 		102D2516B9671BBDD0404461 /* Sources/Views/Lessons/LessonTileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Lessons/LessonTileView.swift; sourceTree = "<group>"; };
 		105BE7FB7463CA44563D083B /* Sources/App/CompanionAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/CompanionAppState.swift; sourceTree = "<group>"; };
 		11A9DE3EA7169CA3B34F9269 /* Sources/ViewModels/SessionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/SessionTracker.swift; sourceTree = "<group>"; };
-		150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/SparkyHintButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/SparkyHintButton.swift; sourceTree = "<group>"; };
+		150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/DashyHintButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/DashyHintButton.swift; sourceTree = "<group>"; };
 		1DB3E8ED1D23FA44AF3BD609 /* Sources/Views/Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		1E7644BE846F7D1B3D24ABEF /* Sources/Views/Progress/ProgressDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressDashboardView.swift; sourceTree = "<group>"; };
 		1EFD31900FAB4E655CE674CD /* Sources/Views/Children/ChildProfileCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Children/ChildProfileCard.swift; sourceTree = "<group>"; };
@@ -155,8 +159,8 @@
 		503767ACADFFBC15AAF192D5 /* Sources/Views/Editor/CardListSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/CardListSidebar.swift; sourceTree = "<group>"; };
 		528B80BCD897677409908C75 /* Sources/Views/Flipbook/VoiceCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/VoiceCardView.swift; sourceTree = "<group>"; };
 		53733BA9AD1E0EB1A67EE1A9 /* Sources/ViewModels/HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/HomeViewModel.swift; sourceTree = "<group>"; };
-		591B8859205724FF6CB587E0 /* Sources/ViewModels/SparkyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/SparkyViewModel.swift; sourceTree = "<group>"; };
-		5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Sparky/SparkyCharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Sparky/SparkyCharacterView.swift; sourceTree = "<group>"; };
+		591B8859205724FF6CB587E0 /* Sources/ViewModels/DashyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/DashyViewModel.swift; sourceTree = "<group>"; };
+		5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Dashy/DashyCharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashy/DashyCharacterView.swift; sourceTree = "<group>"; };
 		5C9C835DDEA88C76CEC0C82A /* Sources/ViewModels/LessonsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/LessonsViewModel.swift; sourceTree = "<group>"; };
 		5F9E2DC7D476F17E2B668783 /* Sources/ViewModels/AssetCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/AssetCacheManager.swift; sourceTree = "<group>"; };
 		65C0DE7FBDD5CE314BC41BF2 /* Sources/Views/Flipbook/FlipbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/FlipbookView.swift; sourceTree = "<group>"; };
@@ -166,7 +170,7 @@
 		6EBE92744656E5361B78C891 /* Sources/ViewModels/CurriculumViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/CurriculumViewModel.swift; sourceTree = "<group>"; };
 		6F43921F38CCBE3C317E9942 /* Sources/Views/Progress/ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressView.swift; sourceTree = "<group>"; };
 		7088A5577448C1E7158C2C00 /* Sources/Views/Common/OfflineGracefulView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/OfflineGracefulView.swift; sourceTree = "<group>"; };
-		72031029B6E29935FC0046E3 /* Sources/Views/Sparky/SparkyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Sparky/SparkyView.swift; sourceTree = "<group>"; };
+		72031029B6E29935FC0046E3 /* Sources/Views/Dashy/DashyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashy/DashyView.swift; sourceTree = "<group>"; };
 		725AB0E533207A409A98A8D8 /* Sources/Views/Editor/LessonPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/LessonPreviewView.swift; sourceTree = "<group>"; };
 		791D1AA468D7048B9EB70E8C /* Sources/Views/Progress/SessionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/SessionHistoryView.swift; sourceTree = "<group>"; };
 		7AB8377E15F2699EABC45EB3 /* Sources/ViewModels/PublishFlowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/PublishFlowViewModel.swift; sourceTree = "<group>"; };
@@ -178,7 +182,7 @@
 		9A24C306137BFE66E9C732E2 /* Sources/Views/Common/OfflineBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/OfflineBannerView.swift; sourceTree = "<group>"; };
 		A3FE3408517BC4D66C95A0DC /* Sources/Views/Settings/LLMProviderSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/LLMProviderSettingsView.swift; sourceTree = "<group>"; };
 		A78528DBE513E88239003352 /* Sources/Views/Legal/LegalDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Legal/LegalDocumentView.swift; sourceTree = "<group>"; };
-		A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/SparkyHintSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/SparkyHintSheet.swift; sourceTree = "<group>"; };
+		A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/DashyHintSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/DashyHintSheet.swift; sourceTree = "<group>"; };
 		AA000000000000000000AA01 /* NovaKids.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NovaKids.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000000000000000000AA02 /* NovaCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NovaCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB1EF1D8C5705D6B757C7154 /* Sources/Services/NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Services/NotificationScheduler.swift; sourceTree = "<group>"; };
@@ -302,17 +306,19 @@
 				D99366EA94F6BE7853DB1733 /* Sources/Views/Common/PerformanceOptimizers.swift */,
 				B17C37D12EA3549C093FA6CE /* Sources/Views/Flipbook/QuizCardView.swift */,
 				11A9DE3EA7169CA3B34F9269 /* Sources/ViewModels/SessionTracker.swift */,
-				5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Sparky/SparkyCharacterView.swift */,
-				150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/SparkyHintButton.swift */,
-				A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/SparkyHintSheet.swift */,
-				72031029B6E29935FC0046E3 /* Sources/Views/Sparky/SparkyView.swift */,
-				591B8859205724FF6CB587E0 /* Sources/ViewModels/SparkyViewModel.swift */,
+				5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Dashy/DashyCharacterView.swift */,
+				150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/DashyHintButton.swift */,
+				A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/DashyHintSheet.swift */,
+				72031029B6E29935FC0046E3 /* Sources/Views/Dashy/DashyView.swift */,
+				591B8859205724FF6CB587E0 /* Sources/ViewModels/DashyViewModel.swift */,
 				B6C38E81B60274B118D63FC0 /* Sources/Views/Flipbook/StoryCardView.swift */,
 				306A3ADD1172B9C030B3CF91 /* Sources/Views/Trophies/TrophiesView.swift */,
 				CC9B8CDE35E40FFD7053976B /* Sources/Views/Trophies/TrophyRoomView.swift */,
 				F7B95C7986033B43A1727A4E /* Sources/ViewModels/TrophyRoomViewModel.swift */,
 				528B80BCD897677409908C75 /* Sources/Views/Flipbook/VoiceCardView.swift */,
 				82F262894EC476F14EF5E76C /* Sources/Views/Home/WelcomeHeader.swift */,
+				DE51617100000011000000C1 /* Sources/Views/Common/DesignSystem/NovaCard.swift */,
+				DE51617100000011000000C2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift */,
 			);
 			name = NovaKids;
 			path = Apps/NovaKids;
@@ -531,17 +537,19 @@
 				F4BD278A6FD811111C6321A3 /* Sources/Views/Common/PerformanceOptimizers.swift in Sources */,
 				DBFEDDF62345BAD19A0B8840 /* Sources/Views/Flipbook/QuizCardView.swift in Sources */,
 				3CA3A722BD3997DFCC31FADE /* Sources/ViewModels/SessionTracker.swift in Sources */,
-				EB515DD83F24B99C71610EB1 /* Sources/Views/Sparky/SparkyCharacterView.swift in Sources */,
-				FCAC8071E5F3BC1B24905CE0 /* Sources/Views/Flipbook/SparkyHintButton.swift in Sources */,
-				2721E5A43DE6D97F142565F1 /* Sources/Views/Flipbook/SparkyHintSheet.swift in Sources */,
-				FEC8A3161DEBFF203FA093F7 /* Sources/Views/Sparky/SparkyView.swift in Sources */,
-				967A5727F7AB6B9C7C1964CD /* Sources/ViewModels/SparkyViewModel.swift in Sources */,
+				EB515DD83F24B99C71610EB1 /* Sources/Views/Dashy/DashyCharacterView.swift in Sources */,
+				FCAC8071E5F3BC1B24905CE0 /* Sources/Views/Flipbook/DashyHintButton.swift in Sources */,
+				2721E5A43DE6D97F142565F1 /* Sources/Views/Flipbook/DashyHintSheet.swift in Sources */,
+				FEC8A3161DEBFF203FA093F7 /* Sources/Views/Dashy/DashyView.swift in Sources */,
+				967A5727F7AB6B9C7C1964CD /* Sources/ViewModels/DashyViewModel.swift in Sources */,
 				9730365FBF51D83CF3A6B084 /* Sources/Views/Flipbook/StoryCardView.swift in Sources */,
 				F9AFF746C2C2B8C76A90ED85 /* Sources/Views/Trophies/TrophiesView.swift in Sources */,
 				A4669090BC7B5B3DC9CBE20C /* Sources/Views/Trophies/TrophyRoomView.swift in Sources */,
 				F59578BCFFEDBE35939D3B5E /* Sources/ViewModels/TrophyRoomViewModel.swift in Sources */,
 				A123EEA9A4B6A52D3CD422D4 /* Sources/Views/Flipbook/VoiceCardView.swift in Sources */,
 				574A3C73EBF31040AE2E8E83 /* Sources/Views/Home/WelcomeHeader.swift in Sources */,
+				DE51617100000011000000B1 /* Sources/Views/Common/DesignSystem/NovaCard.swift in Sources */,
+				DE51617100000011000000B2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -666,8 +674,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nova uses speech recognition so you can talk to Sparky and answer questions with your voice.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova needs microphone access so Sparky can hear your voice during lessons.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nova uses speech recognition so you can talk to Dashy and answer questions with your voice.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova needs microphone access so Dashy can hear your voice during lessons.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nova uses the camera for fun AR experiments in lessons.";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nova.kids;
@@ -693,8 +701,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nova uses speech recognition so you can talk to Sparky and answer questions with your voice.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova needs microphone access so Sparky can hear your voice during lessons.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nova uses speech recognition so you can talk to Dashy and answer questions with your voice.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Nova needs microphone access so Dashy can hear your voice during lessons.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Nova uses the camera for fun AR experiments in lessons.";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nova.kids;

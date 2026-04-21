@@ -4,8 +4,8 @@ import NovaCore
 import NovaVoice
 import Speech
 
-/// Sparky chat conversation state machine.
-public enum SparkyState: Equatable {
+/// Dashy chat conversation state machine.
+public enum DashyState: Equatable {
     case ready
     case listening
     case processing
@@ -13,8 +13,8 @@ public enum SparkyState: Equatable {
     case error(String)
 }
 
-/// Sparky's emotional expression mapped to character animation states.
-public enum SparkyEmotion: String, Codable {
+/// Dashy's emotional expression mapped to character animation states.
+public enum DashyEmotion: String, Codable {
     case happy
     case curious
     case excited
@@ -22,9 +22,14 @@ public enum SparkyEmotion: String, Codable {
 }
 
 /// Single chat message in conversation history.
+///
+/// > Wire-protocol note (S11-09): `role` carries the server-side literal
+/// > — currently still `"sparky"` for Dashy-authored messages because
+/// > the backend under `services/sparky/` hasn't been renamed yet.
+/// > S12 will flip both ends simultaneously.
 public struct ChatMessage: Identifiable, Codable {
     public let id: UUID
-    public let role: String  // "user" or "sparky"
+    public let role: String  // "user" or "sparky" (wire protocol — S12 renames to "dashy")
     public let content: String
     public let timestamp: Date
     public let emotion: String?  // Optional emotion from API
@@ -44,19 +49,19 @@ public struct ChatMessage: Identifiable, Codable {
     }
 }
 
-/// View model managing Sparky voice conversation and state.
+/// View model managing Dashy voice conversation and state.
 @MainActor
-public class SparkyViewModel: NSObject, ObservableObject {
+public class DashyViewModel: NSObject, ObservableObject {
     // MARK: - Published Properties
 
     /// Current state of the conversation.
-    @Published public var state: SparkyState = .ready
+    @Published public var state: DashyState = .ready
 
     /// Conversation history (max 10 messages).
     @Published public var conversationHistory: [ChatMessage] = []
 
     /// Current emotional expression for character animation.
-    @Published public var currentEmotion: SparkyEmotion = .happy
+    @Published public var currentEmotion: DashyEmotion = .happy
 
     /// Suggested follow-up questions from the API.
     @Published public var suggestions: [String] = []
@@ -162,7 +167,7 @@ public class SparkyViewModel: NSObject, ObservableObject {
         // Don't change state here — let recognition task complete
     }
 
-    /// Sends a text message to Sparky.
+    /// Sends a text message to Dashy.
     /// - Parameter text: The user's message.
     public func sendMessage(text: String) {
         guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -172,7 +177,7 @@ public class SparkyViewModel: NSObject, ObservableObject {
         addMessageToHistory(userMessage)
 
         Task {
-            await fetchSparkyResponse(userMessage: text)
+            await fetchDashyResponse(userMessage: text)
         }
     }
 
@@ -204,14 +209,14 @@ public class SparkyViewModel: NSObject, ObservableObject {
             state = .processing
             isRecordingAudio = false
 
-            // Send the transcript to Sparky
+            // Send the transcript to Dashy
             Task {
-                await fetchSparkyResponse(userMessage: transcript)
+                await fetchDashyResponse(userMessage: transcript)
             }
         }
     }
 
-    private func fetchSparkyResponse(userMessage: String) async {
+    private func fetchDashyResponse(userMessage: String) async {
         state = .processing
 
         // Build request payload
@@ -226,12 +231,12 @@ public class SparkyViewModel: NSObject, ObservableObject {
         ] as [String: Any]
 
         do {
-            // POST to /api/v1/sparky/chat
+            // POST to /api/v1/sparky/chat — wire-protocol path, S12 renames to /api/v1/dashy/chat
             // In production: let response = try await apiRouter.request(endpoint)
             // For now, using mock response below
 
             // Parse response
-            struct SparkyResponse: Decodable {
+            struct DashyResponse: Decodable {
                 let message: String
                 let emotion: String?
                 let suggestions: [String]?
@@ -245,15 +250,16 @@ public class SparkyViewModel: NSObject, ObservableObject {
                 try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms
             }
 
-            // Create Sparky's response message
-            let sparkyMessage = ChatMessage(
+            // Create Dashy's response message. Role literal "sparky" is the
+            // wire-protocol value — S12 flips both ends to "dashy".
+            let dashyMessage = ChatMessage(
                 role: "sparky",
                 content: "Thanks for asking! That's a great question about AI. I love learning with you!",
                 emotion: "happy"
             )
 
-            addMessageToHistory(sparkyMessage)
-            updateEmotion(from: sparkyMessage.emotion ?? "happy")
+            addMessageToHistory(dashyMessage)
+            updateEmotion(from: dashyMessage.emotion ?? "happy")
 
             // Simulate suggestions
             suggestions = [
@@ -263,13 +269,13 @@ public class SparkyViewModel: NSObject, ObservableObject {
                 "Show me an example"
             ]
 
-            // Play Sparky's response via voice manager
-            try await voiceManager.speak(text: sparkyMessage.content, preferRemote: false)
+            // Play Dashy's response via voice manager
+            try await voiceManager.speak(text: dashyMessage.content, preferRemote: false)
 
             state = .ready
             processingProgress = 0
         } catch {
-            setState(.error("Oops! Sparky is thinking... try again soon!"))
+            setState(.error("Oops! Dashy is thinking... try again soon!"))
         }
     }
 
@@ -283,12 +289,12 @@ public class SparkyViewModel: NSObject, ObservableObject {
     }
 
     private func updateEmotion(from emotionString: String) {
-        if let emotion = SparkyEmotion(rawValue: emotionString) {
+        if let emotion = DashyEmotion(rawValue: emotionString) {
             currentEmotion = emotion
         }
     }
 
-    private func setState(_ newState: SparkyState) {
+    private func setState(_ newState: DashyState) {
         state = newState
         if case let .error(message) = newState {
             errorMessage = message

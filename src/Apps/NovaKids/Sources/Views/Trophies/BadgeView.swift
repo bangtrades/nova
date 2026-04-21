@@ -43,8 +43,8 @@ public struct BadgeView: View {
                             )
                             : LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.gray.opacity(0.2),
-                                    Color.gray.opacity(0.1),
+                                    NovaPalette.ink.opacity(0.2),
+                                    NovaPalette.ink.opacity(0.1),
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -78,7 +78,7 @@ public struct BadgeView: View {
                         ZStack {
                             Image(systemName: badge.icon)
                                 .font(.largeTitle.weight(.semibold))
-                                .foregroundStyle(Color.gray.opacity(0.3))
+                                .foregroundStyle(NovaPalette.ink.opacity(0.3))
 
                             // Lock icon overlay
                             Image(systemName: "lock.fill")
@@ -92,7 +92,7 @@ public struct BadgeView: View {
                     if !earned {
                         Text("???")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.gray.opacity(0.4))
+                            .foregroundStyle(NovaPalette.ink.opacity(0.4))
                     }
                 }
 
@@ -156,7 +156,7 @@ public struct BadgeView: View {
         .background(
             earned
                 ? NovaPalette.novaYellow.opacity(0.1)
-                : Color.gray.opacity(0.05)
+                : NovaPalette.ink.opacity(0.05)
         )
         .cornerRadius(12)
         .onDisappear {

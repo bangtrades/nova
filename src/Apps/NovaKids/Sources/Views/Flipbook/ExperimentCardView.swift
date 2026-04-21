@@ -381,7 +381,7 @@ private struct DropTargetView: View {
                 // Show placed item
                 VStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.title)
+                        .font(NovaPalette.titleFont())
                         .foregroundStyle(NovaPalette.novaGreen)
                         .accessibilityHidden(true)
 

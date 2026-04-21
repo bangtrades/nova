@@ -3,7 +3,7 @@ import NovaCore
 
 /// Kid-friendly onboarding flow shown once on first launch.
 ///
-/// Walks through 4 pages: Meet Sparky, Choose Avatar, Enter Name, and First Mission.
+/// Walks through 4 pages: Meet Dashy, Choose Avatar, Enter Name, and First Mission.
 /// Uses TabView with PageTabViewStyle for swiping between pages.
 /// Tracks completion via @AppStorage("hasCompletedOnboarding").
 public struct OnboardingView: View {
@@ -22,8 +22,8 @@ public struct OnboardingView: View {
                 .ignoresSafeArea()
 
             TabView(selection: $currentPage) {
-                // Page 1: Meet Sparky
-                meetSparkyPage()
+                // Page 1: Meet Dashy
+                meetDashyPage()
                     .tag(0)
 
                 // Page 2: Choose Avatar
@@ -51,13 +51,13 @@ public struct OnboardingView: View {
 
     // MARK: - Page Views
 
-    private func meetSparkyPage() -> some View {
+    private func meetDashyPage() -> some View {
         VStack(spacing: 32) {
             Spacer()
 
-            // Animated Sparky character
+            // Animated Dashy character
             VStack(spacing: 0) {
-                // Sparky head (purple circle with simple features)
+                // Dashy head (purple circle with simple features)
                 ZStack {
                     Circle()
                         .fill(NovaPalette.novaPurple)
@@ -102,7 +102,7 @@ public struct OnboardingView: View {
                         .offset(x: 45, y: -25)
 
                     Image(systemName: "hand.raised.fill")
-                        .font(.title)
+                        .font(NovaPalette.titleFont())
                         .foregroundStyle(NovaPalette.novaYellow)
                         .offset(x: 45, y: -25)
                         .rotation3DEffect(
@@ -117,11 +117,11 @@ public struct OnboardingView: View {
 
             // Text
             VStack(spacing: 12) {
-                Text("Meet Sparky!")
-                    .font(.title)
+                Text("Meet Dashy!")
+                    .font(NovaPalette.titleFont())
                     .foregroundStyle(.primary)
 
-                Text("Hi! I'm Sparky, your AI buddy!")
+                Text("Hi! I'm Dashy, your AI buddy!")
                     .font(NovaPalette.headingFont())
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -243,7 +243,7 @@ public struct OnboardingView: View {
                     .font(NovaPalette.titleFont())
                     .foregroundStyle(.primary)
 
-                Text("Let Sparky know how to say hello!")
+                Text("Let Dashy know how to say hello!")
                     .font(NovaPalette.bodyFont())
                     .foregroundStyle(.secondary)
             }

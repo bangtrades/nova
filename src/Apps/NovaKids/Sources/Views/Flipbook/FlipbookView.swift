@@ -87,8 +87,8 @@ public struct FlipbookView: View {
                         .indexViewStyle(.page(backgroundDisplayMode: .never))
                         .padding(20)
 
-                        // Sparky Hint Button - top right
-                        SparkyHintButton(showHintSheet: $viewModel.showSparkyHint)
+                        // Dashy Hint Button - top right
+                        DashyHintButton(showHintSheet: $viewModel.showDashyHint)
                             .padding(20)
                     }
                 } else {
@@ -129,8 +129,8 @@ public struct FlipbookView: View {
                             .padding(.vertical, 14)
                             .background(
                                 viewModel.currentCardIndex > 0
-                                    ? Color.gray.opacity(0.1)
-                                    : Color.gray.opacity(0.05)
+                                    ? NovaPalette.ink.opacity(0.1)
+                                    : NovaPalette.ink.opacity(0.05)
                             )
                             .foregroundStyle(
                                 viewModel.currentCardIndex > 0
@@ -177,8 +177,8 @@ public struct FlipbookView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Flipbook viewer")
         .accessibilityValue("Card \(viewModel.currentCardIndex + 1) of \(viewModel.cards.count)")
-        .sheet(isPresented: $viewModel.showSparkyHint) {
-            SparkyHintSheet(hintText: viewModel.currentHint)
+        .sheet(isPresented: $viewModel.showDashyHint) {
+            DashyHintSheet(hintText: viewModel.currentHint)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }

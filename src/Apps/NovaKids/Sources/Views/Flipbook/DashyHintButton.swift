@@ -1,11 +1,11 @@
 import SwiftUI
 import NovaCore
 
-/// Floating hint button on flipbook cards with Sparky character.
+/// Floating hint button on flipbook cards with Dashy character.
 ///
 /// A circular button (50pt) in the top-right corner with a gentle bounce animation.
-/// Tapping shows a hint sheet with Sparky's advice.
-public struct SparkyHintButton: View {
+/// Tapping shows a hint sheet with Dashy's advice.
+public struct DashyHintButton: View {
     /// Whether to show the hint sheet.
     @Binding var showHintSheet: Bool
 
@@ -25,7 +25,7 @@ public struct SparkyHintButton: View {
                     .fill(NovaPalette.novaPurple)
                     .frame(width: 50, height: 50)
 
-                // Sparky emoji/robot icon
+                // Dashy speech-bubble icon
                 VStack(spacing: 2) {
                     Image(systemName: "bubble.left.fill")
                         .font(.title3)
@@ -34,7 +34,7 @@ public struct SparkyHintButton: View {
                 }
             }
         }
-        .accessibilityLabel("Hint from Sparky")
+        .accessibilityLabel("Hint from Dashy")
         .accessibilityHint("Get a helpful tip about this card")
         .scaleEffect(1.0)
         .animation(
@@ -61,7 +61,7 @@ public struct SparkyHintButton: View {
         VStack {
             HStack {
                 Spacer()
-                SparkyHintButton(showHintSheet: .constant(false))
+                DashyHintButton(showHintSheet: .constant(false))
                     .padding(20)
             }
             Spacer()

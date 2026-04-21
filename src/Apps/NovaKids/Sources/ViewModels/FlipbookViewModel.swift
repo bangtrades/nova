@@ -13,7 +13,7 @@ public class FlipbookViewModel: ObservableObject {
     @Published var currentCardIndex: Int = 0
     @Published var completedCardIndices: Set<Int> = []
     @Published var isLoading: Bool = false
-    @Published var showSparkyHint: Bool = false
+    @Published var showDashyHint: Bool = false
     @Published var autoNarrate: Bool {
         didSet {
             UserDefaults.standard.set(autoNarrate, forKey: "flipbook.autoNarrate")
@@ -176,7 +176,7 @@ public class FlipbookViewModel: ObservableObject {
     private func generateStoryHint(card: Card) -> String {
         let hints = [
             "Listen carefully to the story. There might be something important!",
-            "Think about what Sparky is trying to teach you in this story.",
+            "Think about what Dashy is trying to teach you in this story.",
             "Pay attention to the colors and shapes — they're clues!",
             "This story is showing you how AI works in real life."
         ]

@@ -60,8 +60,8 @@ public struct OfflineGracefulView<Content: View, OfflineContent: View>: View {
 
 // MARK: - Feature-Specific Offline Views
 
-/// Offline view for Sparky voice chat (NOT available offline).
-public struct SparkyOfflineView: View {
+/// Offline view for Dashy voice chat (NOT available offline).
+public struct DashyOfflineView: View {
     public var body: some View {
         ZStack {
             NovaPalette.novaBackground
@@ -81,11 +81,11 @@ public struct SparkyOfflineView: View {
                 }
 
                 VStack(spacing: 12) {
-                    Text("Sparky Needs the Internet")
+                    Text("Dashy Needs the Internet")
                         .font(NovaPalette.headingFont())
                         .foregroundStyle(.primary)
 
-                    Text("Sparky needs the internet to chat, but you can still explore your lessons!")
+                    Text("Dashy needs the internet to chat, but you can still explore your lessons!")
                         .font(NovaPalette.bodyFont())
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -165,7 +165,7 @@ import Network
             }
         },
         offlineContent: {
-            SparkyOfflineView()
+            DashyOfflineView()
         }
     )
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Animation state for Sparky character expression.
-public enum SparkyAnimationState {
+/// Animation state for Dashy character expression.
+public enum DashyAnimationState {
     case idle
     case listening
     case thinking
@@ -9,12 +9,12 @@ public enum SparkyAnimationState {
     case celebrating
 }
 
-/// Reusable animated Sparky character component with expression states.
+/// Reusable animated Dashy character component with expression states.
 ///
 /// Draws a cute robot face with animated eyes, mouth, and antenna.
 /// Changes expression based on the animation state binding.
-public struct SparkyCharacterView: View {
-    @Binding var state: SparkyAnimationState
+public struct DashyCharacterView: View {
+    @Binding var state: DashyAnimationState
 
     @State private var blinkOpacity: Double = 1.0
     @State private var antennaRotation: Double = 0
@@ -28,7 +28,7 @@ public struct SparkyCharacterView: View {
 
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
-    public init(state: Binding<SparkyAnimationState>) {
+    public init(state: Binding<DashyAnimationState>) {
         self._state = state
     }
 
@@ -353,19 +353,19 @@ public struct SparkyCharacterView: View {
     VStack(spacing: 30) {
         HStack(spacing: 20) {
             VStack(spacing: 8) {
-                SparkyCharacterView(state: .constant(.idle))
+                DashyCharacterView(state: .constant(.idle))
                 Text("Idle")
                     .font(NovaPalette.captionFont())
             }
 
             VStack(spacing: 8) {
-                SparkyCharacterView(state: .constant(.listening))
+                DashyCharacterView(state: .constant(.listening))
                 Text("Listening")
                     .font(NovaPalette.captionFont())
             }
 
             VStack(spacing: 8) {
-                SparkyCharacterView(state: .constant(.thinking))
+                DashyCharacterView(state: .constant(.thinking))
                 Text("Thinking")
                     .font(NovaPalette.captionFont())
             }
@@ -373,13 +373,13 @@ public struct SparkyCharacterView: View {
 
         HStack(spacing: 20) {
             VStack(spacing: 8) {
-                SparkyCharacterView(state: .constant(.talking))
+                DashyCharacterView(state: .constant(.talking))
                 Text("Talking")
                     .font(NovaPalette.captionFont())
             }
 
             VStack(spacing: 8) {
-                SparkyCharacterView(state: .constant(.celebrating))
+                DashyCharacterView(state: .constant(.celebrating))
                 Text("Celebrating")
                     .font(NovaPalette.captionFont())
             }

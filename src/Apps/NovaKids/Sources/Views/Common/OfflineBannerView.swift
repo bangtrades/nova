@@ -19,7 +19,7 @@ public struct OfflineBannerView: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(NovaPalette.novaYellow)
 
-                    Text("You're offline — Sparky will remember your progress!")
+                    Text("You're offline — Dashy will remember your progress!")
                         .font(NovaPalette.smallHeadingFont())
                         .foregroundStyle(.primary)
 

@@ -97,7 +97,7 @@ private struct PathFilterButton: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 16)
-                .background(isSelected ? NovaPalette.novaBlue : Color.gray.opacity(0.1))
+                .background(isSelected ? NovaPalette.novaBlue : NovaPalette.ink.opacity(0.1))
                 .cornerRadius(8)
         }
         .accessibilityElement(children: .combine)

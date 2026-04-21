@@ -167,10 +167,10 @@ struct TabBarView: View {
                     }
                     .tag(1)
 
-                // Sparky tab
-                SparkyView()
+                // Dashy tab
+                DashyView()
                     .tabItem {
-                        Label("Sparky", systemImage: "bubble.left.and.bubble.right.fill")
+                        Label("Dashy", systemImage: "bubble.left.and.bubble.right.fill")
                     }
                     .tag(2)
 

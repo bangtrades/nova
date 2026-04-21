@@ -211,8 +211,8 @@ private struct BadgeDetailSheet: View {
                                         )
                                         : LinearGradient(
                                             gradient: Gradient(colors: [
-                                                Color.gray.opacity(0.2),
-                                                Color.gray.opacity(0.1),
+                                                NovaPalette.ink.opacity(0.2),
+                                                NovaPalette.ink.opacity(0.1),
                                             ]),
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
@@ -237,7 +237,7 @@ private struct BadgeDetailSheet: View {
 
                             Image(systemName: item.badge.icon)
                                 .font(.largeTitle.weight(.semibold))
-                                .foregroundStyle(item.isEarned ? .white : Color.gray.opacity(0.3))
+                                .foregroundStyle(item.isEarned ? .white : NovaPalette.ink.opacity(0.3))
                         }
                         .frame(width: 160, height: 160)
 

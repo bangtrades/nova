@@ -136,7 +136,7 @@ public struct VoiceCardView: View {
                 // Response display
                 if isResponding {
                     VStack(spacing: 16) {
-                        // Sparky avatar with sparkle
+                        // Dashy avatar with sparkle
                         ZStack {
                             Circle()
                                 .fill(
@@ -321,7 +321,7 @@ public struct VoiceCardView: View {
     }
 }
 
-/// Arc shape for Sparky's smile.
+/// Arc shape for Dashy's smile.
 private struct Arc: Shape {
     var start: Double
     var end: Double

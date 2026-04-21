@@ -50,9 +50,9 @@ private struct SkeletonBlock: View {
             .fill(
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color.gray.opacity(0.2),
-                        Color.gray.opacity(0.3),
-                        Color.gray.opacity(0.2),
+                        NovaPalette.ink.opacity(0.2),
+                        NovaPalette.ink.opacity(0.3),
+                        NovaPalette.ink.opacity(0.2),
                     ]),
                     startPoint: .leading,
                     endPoint: .trailing

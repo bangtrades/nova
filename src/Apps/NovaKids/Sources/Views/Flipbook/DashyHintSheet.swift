@@ -2,15 +2,15 @@ import SwiftUI
 import NovaCore
 import NovaVoice
 
-/// Modal sheet showing Sparky's hint with speech bubble design.
+/// Modal sheet showing Dashy's hint with speech bubble design.
 ///
 /// Features:
-/// - Speech bubble design with Sparky avatar
+/// - Speech bubble design with Dashy avatar
 /// - Friendly hint text in large font
 /// - Speaker button for text-to-speech
 /// - "Got it!" dismiss button
 /// - Swipe down to dismiss
-public struct SparkyHintSheet: View {
+public struct DashyHintSheet: View {
     /// The hint text to display.
     let hintText: String
 
@@ -31,7 +31,7 @@ public struct SparkyHintSheet: View {
         VStack(spacing: 20) {
             // Header with dismiss gesture hint
             HStack {
-                Text("Sparky's Hint")
+                Text("Dashy's Hint")
                     .font(NovaPalette.headingFont())
                     .foregroundStyle(.primary)
 
@@ -49,16 +49,16 @@ public struct SparkyHintSheet: View {
 
             Spacer()
 
-            // Speech bubble with Sparky avatar
+            // Speech bubble with Dashy avatar
             VStack(spacing: 16) {
-                // Sparky avatar
+                // Dashy avatar
                 ZStack {
                     Circle()
                         .fill(NovaPalette.novaPurple)
                         .frame(width: 60, height: 60)
 
                     Image(systemName: "bubble.left.fill")
-                        .font(.title)
+                        .font(NovaPalette.titleFont())
                         .foregroundStyle(.white)
                         .accessibilityHidden(true)
                 }
@@ -73,11 +73,11 @@ public struct SparkyHintSheet: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(20)
-                .background(Color.gray.opacity(0.1))
+                .background(NovaPalette.ink.opacity(0.1))
                 .cornerRadius(16)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 2)
+                        .stroke(NovaPalette.ink.opacity(0.2), lineWidth: 2)
                 )
             }
             .padding(.horizontal, 24)
@@ -103,7 +103,7 @@ public struct SparkyHintSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color.gray.opacity(0.1))
+                    .background(NovaPalette.ink.opacity(0.1))
                     .foregroundStyle(NovaPalette.novaBlue)
                     .cornerRadius(12)
                 }
@@ -131,7 +131,7 @@ public struct SparkyHintSheet: View {
         .background(NovaPalette.novaBackground)
         .cornerRadius(24, corners: [.topLeft, .topRight])
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Sparky's hint")
+        .accessibilityLabel("Dashy's hint")
         .accessibilityValue(hintText)
     }
 }
@@ -159,7 +159,7 @@ struct RoundedCorner: Shape {
 }
 
 #Preview {
-    SparkyHintSheet(
+    DashyHintSheet(
         hintText: "Try clicking on the different shapes to see what happens! Each color represents a different concept in AI."
     )
     .environmentObject(SpeechSynthesizer())

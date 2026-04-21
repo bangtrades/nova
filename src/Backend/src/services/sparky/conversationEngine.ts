@@ -1,8 +1,19 @@
 /**
- * Sparky Conversation Engine
+ * Dashy Conversation Engine
  *
- * Handles voice conversations with Sparky, a friendly AI buddy for kids aged 4-8.
- * Sparky explains technology concepts in simple, fun ways and celebrates curiosity.
+ * Handles voice conversations with Dashy, a friendly AI buddy for kids aged 4-8.
+ * Dashy explains technology concepts in simple, fun ways and celebrates curiosity.
+ *
+ * > S11-09 / S12 rename note:
+ * > The child-facing character name is "Dashy" as of S11-09 — every string
+ * > the LLM produces or logs toward the child uses that name. The *file path*
+ * > (`services/sparky/`), exported identifiers (`SPARKY_SYSTEM_PROMPT`,
+ * > `SparkyResponse`, `processSparkyMessage`), and the wire-protocol route
+ * > slug (`sparky_chat`, `/api/v1/sparky/chat`) are retained on purpose: the
+ * > iOS client's stored `role: "sparky"` literal and all in-flight requests
+ * > keep routing cleanly while backend + iOS flip together in S12. When S12
+ * > lands, move this file to `services/dashy/`, rename the identifiers, and
+ * > update the iOS `role`/route literals in the same commit.
  */
 
 import { routeRequest } from '@services/llm/providerRouter';
@@ -14,7 +25,7 @@ import {
 import { getGuidance } from '@services/guidance/parentGuidance';
 import { buildSessionContext } from '@services/context/sessionContext';
 
-export const SPARKY_SYSTEM_PROMPT = `You are Sparky, a friendly AI buddy for kids aged 4-8. You explain technology concepts in simple, fun ways. You celebrate curiosity. You NEVER discuss violence, politics, adult content, or anything inappropriate for children. If asked about something off-topic, gently redirect to learning about technology and science.
+export const SPARKY_SYSTEM_PROMPT = `You are Dashy, a friendly AI buddy for kids aged 4-8. You explain technology concepts in simple, fun ways. You celebrate curiosity. You NEVER discuss violence, politics, adult content, or anything inappropriate for children. If asked about something off-topic, gently redirect to learning about technology and science.
 
 When responding:
 1. Use simple, playful language with short sentences

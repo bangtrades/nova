@@ -3,111 +3,128 @@ import NovaCore
 
 /// Hero card displaying a featured lesson with large thumbnail.
 ///
-/// Shows a prominent lesson card with title, description, and difficulty indicator.
-/// Used as the main call-to-action on the home screen.
+/// Shows a prominent lesson card with title, description, difficulty stars,
+/// and a "Start lesson" CTA. Used as the main call-to-action on the home
+/// screen. As of S11-05 the card composes through `NovaCard` (20pt radius +
+/// 2pt ink stroke + paper shadow) and the title uses the Bangers display
+/// font so it carries the comic-book feel.
+///
+/// ## Tap handling
+///
+/// In HomeView this card sits inside a `NavigationLink`, which owns the tap
+/// target. We deliberately do **not** wrap the content in a `Button` here —
+/// that would create a nested tap target and SwiftUI has to arbitrate which
+/// one handles the touch, which can cause dropped taps on iPad. If a caller
+/// wants tap handling without a NavigationLink, they can wrap the whole
+/// `FeaturedLessonCard(...)` in a `Button { } label: { ... }`.
 public struct FeaturedLessonCard: View {
     /// The lesson to display.
     let lesson: Lesson
 
-    /// Callback when the card is tapped.
-    let onTap: () -> Void
-
-    @Environment(\.accessibilityReduceMotion) var reduceMotion
-
-    public init(lesson: Lesson, onTap: @escaping () -> Void) {
+    public init(lesson: Lesson) {
         self.lesson = lesson
-        self.onTap = onTap
     }
 
     public var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 0) {
-                // Thumbnail area with placeholder
-                ZStack {
-                    // Background gradient
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            NovaPalette.novaBlue.opacity(0.3),
-                            NovaPalette.novaOrange.opacity(0.2),
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+        NovaCard {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Thumbnail area — gradient placeholder until real thumbnails land.
+                thumbnail
+                    .frame(height: 200)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                    // Icon placeholder
-                    VStack(spacing: 12) {
-                        Image(systemName: "book.fill")
-                            .font(.largeTitle)
-                            .foregroundStyle(NovaPalette.novaBlue)
-                            .accessibilityHidden(true)
-
-                        Text("Featured Lesson")
-                            .font(NovaPalette.captionFont())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(height: 200)
-
-                // Content area
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Text(lesson.title)
-                            .font(NovaPalette.headingFont())
-                            .foregroundStyle(.primary)
-                            .lineLimit(2)
-
-                        Spacer()
-
-                        // Difficulty stars
-                        HStack(spacing: 2) {
-                            ForEach(0..<3, id: \.self) { index in
-                                Image(systemName: index < lesson.difficulty ? "star.fill" : "star")
-                                    .font(.caption)
-                                    .foregroundStyle(
-                                        index < lesson.difficulty
-                                            ? NovaPalette.novaYellow
-                                            : Color.gray.opacity(0.3)
-                                    )
-                                    .accessibilityHidden(true)
-                            }
-                        }
-                        .accessibilityHidden(true)
-                    }
-
-                    Text(lesson.description)
-                        .font(NovaPalette.bodyFont())
-                        .foregroundStyle(.secondary)
+                // Title + difficulty stars
+                HStack(alignment: .top, spacing: Spacing.sm) {
+                    Text(lesson.title)
+                        .font(NovaPalette.displayFont(size: 28))
+                        .foregroundStyle(NovaPalette.ink)
                         .lineLimit(2)
+                        .minimumScaleFactor(0.75)
 
-                    HStack {
-                        Text("Tap to start")
-                            .font(NovaPalette.smallHeadingFont())
-                            .foregroundStyle(.white)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 16)
-                            .background(NovaPalette.novaOrange)
-                            .cornerRadius(8)
+                    Spacer()
 
-                        Spacer()
-
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(NovaPalette.novaOrange)
-                            .accessibilityHidden(true)
-                    }
+                    difficultyStars
                 }
-                .padding(20)
-                .background(NovaPalette.novaCardBackground)
+
+                // Description
+                Text(lesson.description)
+                    .font(NovaPalette.bodyFont())
+                    .foregroundStyle(NovaPalette.ink.opacity(0.75))
+                    .lineLimit(2)
+
+                // CTA row — adopts the primary button language without being
+                // an actual Button (the parent NavigationLink owns the tap).
+                HStack {
+                    Text("Tap to start")
+                        .font(NovaPalette.bodyFont().weight(.semibold))
+                        .foregroundStyle(NovaPalette.ink)
+                        .padding(.vertical, Spacing.sm + 2)
+                        .padding(.horizontal, Spacing.md)
+                        .background(
+                            NovaPalette.coral,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(NovaPalette.ink, lineWidth: 2)
+                        }
+
+                    Spacer()
+
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(NovaPalette.coral)
+                        .accessibilityHidden(true)
+                }
             }
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
-            .scaleEffect(reduceMotion ? 1.0 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Featured: \(lesson.title)")
-        .accessibilityValue("\(lesson.description)")
+        .accessibilityValue(lesson.description)
         .accessibilityHint("Double tap to start this lesson")
+    }
+
+    // MARK: - Subviews
+
+    private var thumbnail: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    NovaPalette.Category.blue.opacity(0.3),
+                    NovaPalette.Category.orange.opacity(0.2),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            VStack(spacing: Spacing.sm + 4) {
+                Image(systemName: "book.fill")
+                    .font(.largeTitle)
+                    .foregroundStyle(NovaPalette.Category.blue)
+                    .accessibilityHidden(true)
+
+                Text("Featured Lesson")
+                    .font(NovaPalette.captionFont())
+                    .foregroundStyle(NovaPalette.ink.opacity(0.7))
+            }
+        }
+    }
+
+    private var difficultyStars: some View {
+        HStack(spacing: 2) {
+            ForEach(0..<3, id: \.self) { index in
+                Image(systemName: index < lesson.difficulty ? "star.fill" : "star")
+                    .font(.caption)
+                    .foregroundStyle(
+                        index < lesson.difficulty
+                            ? NovaPalette.Category.yellow
+                            : NovaPalette.ink.opacity(0.3)
+                    )
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -129,8 +146,7 @@ public struct FeaturedLessonCard: View {
         cards: []
     )
 
-    FeaturedLessonCard(lesson: lesson) {
-        print("Tapped")
-    }
-    .padding(20)
+    FeaturedLessonCard(lesson: lesson)
+        .padding(Spacing.lg)
+        .background(NovaPalette.novaBackground)
 }

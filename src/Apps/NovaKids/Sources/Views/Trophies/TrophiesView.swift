@@ -136,7 +136,7 @@ private struct StatRow: View {
                 .foregroundStyle(.secondary)
         }
         .padding(12)
-        .background(Color.gray.opacity(0.05))
+        .background(NovaPalette.ink.opacity(0.05))
         .cornerRadius(8)
     }
 }
@@ -174,7 +174,7 @@ private struct BadgeCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(12)
-        .background(Color.gray.opacity(0.05))
+        .background(NovaPalette.ink.opacity(0.05))
         .cornerRadius(8)
         .opacity(unlocked ? 1.0 : 0.6)
     }

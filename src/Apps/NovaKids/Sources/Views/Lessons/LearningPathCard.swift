@@ -53,7 +53,7 @@ public struct LearningPathCard: View {
                     Spacer()
 
                     Image(systemName: path.icon)
-                        .font(.title)
+                        .font(NovaPalette.titleFont())
                         .foregroundStyle(.white)
                         .accessibilityHidden(true)
                 }

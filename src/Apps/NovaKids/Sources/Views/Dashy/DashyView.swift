@@ -2,23 +2,29 @@ import SwiftUI
 import NovaCore
 import NovaVoice
 
-/// Full voice chat interface with animated Sparky character.
+/// Full voice chat interface with animated Dashy character.
 ///
-/// Central Sparky character with 4 animation states, conversation history,
+/// Central Dashy character with 4 animation states, conversation history,
 /// large talk button, and suggested follow-up questions.
-public struct SparkyView: View {
-    @StateObject private var viewModel: SparkyViewModel
+///
+/// > Asymmetric rename note (S11-09): The on-wire `role` string for
+/// > Dashy-authored messages is still `"sparky"` because the backend
+/// > pipeline under `services/sparky/` hasn't been renamed yet (S12
+/// > work). Comparing `message.role == "sparky"` below is intentional
+/// > and will flip to `"dashy"` when the backend catches up.
+public struct DashyView: View {
+    @StateObject private var viewModel: DashyViewModel
     @EnvironmentObject var apiRouter: APIRouter
     @EnvironmentObject var voiceManager: VoiceManager
 
-    @State private var animationState: SparkyAnimationState = .idle
+    @State private var animationState: DashyAnimationState = .idle
     @State private var inputText: String = ""
     @State private var showCelebration: Bool = false
     @State private var celebrationTask: Task<Void, Never>?
 
     public init() {
         // Placeholder initialization — will be injected by parent
-        _viewModel = StateObject(wrappedValue: SparkyViewModel(
+        _viewModel = StateObject(wrappedValue: DashyViewModel(
             apiRouter: APIRouter(apiClient: APIClient(
                 baseURL: URL(string: "https://api.nova.local")!,
                 tokenProvider: EmptyTokenProvider()
@@ -36,7 +42,7 @@ public struct SparkyView: View {
                 VStack(spacing: 0) {
                     // Header
                     VStack(spacing: 8) {
-                        Text("Talk to Sparky")
+                        Text("Talk to Dashy")
                             .font(.headline)
                             .foregroundStyle(.primary)
 
@@ -59,8 +65,8 @@ public struct SparkyView: View {
 
                             // Character and responses
                             VStack(spacing: 20) {
-                                // Sparky character
-                                SparkyCharacterView(state: $animationState)
+                                // Dashy character
+                                DashyCharacterView(state: $animationState)
                                     .frame(height: 200)
                                     .padding(.horizontal, 40)
 
@@ -71,7 +77,7 @@ public struct SparkyView: View {
                                             .tint(NovaPalette.novaOrange)
                                             .frame(height: 4)
 
-                                        Text("Sparky is thinking...")
+                                        Text("Dashy is thinking...")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
@@ -236,7 +242,7 @@ public struct SparkyView: View {
                                 Image(systemName: viewModel.state == .listening ? "mic.fill" : "mic")
                                     .font(.title3)
 
-                                Text(viewModel.state == .listening ? "Release to Send" : "Talk to Sparky")
+                                Text(viewModel.state == .listening ? "Release to Send" : "Talk to Dashy")
                                     .font(NovaPalette.smallHeadingFont())
                             }
                             .foregroundStyle(.white)
@@ -282,8 +288,10 @@ public struct SparkyView: View {
 
     private func chatBubble(_ message: ChatMessage) -> some View {
         HStack(spacing: 12) {
+            // Wire-protocol literal "sparky" — S12 rename will flip this to "dashy"
+            // once the backend catches up. See S11-09 delivery note.
             if message.role == "sparky" {
-                // Sparky message (left-aligned)
+                // Dashy message (left-aligned)
                 HStack(spacing: 8) {
                     // Avatar
                     Image(systemName: "bubble.left.and.bubble.right.fill")
@@ -322,7 +330,7 @@ public struct SparkyView: View {
         .padding(.horizontal, 20)
     }
 
-    private func updateAnimationState(_ state: SparkyState) {
+    private func updateAnimationState(_ state: DashyState) {
         switch state {
         case .ready:
             animationState = .idle
@@ -337,7 +345,7 @@ public struct SparkyView: View {
         }
     }
 
-    private func updateAnimationFromEmotion(_ emotion: SparkyEmotion) {
+    private func updateAnimationFromEmotion(_ emotion: DashyEmotion) {
         switch emotion {
         case .happy, .excited:
             withAnimation { showCelebration = true }
@@ -369,6 +377,6 @@ private class EmptyTokenProvider: TokenProvider {
 }
 
 #Preview {
-    SparkyView()
+    DashyView()
         .environmentObject(VoiceManager(speechSynthesizer: SpeechSynthesizer()))
 }

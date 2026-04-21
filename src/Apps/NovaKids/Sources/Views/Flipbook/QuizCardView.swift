@@ -180,7 +180,7 @@ public struct QuizCardView: View {
                         HStack(spacing: 6) {
                             ForEach(1...maxAttempts, id: \.self) { i in
                                 Circle()
-                                    .fill(i <= attempts ? NovaPalette.novaOrange : Color.gray.opacity(0.2))
+                                    .fill(i <= attempts ? NovaPalette.novaOrange : NovaPalette.ink.opacity(0.2))
                                     .frame(width: 8, height: 8)
                                     .accessibilityHidden(true)
                             }
@@ -360,7 +360,7 @@ private struct QuizOptionButton: View {
             return NovaPalette.novaGreen.opacity(0.2)
         }
 
-        return Color.gray.opacity(0.05)
+        return NovaPalette.ink.opacity(0.05)
     }
 
     var textColor: Color {

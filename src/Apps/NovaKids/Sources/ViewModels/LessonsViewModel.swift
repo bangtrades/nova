@@ -127,7 +127,7 @@ public class LessonsViewModel: ObservableObject {
                 id: UUID(),
                 pathId: learningPaths[2].id,
                 userId: userId,
-                title: "Ask Sparky Anything",
+                title: "Ask Dashy Anything",
                 description: "Have a conversation with AI",
                 thumbnailURL: nil,
                 difficulty: 2,

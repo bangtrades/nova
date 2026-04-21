@@ -3,12 +3,16 @@ import NovaCore
 
 /// Home screen for authenticated users.
 ///
-/// Displays welcome greeting, featured lesson, learning paths, and progress overview.
-/// Optimized for iPad with large touch targets.
+/// Displays welcome greeting, featured lesson, continue-learning block,
+/// learning paths, and a quick-stats row. Optimized for iPad with large
+/// touch targets. As of S11-05 the screen is built from the S11-03 design
+/// system primitives — `NovaCard` for surfaces, Bangers via
+/// `NovaPalette.displayFont(size:)` for headlines, and `Spacing.*` for
+/// consistent vertical rhythm.
 public struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
-    @State private var selectedLesson: Lesson?
-    @State private var showFlipbook = false
+
+    public init() {}
 
     public var body: some View {
         NavigationStack {
@@ -17,38 +21,34 @@ public struct HomeView: View {
                     .ignoresSafeArea()
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        // Welcome header
+                    VStack(spacing: Spacing.lg) {
                         WelcomeHeader(childName: viewModel.childName)
 
-                        // Featured lesson card
+                        // Featured lesson — NavigationLink owns the tap so
+                        // the card itself stays "content, not control".
                         if let featured = viewModel.featuredLesson {
-                            NavigationLink(destination: {
+                            NavigationLink {
                                 FlipbookView(lesson: featured)
-                            }) {
-                                FeaturedLessonCard(lesson: featured) {
-                                    showFlipbook = true
-                                }
+                            } label: {
+                                FeaturedLessonCard(lesson: featured)
                             }
+                            .buttonStyle(.plain)
                         }
 
-                        // Continue learning section
                         ContinueLearningSection(
                             currentLesson: viewModel.currentLesson,
                             progress: viewModel.progressPercentage
                         )
 
-                        // Learning paths row
                         if !viewModel.learningPaths.isEmpty {
                             LearningPathRow(paths: viewModel.learningPaths)
                         }
 
-                        // Quick stats
                         QuickStatsView()
 
-                        Spacer(minLength: 20)
+                        Spacer(minLength: Spacing.lg)
                     }
-                    .padding(20)
+                    .padding(Spacing.lg)
                 }
             }
             .navigationTitle("Nova Kids")
@@ -57,68 +57,84 @@ public struct HomeView: View {
     }
 }
 
-/// Quick stats view showing badges and achievements.
+/// Quick stats row showing badges and achievements.
+///
+/// Each `StatBadge` keeps its per-metric color fill (points = sun, lessons =
+/// blue, streak = orange) but adopts the `NovaCard` visual language
+/// underneath: 20pt corner radius + 2pt ink stroke + paper shadow. The
+/// colored fill stays because that's how a kid tells at a glance which
+/// number means what.
 private struct QuickStatsView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.sm + 4) {
             Text("Achievements")
-                .font(NovaPalette.headingFont())
-                .foregroundStyle(.primary)
+                .font(NovaPalette.displayFont(size: 24))
+                .foregroundStyle(NovaPalette.ink)
 
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.sm + 4) {
                 StatBadge(
                     icon: "star.fill",
                     value: "42",
                     label: "Points",
-                    color: NovaPalette.novaYellow
+                    tint: NovaPalette.sun
                 )
 
                 StatBadge(
                     icon: "book.fill",
                     value: "6",
                     label: "Lessons Done",
-                    color: NovaPalette.novaBlue
+                    tint: NovaPalette.Category.blue
                 )
 
                 StatBadge(
                     icon: "flame.fill",
                     value: "3",
                     label: "Day Streak",
-                    color: NovaPalette.novaOrange
+                    tint: NovaPalette.Category.orange
                 )
             }
         }
     }
 }
 
-/// Individual stat badge.
+/// Individual stat tile — keeps its category tint as the fill, adopts NovaCard's
+/// stroke + radius language so the row sits visually in the same family as
+/// the rest of the screen.
 private struct StatBadge: View {
     let icon: String
     let value: String
     let label: String
-    let color: Color
+    let tint: Color
+
+    private let cornerRadius: CGFloat = 20
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(.white)
+                .font(.title2)
+                .foregroundStyle(NovaPalette.ink)
                 .accessibilityHidden(true)
 
             Text(value)
-                .font(NovaPalette.smallHeadingFont())
-                .foregroundStyle(.white)
+                .font(NovaPalette.displayFont(size: 28))
+                .foregroundStyle(NovaPalette.ink)
 
             Text(label)
                 .font(NovaPalette.captionFont())
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(NovaPalette.ink.opacity(0.75))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(16)
-        .background(color)
-        .cornerRadius(12)
-        .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
+        .padding(Spacing.md)
+        .background(
+            tint,
+            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(NovaPalette.ink, lineWidth: 2)
+        }
+        .shadow(color: NovaPalette.ink.opacity(0.08), radius: 6, x: 0, y: 3)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(label)
         .accessibilityValue(value)

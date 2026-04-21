@@ -128,7 +128,7 @@ public class HomeViewModel: ObservableObject {
                 id: UUID(),
                 pathId: learningPaths[2].id,
                 userId: userId,
-                title: "Ask Sparky Anything",
+                title: "Ask Dashy Anything",
                 description: "Have a conversation with AI",
                 thumbnailURL: nil,
                 difficulty: 2,
@@ -193,7 +193,19 @@ public class HomeViewModel: ObservableObject {
     }
 
     /// Refreshes data (reloads mock data for now).
-    func refresh() {
+    ///
+    /// As of S11-05 this toggles `isLoading` around the fetch so the Home
+    /// screen can surface `LoadingSkeletonView` while the refresh is in
+    /// flight — closes the S11-AUDIT finding #4 on the Home side. The
+    /// 400ms sleep is intentional: the mock path resolves too quickly for
+    /// the skeleton to even render, and pull-to-refresh feels broken
+    /// without at least a moment of visible work. When this swaps to a
+    /// real backend fetch, delete the sleep — the network latency will
+    /// supply the signal instead.
+    func refresh() async {
+        isLoading = true
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 400_000_000)
         loadMockData()
     }
 
