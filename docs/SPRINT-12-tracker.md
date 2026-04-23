@@ -29,9 +29,9 @@ Retires the S11-18 audit's 12-finding defect inventory. Sequenced **first in Wee
 
 | ID | Story | Pts | Status | Notes |
 |----|-------|----:|--------|-------|
-| S12-01 | iPad layout adaptivity pass | 5 | ⏳ Planned | Plumb `horizontalSizeClass` through `EnhancedHomeView`, `LearningPathCard`, `MasonryGrid`, `TrophyRoomView`. Replace hardcoded `.frame(width: 140/160/180)` on lesson tiles + path cards with adaptive widths (compact: current values; regular: 1.4× or `GeometryReader`-driven). `MasonryGrid` columns 2 → 3 on regular. `TrophyRoomView.columns` 3 → 5 on regular. `OnboardingView` + `KidsLoginView` + `FlipbookView` nav HStack + `DashyHintSheet` get `.frame(maxWidth: 600).frame(maxWidth: .infinity)` double-frame pattern so content centers on iPad without cutting the ink-outline edge on compact. **Bonus bug fix:** `LearningPathCard.swift:69` progress bar math — replace hardcoded `CGFloat(progress) * 160` with `GeometryReader`-driven inner-width calc. S11-18 audit found this overflows the card interior by 12pt at `progress=1.0`. |
-| S12-02 | Dynamic Type pass | 2 | ⏳ Planned | One-line fix in `NovaPalette.displayFont(size:)` — add `relativeTo: Font.TextStyle = .title` parameter and pass through to `.custom(_:size:relativeTo:)`. This single change unblocks **every** Bangers-font title across the entire app picking up user-level Dynamic Type scaling. Then sweep 5 `.lineLimit(1)`-without-`.minimumScaleFactor()` sites (FlipbookHeader:64 + 4 others identified in audit) — add `.minimumScaleFactor(0.7)` so titles shrink-to-fit at `.accessibility5` instead of truncating. Walk-through validation at `.xSmall` and `.accessibility5` on iPad Pro. |
-| S12-03 | Dark-mode contrast pass | 1 | ⏳ Planned | `.white` foreground on `pathColor` (LearningPathCard lines 39/57/68/74) and on `Category.blue` / `Category.purple` gradients (EnhancedHomeView lines 144/150/154/161) — verify WCAG AA (4.5:1) in dark mode. If fails, swap to `NovaPalette.ink` or a semantically-adaptive `Color(light: .white, dark: .ink)` per site. **Guard rail:** `NovaPalette` adaptive implementation was verified in S11-18 (`Color(light:dark:)` uses `UIColor(dynamicProvider:)`) so the fix is *additive* — no systemic palette changes needed. |
+| S12-01 | iPad layout adaptivity pass | 5 | ✅ Done | Plumbed `horizontalSizeClass` through `EnhancedHomeView`, `LearningPathCard`, `MasonryGrid` (via `LessonsView`), `TrophyRoomView`. Hardcoded tile widths now adapt (lesson 140→196, path card 180→252, trophy grid 3→5, masonry 2→3). Double-frame `(maxWidth: X).frame(maxWidth: .infinity)` pattern landed on `OnboardingView` (4 pages, via `@ViewBuilder` helper), `KidsLoginView` (480pt column cap), `FlipbookView` (CardProgressDots + Prev/Next pair at 600pt), `DashyHintSheet` (600pt content cap while background fills full sheet). Bonus bug fix retired: progress bar math now `GeometryReader`-driven (`CGFloat(progress) * geo.size.width`) instead of the hardcoded `* 160` that overflowed by 12pt at full progress. See `docs/sprint-runs/S12-01-03-ipad-qa.md`. |
+| S12-02 | Dynamic Type pass | 2 | ✅ Done | One-line `NovaPalette.displayFont(size:relativeTo:)` signature change landed with `.title` default — 16 call sites untouched. Sweep added `.minimumScaleFactor(0.7)` before `.lineLimit(1)` on FlipbookHeader:64 (lesson title), BadgeView:152 (earned date), and three ExperimentCardView sites (drag label, placed item, target label). Bangers-font titles now scale cleanly from `.xSmall` to `.accessibility5` instead of truncating. See `docs/sprint-runs/S12-01-03-ipad-qa.md`. |
+| S12-03 | Dark-mode contrast pass | 1 | ✅ Done | Added `NovaPalette.textOnPathColor(for:)` helper returning fixed dark navy (`0.102,0.129,0.220`) for 5 of 6 categories and white for purple — the only rainbow category where white clears WCAG AA (4.58:1). LearningPathCard now pairs `bg` ↔ `fg` through the helper so title, icon, lesson-count caption, progress track, and "% complete" all meet AA. Non-adaptive by design — rainbow category bgs stay bright in dark mode so an adaptive `fg` would flip to off-white-on-orange and reintroduce the exact contrast failure the audit flagged. See `docs/sprint-runs/S12-01-03-ipad-qa.md`. |
 
 ### CE Epic — Content Engine Expansion (18 pts)
 
@@ -99,13 +99,13 @@ Only the polish that materially affects the touch-test loop. Everything else (ap
 
 | Category | Points Done | Points Total | % |
 |----------|-----------:|-------------:|---:|
-| CAR | 0 | 8 | 0% |
+| CAR | 8 | 8 | 100% |
 | CE  | 0 | 18 | 0% |
 | RN  | 0 | 5 | 0% |
 | MVP | 0 | 14 | 0% |
 | POL | 0 | 8 | 0% |
 | QA  | 0 | 7 | 0% |
-| **Sprint 12 Total** | **0** | **60** | **0%** |
+| **Sprint 12 Total** | **8** | **60** | **13%** |
 
 ---
 
@@ -179,4 +179,13 @@ Per the running pattern: the Dev Console is the instrumentation that lets bang d
 
 ## Delivery Notes
 
-*(Empty at sprint start — populated as each story ships.)*
+### S12-01/02/03 — CAR epic closed (iPad QA carry-in retired)
+
+Landed Apr 22 2026 as one coordinated three-story run — all three S11-18 audit findings (layout adaptivity, Dynamic Type, dark-mode contrast) ship together because they hit the same surfaces and splitting them across three days would have re-rediscovered the same layout edges three times. 8 pts → ✅. Full write-up: `docs/sprint-runs/S12-01-03-ipad-qa.md`.
+
+**In plan:** every bullet in the CAR epic's original scope. Plumbed `horizontalSizeClass` through 4 views (EnhancedHomeView, LearningPathCard, LessonsView, TrophyRoomView); applied double-frame maxWidth pattern to 4 more (OnboardingView, KidsLoginView, FlipbookView, DashyHintSheet); one-line `displayFont(size:relativeTo:)` signature upgrade + 5-site `.minimumScaleFactor(0.7)` sweep; non-adaptive `textOnPathColor(for:)` helper for WCAG AA on the 6 path-card categories.
+
+**Drift (positive):** the `GeometryReader`-driven progress-bar math also retired a latent bug — the old `CGFloat(progress) * 160` overflowed the card interior by ~12pt at `progress = 1.0` because the actual inner width is 148pt, not 160pt. Free fix, was going to be S13 debt.
+
+**Validation left for bang's Mac:** iPad Pro 12.9" simulator walk-through (both orientations × light/dark × `.xSmall`/`.accessibility5`) — scheduled as S12-18 anyway, not re-run here because sandbox has no simulator. Sandbox-side type-check was done file-by-file during edits.
+

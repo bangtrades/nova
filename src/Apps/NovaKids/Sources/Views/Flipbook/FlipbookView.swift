@@ -126,12 +126,16 @@ public struct FlipbookView: View {
 
                 Spacer()
 
-                // Progress dots
+                // Progress dots — S12-01 caps the dot row at 600pt so the
+                // marker spread stays readable on iPad instead of 16 dots
+                // walking from edge to edge of a 1366pt landscape.
                 if !viewModel.cards.isEmpty {
                     CardProgressDots(
                         currentIndex: viewModel.currentCardIndex,
                         totalCards: viewModel.cards.count
                     )
+                    .frame(maxWidth: 600)
+                    .frame(maxWidth: .infinity)
                     .padding(20)
                 }
 
@@ -141,6 +145,10 @@ public struct FlipbookView: View {
                 // chrome. Two secondary buttons read cleanly here because
                 // neither is a top-of-screen primary CTA — the primary
                 // action is the card content itself.
+                // S12-01 caps the Prev/Next pair at 600pt so the two
+                // buttons don't land on opposite ends of an iPad landscape
+                // viewport. Keeps them reading as a paired control rather
+                // than two orphaned buttons.
                 if !viewModel.cards.isEmpty {
                     HStack(spacing: Spacing.md) {
                         let isAtStart = viewModel.currentCardIndex == 0
@@ -193,6 +201,8 @@ public struct FlipbookView: View {
                         .opacity(isAtEnd ? 0.5 : 1.0)
                         .accessibilityLabel(isAtEnd ? "Finish lesson" : "Next card")
                     }
+                    .frame(maxWidth: 600)
+                    .frame(maxWidth: .infinity)
                     .padding(20)
                 }
             }

@@ -213,15 +213,31 @@ public struct NovaPalette {
     /// Display font for card titles, hero headlines, and action words.
     ///
     /// Returns the Bangers custom font if it's registered, otherwise SF
-    /// Rounded Heavy at the same size. The size is relative (points), so for
-    /// Dynamic Type-aware call sites pair with `.dynamicTypeSize(...)` on
-    /// the containing view or use `.scaledToFit()` in the layout.
+    /// Rounded Heavy at the same size. The `relativeTo:` parameter is what
+    /// makes the custom font participate in the user's Dynamic Type setting
+    /// — without it, `.custom(_:size:)` ships a fixed-size font that does
+    /// NOT scale when the accessibility text size increases, which is the
+    /// S11-18 QA audit finding we are retiring here. Default is `.title`
+    /// because that's the text style every existing call site (hero
+    /// greeting, card-type badge, section headers) visually occupies.
     ///
-    /// - Parameter size: Point size for the font.
+    /// The fallback branch stays on `.system(size:weight:design:)` — that
+    /// path does not scale with Dynamic Type either, but it only fires when
+    /// the .ttf is missing from the bundle, which is a packaging bug, not
+    /// a runtime concern worth plumbing `UIFontMetrics` for.
+    ///
+    /// - Parameters:
+    ///   - size: Point size for the font.
+    ///   - textStyle: The Dynamic Type style the font should scale against.
+    ///     Leave at `.title` unless the call site is visually a caption,
+    ///     headline, or body fragment.
     /// - Returns: A SwiftUI Font — Bangers if available, SF Rounded Heavy fallback.
-    public static func displayFont(size: CGFloat) -> Font {
+    public static func displayFont(
+        size: CGFloat,
+        relativeTo textStyle: Font.TextStyle = .title
+    ) -> Font {
         if isBangersRegistered {
-            return .custom(bangersPostScriptName, size: size)
+            return .custom(bangersPostScriptName, size: size, relativeTo: textStyle)
         }
         return .system(size: size, weight: .heavy, design: .rounded)
     }
@@ -257,6 +273,40 @@ public struct NovaPalette {
         let hash = pathId.hashValue
         let index = abs(hash) % colors.count
         return colors[index]
+    }
+
+    /// Returns the legible foreground color to pair with `pathColor(for:)` for
+    /// a given path identifier. This is the **S12-03** contrast helper —
+    /// `.foregroundStyle(.white)` over the rainbow fails WCAG AA on most
+    /// categories (yellow 1.39:1, orange 2.31:1, green 2.42:1, pink 2.78:1,
+    /// blue 3.41:1). Only purple (4.58:1) clears the 4.5:1 threshold for
+    /// white. Dark navy (the same swatch we use for `.ink` in light mode)
+    /// clears ≥4.6:1 on every rainbow category except purple.
+    ///
+    /// Why this color is **non-adaptive** (a fixed hex, not `NovaPalette.ink`):
+    /// `NovaPalette.ink` flips to warm off-white in dark mode so the app can
+    /// invert surfaces cleanly. But the rainbow backgrounds here DON'T invert
+    /// — `Category.blue` / `.orange` / etc. stay bright in both schemes. If
+    /// we used `.ink` for the text, dark mode would put off-white-on-bright-
+    /// orange and we'd be right back in the same failing-contrast place.
+    /// Locking to a fixed dark navy keeps the contrast stable regardless of
+    /// the user's appearance setting.
+    ///
+    /// The hash lookup mirrors `pathColor(for:)` exactly so the 1:1 mapping
+    /// between a path's bg color and its fg color cannot drift.
+    ///
+    /// - Parameter pathId: Stable string identifier for the learning path.
+    /// - Returns: `.white` for purple-category paths, fixed dark navy for all
+    ///   others. Non-adaptive — same value in light and dark mode.
+    public static func textOnPathColor(for pathId: String) -> Color {
+        // Fixed dark navy — same hex as `ink`'s light-mode swatch.
+        // Intentionally NOT `NovaPalette.ink` (see doc-comment rationale).
+        let darkNavy = Color(red: 0.102, green: 0.129, blue: 0.220)
+        // Mirror pathColor's array order so index 2 ↔ purple.
+        let index = abs(pathId.hashValue) % 6
+        // Only index 2 (purple) has enough background luminance for white
+        // to clear WCAG AA. Everything else needs dark navy.
+        return index == 2 ? .white : darkNavy
     }
 }
 

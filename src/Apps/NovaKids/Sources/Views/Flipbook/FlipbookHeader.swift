@@ -61,6 +61,7 @@ public struct FlipbookHeader: View {
                 Text(lesson.title)
                     .font(NovaPalette.smallHeadingFont())
                     .foregroundStyle(.primary)
+                    .minimumScaleFactor(0.7)
                     .lineLimit(1)
                     .truncationMode(.tail)
 

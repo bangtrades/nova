@@ -32,11 +32,18 @@ public struct TrophyRoomView: View {
     @EnvironmentObject private var appState: KidsAppState
     @State private var selectedBadge: TrophyRoomViewModel.BadgeDisplayItem?
 
-    private let columns = [
-        GridItem(.flexible(), spacing: Spacing.md),
-        GridItem(.flexible(), spacing: Spacing.md),
-        GridItem(.flexible(), spacing: Spacing.md),
-    ]
+    // S12-01: iPad-vs-iPhone density. `.regular` gets 5 columns so the
+    // rainbow badge wall fills the landscape; `.compact` keeps the 3-col
+    // grid the tile size was drawn for.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var columns: [GridItem] {
+        let count = horizontalSizeClass == .regular ? 5 : 3
+        return Array(
+            repeating: GridItem(.flexible(), spacing: Spacing.md),
+            count: count
+        )
+    }
 
     public init() {}
 

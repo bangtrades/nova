@@ -20,6 +20,13 @@ public struct LessonsView: View {
     @State private var selectedLesson: Lesson?
     @State private var showFlipbook = false
 
+    // S12-01: iPad-vs-iPhone grid density. `.regular` (iPad full-screen, not
+    // split) gets 3 columns so the masonry actually uses the extra real
+    // estate instead of stretching two giant tiles; `.compact` (iPhone, or
+    // iPad in split) stays at the 2-column count the tile art is designed
+    // around.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     public init() {}
 
     public var body: some View {
@@ -149,7 +156,7 @@ public struct LessonsView: View {
         } else {
             MasonryGrid(
                 items: viewModel.filteredLessons,
-                columns: 2,
+                columns: horizontalSizeClass == .regular ? 3 : 2,
                 spacing: Spacing.md
             ) { lesson in
                 NavigationLink(destination: {

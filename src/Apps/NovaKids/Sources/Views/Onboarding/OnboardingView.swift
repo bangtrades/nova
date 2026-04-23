@@ -33,19 +33,19 @@ public struct OnboardingView: View {
 
             TabView(selection: $currentPage) {
                 // Page 1: Meet Dashy
-                meetDashyPage()
+                onboardingPage { meetDashyPage() }
                     .tag(0)
 
                 // Page 2: Choose Avatar
-                chooseAvatarPage()
+                onboardingPage { chooseAvatarPage() }
                     .tag(1)
 
                 // Page 3: Enter Name
-                enterNamePage()
+                onboardingPage { enterNamePage() }
                     .tag(2)
 
                 // Page 4: First Mission
-                firstMissionPage()
+                onboardingPage { firstMissionPage() }
                     .tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
@@ -57,6 +57,23 @@ public struct OnboardingView: View {
                     .ignoresSafeArea()
             }
         }
+    }
+
+    // MARK: - iPad width cap
+    //
+    // S12-01: Onboarding copy is a letter to the child, not a dashboard.
+    // On iPhone the 390pt viewport already paces the sentences; on iPad
+    // landscape (1366pt) we need to cap the page at a reading measure so
+    // the copy doesn't stretch into a 14-word line. Double-frame pattern —
+    // `.frame(maxWidth: 600)` caps the content, then `.frame(maxWidth:
+    // .infinity)` claims the parent's full width so the capped content
+    // centers inside it. On compact size class the first frame is a no-op
+    // (parent width < 600), so the phone layout is unchanged.
+    @ViewBuilder
+    private func onboardingPage<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: 600)
+            .frame(maxWidth: .infinity)
     }
 
     // MARK: - Page Views

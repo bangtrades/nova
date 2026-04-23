@@ -24,6 +24,11 @@ public struct KidsLoginView: View {
             AnimatedBackgroundView()
                 .ignoresSafeArea()
 
+            // S12-01: cap the login column at a button-width measure (480pt)
+            // so the Sign-In-with-Apple button doesn't stretch to a 1366pt
+            // landscape iPad bar. Double-frame pattern — inner cap then
+            // outer maxWidth: .infinity centers the capped column. On
+            // iPhone the 480 cap is a no-op (viewport is ~390pt).
             VStack(spacing: 0) {
                 Spacer()
                     .frame(maxHeight: .infinity)
@@ -111,6 +116,8 @@ public struct KidsLoginView: View {
                 .padding(.horizontal, Spacing.xl)
                 .padding(.bottom, Spacing.xxl)
             }
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity)
         }
         .alert("Oops! Let's try again", isPresented: $showError) {
             Button("OK") {

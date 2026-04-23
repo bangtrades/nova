@@ -130,6 +130,12 @@ public struct DashyHintSheet: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
+        // S12-01: cap the hint content at 600pt so on an iPad .large
+        // detent the speech bubble paragraph doesn't stretch into a
+        // 14-word line. Outer maxWidth: .infinity keeps the sheet's
+        // background + cornerRadius filling the full presented width.
+        .frame(maxWidth: 600)
+        .frame(maxWidth: .infinity)
         .background(NovaPalette.novaBackground)
         .cornerRadius(24, corners: [.topLeft, .topRight])
         .accessibilityElement(children: .combine)

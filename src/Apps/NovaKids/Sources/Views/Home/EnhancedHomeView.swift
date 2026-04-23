@@ -14,6 +14,20 @@ public struct EnhancedHomeView: View {
     @EnvironmentObject private var apiRouter: APIRouter
     @EnvironmentObject private var appState: KidsAppState
 
+    // S12-01: iPad-vs-iPhone tile sizing. Hero-row lesson cards need more
+    // presence on iPad — kids see them from 18" away on a shared family
+    // device, not 8" on a phone. `.regular` bumps the card to 196×224 so
+    // it reads as a full scene rather than a thumbnail; `.compact` stays
+    // at the phone-calibrated 140×160 the art was drawn for.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var lessonCardWidth: CGFloat {
+        horizontalSizeClass == .regular ? 196 : 140
+    }
+    private var lessonCardHeight: CGFloat {
+        horizontalSizeClass == .regular ? 224 : 160
+    }
+
     public init() {}
 
     public var body: some View {
@@ -257,7 +271,7 @@ public struct EnhancedHomeView: View {
             }
         }
         .padding(Spacing.sm + 4)
-        .frame(width: 140, height: 160)
+        .frame(width: lessonCardWidth, height: lessonCardHeight)
         .background(
             NovaPalette.page,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)

@@ -149,6 +149,7 @@ public struct BadgeView: View {
             Text(earnedDate.map(formatDate) ?? "Earned!")
                 .font(NovaPalette.captionFont().weight(.semibold))
                 .foregroundStyle(NovaPalette.coral)
+                .minimumScaleFactor(0.7)
                 .lineLimit(1)
         } else {
             VStack(spacing: Spacing.xs) {

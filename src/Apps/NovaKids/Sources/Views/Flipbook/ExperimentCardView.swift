@@ -357,6 +357,7 @@ private struct DraggableItemView: View {
                 Text(item.label)
                     .font(NovaPalette.smallHeadingFont())
                     .foregroundStyle(.white)
+                    .minimumScaleFactor(0.7)
                     .lineLimit(1)
             }
             .padding(8)
@@ -411,6 +412,7 @@ private struct DropTargetView: View {
                     Text(filledItem.label)
                         .font(NovaPalette.smallHeadingFont())
                         .foregroundStyle(.primary)
+                        .minimumScaleFactor(0.7)
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity)
@@ -431,6 +433,7 @@ private struct DropTargetView: View {
                     Text(target.label)
                         .font(NovaPalette.smallHeadingFont())
                         .foregroundStyle(.primary)
+                        .minimumScaleFactor(0.7)
                         .lineLimit(1)
                 }
             }
