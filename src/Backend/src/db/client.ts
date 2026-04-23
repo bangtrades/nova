@@ -9,7 +9,7 @@ const JSON_STRING_FIELDS: Record<string, string[]> = {
   badge: ['criteria'],
   urlIngest: ['aiAnalysis'],
   assetJob: ['input'],
-  sparkyConversation: ['followUpQuestions'],
+  dashyConversation: ['followUpQuestions'],
   llmUsageLog: ['metadata'],
   concept: ['prerequisites'], // S10-01: knowledge graph — array of concept IDs
   parentGuidance: ['topicFocus', 'topicAvoid', 'contentBoundaries'], // S10-04: parent controls

@@ -311,7 +311,7 @@ const CURRICULUM: LearningPath[] = [
           },
           {
             title: 'Input Examples',
-            bodyText: 'When you tap a button, that is input. When you type words, that is input. When you say something to Sparky, that is input!',
+            bodyText: 'When you tap a button, that is input. When you type words, that is input. When you say something to Dashy, that is input!',
             voiceScript: 'Tapping, typing, and talking are all inputs!',
             type: 'concept',
             sortOrder: 3,
@@ -1004,7 +1004,7 @@ const CURRICULUM: LearningPath[] = [
           },
           {
             title: 'AI Robots',
-            bodyText: 'Artificial Intelligence robots can learn and make decisions! They get smarter as they learn more. Sparky is an AI!',
+            bodyText: 'Artificial Intelligence robots can learn and make decisions! They get smarter as they learn more. Dashy is an AI!',
             voiceScript: 'AI robots learn and grow!',
             type: 'concept',
             sortOrder: 2,
@@ -1193,7 +1193,7 @@ const CURRICULUM: LearningPath[] = [
         cards: [
           {
             title: 'AI Can Talk',
-            bodyText: 'Some AI can understand your words and talk back! Like Sparky! You ask questions and AI tries to answer them!',
+            bodyText: 'Some AI can understand your words and talk back! Like Dashy! You ask questions and AI tries to answer them!',
             voiceScript: 'AI can talk to you!',
             type: 'story',
             sortOrder: 1,
@@ -1217,12 +1217,12 @@ const CURRICULUM: LearningPath[] = [
           },
           {
             title: 'Have a Conversation',
-            bodyText: 'Talk to Sparky! Ask about animals, space, science, or anything you are curious about. Sparky tries to answer!',
+            bodyText: 'Talk to Dashy! Ask about animals, space, science, or anything you are curious about. Dashy tries to answer!',
             voiceScript: 'Let us talk to AI!',
             type: 'experiment',
             sortOrder: 4,
             content: {
-              experimentSetup: 'Ask Sparky questions. See how it responds. Does it understand? Can you learn from it?',
+              experimentSetup: 'Ask Dashy questions. See how it responds. Does it understand? Can you learn from it?',
               experimentItems: ['Ask question 1', 'Ask question 2', 'Ask question 3'],
               experimentTargets: ['Get answers', 'Learn something'],
             },
@@ -1398,7 +1398,7 @@ const CURRICULUM: LearningPath[] = [
           },
           {
             title: 'AI Teachers',
-            bodyText: 'AI can tutor you and adapt lessons to how you learn! Like Nova and Sparky! They learn your speed and help you succeed!',
+            bodyText: 'AI can tutor you and adapt lessons to how you learn! Like Nova and Dashy! They learn your speed and help you succeed!',
             voiceScript: 'AI can teach!',
             type: 'concept',
             sortOrder: 3,
@@ -1544,7 +1544,7 @@ const CURRICULUM: LearningPath[] = [
           },
           {
             title: 'Will AI Be Your Friend?',
-            bodyText: 'Maybe! Sparky tries to be your friend. AI cannot love like people can, but it can help, teach, and be kind!',
+            bodyText: 'Maybe! Dashy tries to be your friend. AI cannot love like people can, but it can help, teach, and be kind!',
             voiceScript: 'AI can be helpful!',
             type: 'quiz',
             sortOrder: 5,

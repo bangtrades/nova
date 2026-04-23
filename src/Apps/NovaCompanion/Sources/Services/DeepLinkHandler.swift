@@ -32,8 +32,8 @@ public class DeepLinkHandler: ObservableObject {
         switch host {
         case "lesson":
             return handleLessonLink(url)
-        case "sparky":
-            return .sparky
+        case "dashy":
+            return .dashy
         case "progress":
             return handleProgressLink(url)
         case "settings":
@@ -50,8 +50,8 @@ public class DeepLinkHandler: ObservableObject {
 
         if path.contains("lesson") {
             return handleLessonLink(url)
-        } else if path.contains("sparky") {
-            return .sparky
+        } else if path.contains("dashy") {
+            return .dashy
         } else if path.contains("progress") {
             return handleProgressLink(url)
         } else if path.contains("settings") {
@@ -103,7 +103,7 @@ public class DeepLinkHandler: ObservableObject {
 /// Represents a deep link destination.
 public enum DeepLinkDestination: Equatable {
     case lesson(id: String)
-    case sparky
+    case dashy
     case progress(childId: String)
     case settings
     case curriculum

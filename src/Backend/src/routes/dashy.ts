@@ -1,12 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { validateBody, validateParams } from '@middleware/validate';
-import { processSparkyMessage } from '@services/sparky/conversationEngine';
+import { processDashyMessage } from '@services/dashy/conversationEngine';
 import { checkUsageLimit, recordUsage } from '@services/entitlement/entitlementEngine';
 import { getPrismaClient } from '@db/client';
 import { randomUUID } from 'crypto';
 
-const sparkyMessageSchema = z.object({
+const dashyMessageSchema = z.object({
   childId: z.string().uuid(),
   transcript: z.string().min(1, 'Transcript cannot be empty').max(1000),
   conversationHistory: z
@@ -25,15 +25,15 @@ const childParamsSchema = z.object({
   childId: z.string().uuid(),
 });
 
-type SparkyMessageRequest = z.infer<typeof sparkyMessageSchema>;
+type DashyMessageRequest = z.infer<typeof dashyMessageSchema>;
 type ChildParams = z.infer<typeof childParamsSchema>;
 
-export default async function sparkyRoutes(fastify: FastifyInstance): Promise<void> {
-  // POST /sparky/chat - Process a message with Sparky
-  fastify.post<{ Body: SparkyMessageRequest }>(
+export default async function dashyRoutes(fastify: FastifyInstance): Promise<void> {
+  // POST /dashy/chat - Process a message with Dashy
+  fastify.post<{ Body: DashyMessageRequest }>(
     '/chat',
     {
-      preHandler: validateBody(sparkyMessageSchema),
+      preHandler: validateBody(dashyMessageSchema),
     },
     async (request, reply) => {
       try {
@@ -86,8 +86,8 @@ export default async function sparkyRoutes(fastify: FastifyInstance): Promise<vo
         // Record usage
         await recordUsage(request.userId, 'voiceChats');
 
-        // Process the message with Sparky
-        const sparkyResponse = await processSparkyMessage(
+        // Process the message with Dashy
+        const dashyResponse = await processDashyMessage(
           childId,
           transcript,
           conversationHistory,
@@ -99,25 +99,25 @@ export default async function sparkyRoutes(fastify: FastifyInstance): Promise<vo
 
         // Create conversation record (optional - for analytics)
         try {
-          await prisma.sparkyConversation.create({
+          await prisma.dashyConversation.create({
             data: {
               id: conversationId,
               childId,
               transcript,
-              response: sparkyResponse.text,
-              emotion: sparkyResponse.emotion,
-              followUpQuestions: sparkyResponse.followUpQuestions,
+              response: dashyResponse.text,
+              emotion: dashyResponse.emotion,
+              followUpQuestions: dashyResponse.followUpQuestions,
             },
           });
         } catch (dbError) {
           // Log but don't fail if conversation record creation fails
-          fastify.log.warn(`Failed to record Sparky conversation: ${dbError}`);
+          fastify.log.warn(`Failed to record Dashy conversation: ${dbError}`);
         }
 
         return reply.status(200).send({
-          response: sparkyResponse.text,
-          emotion: sparkyResponse.emotion,
-          suggestions: sparkyResponse.followUpQuestions,
+          response: dashyResponse.text,
+          emotion: dashyResponse.emotion,
+          suggestions: dashyResponse.followUpQuestions,
           conversationId,
         });
       } catch (error) {
@@ -137,7 +137,7 @@ export default async function sparkyRoutes(fastify: FastifyInstance): Promise<vo
         return reply.status(500).send({
           statusCode: 500,
           error: 'Internal Server Error',
-          message: 'Failed to process Sparky message',
+          message: 'Failed to process Dashy message',
         });
       }
     }

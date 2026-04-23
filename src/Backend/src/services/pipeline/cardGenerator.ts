@@ -20,6 +20,29 @@ import { routeAllAtoms, type AtomTrace, type SkipReason } from './skillRouter';
 
 export type CardType = 'story' | 'concept' | 'experiment' | 'quiz' | 'voice';
 
+/**
+ * Drag-item chip emitted by `experiment-designer` (S12-04).
+ *
+ * Backend uses camelCase; the iOS transformer re-keys to `image_url`
+ * etc. at the app boundary, same as quiz's `correct_option_index`.
+ */
+export interface DragItem {
+  id: string;
+  label: string;
+  /** Optional illustration — not populated by the LLM today. */
+  imageURL?: string;
+}
+
+/**
+ * Drop-target bin emitted by `experiment-designer` (S12-04).
+ * `acceptsItemIds` is the set of `DragItem.id`s that belong here.
+ */
+export interface DropTarget {
+  id: string;
+  label: string;
+  acceptsItemIds: string[];
+}
+
 export interface CardContent {
   text?: string;
   title?: string;
@@ -27,6 +50,38 @@ export interface CardContent {
   options?: string[];
   correctIndex?: number;
   materials?: string[];
+  /** Experiment: 1–2 sentence drag-and-drop instruction. S12-04. */
+  instructions?: string;
+  /** Experiment: 3/4/5 drag chips (easy/medium/hard). S12-04. */
+  dragItems?: DragItem[];
+  /** Experiment: 2/2/3 drop bins (easy/medium/hard). S12-04. */
+  dropTargets?: DropTarget[];
+  /**
+   * Voice: Dashy's first-person spoken prompt the kid answers aloud.
+   * Matches iOS `card.content.promptText`. S12-06.
+   */
+  promptText?: string;
+  /**
+   * Voice: 1–5 accepted spoken responses the matcher whitelists.
+   * Case-insensitively unique after whitespace-normalization. Matches
+   * iOS `card.content.expectedResponses`. S12-06.
+   */
+  expectedResponses?: string[];
+  /**
+   * Voice: Dashy's shared-win line on match (6–80 chars, first-person).
+   * Persisted so the iPad can surface the celebration post-match. S12-06.
+   */
+  celebration?: string;
+  /**
+   * Voice: Dashy's soft-reset line on miss (6–80 chars, first-person).
+   * Never a hard correction. S12-06.
+   */
+  retryHint?: string;
+  /**
+   * Voice: optional kebab-syllable pronunciation hint for TTS, e.g.
+   * "pho-to-syn-the-sis". S12-06.
+   */
+  phonetics?: string;
 }
 
 export interface GeneratedCard {
@@ -330,10 +385,52 @@ function validateAndNormalizeCard(card: Record<string, unknown>, fallbackIndex: 
       imagePrompt: content.imagePrompt ? String(content.imagePrompt).trim() : undefined,
     };
   } else if (type === 'experiment') {
+    // S12-04: experiment cards prefer the skill-engine drag-and-drop
+    // shape (instructions + dragItems + dropTargets). Legacy cards that
+    // still ship with `materials` + `text` keep working — the iOS view
+    // falls back to the instructional layout when dragItems is absent.
+    const dragItemsRaw = Array.isArray(content.dragItems) ? content.dragItems : [];
+    const dropTargetsRaw = Array.isArray(content.dropTargets) ? content.dropTargets : [];
+
+    const dragItems: DragItem[] = dragItemsRaw
+      .map((raw) => {
+        const item = raw as Record<string, unknown>;
+        const id = typeof item.id === 'string' ? item.id.trim() : '';
+        const label = typeof item.label === 'string' ? item.label.trim() : '';
+        if (!id || !label) return null;
+        const imageURL = typeof item.imageURL === 'string' ? item.imageURL.trim() : undefined;
+        return { id, label, ...(imageURL ? { imageURL } : {}) } as DragItem;
+      })
+      .filter((v): v is DragItem => v !== null);
+
+    const dropTargets: DropTarget[] = dropTargetsRaw
+      .map((raw) => {
+        const t = raw as Record<string, unknown>;
+        const id = typeof t.id === 'string' ? t.id.trim() : '';
+        const label = typeof t.label === 'string' ? t.label.trim() : '';
+        const accepts = Array.isArray(t.acceptsItemIds)
+          ? t.acceptsItemIds.map(String).map((s) => s.trim()).filter(Boolean)
+          : [];
+        if (!id || !label) return null;
+        return { id, label, acceptsItemIds: accepts } as DropTarget;
+      })
+      .filter((v): v is DropTarget => v !== null);
+
+    const hasDragDropShape = dragItems.length > 0 && dropTargets.length > 0;
+
     normalizedContent = {
       title: content.title ? String(content.title).trim() : undefined,
+      instructions: content.instructions ? String(content.instructions).trim() : undefined,
       text: String(content.text || '').trim(),
-      materials: Array.isArray(content.materials) ? content.materials.map(String) : [],
+      // Preserve the legacy materials list when the card came from the
+      // old path; drop it silently when the drag/drop shape is present.
+      materials: hasDragDropShape
+        ? undefined
+        : Array.isArray(content.materials)
+        ? content.materials.map(String)
+        : [],
+      dragItems: hasDragDropShape ? dragItems : undefined,
+      dropTargets: hasDragDropShape ? dropTargets : undefined,
       imagePrompt: content.imagePrompt ? String(content.imagePrompt).trim() : undefined,
     };
   } else if (type === 'quiz') {

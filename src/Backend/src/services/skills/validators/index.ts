@@ -21,6 +21,9 @@
  */
 import type { z } from 'zod';
 import { quizMakerOutputSchema } from './quizMaker';
+import { experimentDesignerOutputSchema } from './experimentDesigner';
+import { curriculumArchitectOutputSchema } from './curriculumArchitect';
+import { voicePersonaOutputSchema } from './voicePersona';
 
 /**
  * Name-keyed map. Add new skills alongside their schema file as they
@@ -28,7 +31,13 @@ import { quizMakerOutputSchema } from './quizMaker';
  */
 export const SKILL_OUTPUT_SCHEMAS: Record<string, z.ZodTypeAny> = {
   'quiz-maker': quizMakerOutputSchema,
+  'experiment-designer': experimentDesignerOutputSchema,
+  'curriculum-architect': curriculumArchitectOutputSchema,
+  'voice-persona': voicePersonaOutputSchema,
 };
 
 /** Re-exports so the rest of the backend can import individual schemas. */
 export { quizMakerOutputSchema } from './quizMaker';
+export { experimentDesignerOutputSchema } from './experimentDesigner';
+export { curriculumArchitectOutputSchema } from './curriculumArchitect';
+export { voicePersonaOutputSchema } from './voicePersona';

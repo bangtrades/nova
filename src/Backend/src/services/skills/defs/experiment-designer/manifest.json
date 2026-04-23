@@ -1,0 +1,14 @@
+{
+  "name": "experiment-designer",
+  "version": "0.1.0",
+  "description": "Interactive drag-and-drop experiment skill — produces a single sort-and-classify challenge that probes whether the child has grasped a concept by asking them to place concrete items into the right bins. The drop targets define the mental categories; the drag items are the examples the child must classify. Matches the iOS ExperimentCardView contract (title + instructions + dragItems + dropTargets).",
+  "modelHint": "flash",
+  "temperatureHint": 0.5,
+  "inputs": {
+    "requires": ["concept", "conceptType"],
+    "optional": ["topic", "targetLessonId", "lastStoryExcerpt"]
+  },
+  "ageProfiles": [4, 6, 8],
+  "difficulties": ["easy", "medium", "hard"],
+  "handlesConceptTypes": ["process", "comparison", "causeEffect", "vocabulary", "factual"]
+}

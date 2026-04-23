@@ -1,0 +1,14 @@
+{
+  "name": "voice-persona",
+  "version": "0.1.0",
+  "description": "Voice-mode card skill — produces a single Dashy-voiced speaking prompt where the child responds aloud and a speech-recognition layer matches against a short list of accepted answers. Dashy herself lives inside this prompt: her first-person mascot voice, her gentle correction pattern, her celebration lines. This is the single-sourced-truth for Dashy's character anywhere it speaks in the app.",
+  "modelHint": "flash",
+  "temperatureHint": 0.6,
+  "inputs": {
+    "requires": ["concept", "conceptType"],
+    "optional": ["topic", "targetLessonId", "lastStoryExcerpt"]
+  },
+  "ageProfiles": [4, 6, 8],
+  "difficulties": ["easy", "medium", "hard"],
+  "handlesConceptTypes": ["vocabulary", "factual", "abstract"]
+}

@@ -23,13 +23,14 @@ public enum DashyEmotion: String, Codable {
 
 /// Single chat message in conversation history.
 ///
-/// > Wire-protocol note (S11-09): `role` carries the server-side literal
-/// > — currently still `"sparky"` for Dashy-authored messages because
-/// > the backend under `services/sparky/` hasn't been renamed yet.
-/// > S12 will flip both ends simultaneously.
+/// > Wire-protocol note: `role` carries the server-side literal. As of S12-07/08
+/// > the backend under `services/dashy/` and this iOS VM flipped together to
+/// > the "dashy" literal in a single coordinated commit range — no in-flight
+/// > skew because bang owns both client and server and the only live client
+/// > is his iPad.
 public struct ChatMessage: Identifiable, Codable {
     public let id: UUID
-    public let role: String  // "user" or "sparky" (wire protocol — S12 renames to "dashy")
+    public let role: String  // "user" or "dashy" (wire protocol)
     public let content: String
     public let timestamp: Date
     public let emotion: String?  // Optional emotion from API
@@ -216,7 +217,7 @@ public class DashyViewModel: NSObject, ObservableObject {
         }
     }
 
-    /// Decoded response shape from `POST /api/v1/sparky/chat`.
+    /// Decoded response shape from `POST /api/v1/dashy/chat`.
     /// Kept at type scope (not nested inside `fetchDashyResponse`) so the
     /// Swift 6 decoder doesn't drag an async-context generic binding across
     /// a function body every call.
@@ -231,7 +232,7 @@ public class DashyViewModel: NSObject, ObservableObject {
 
         // Build the history payload in the wire shape the backend expects:
         // an array of `{role, content}` dicts, one per message in the
-        // rolling 10-message window. `sparkyChat` takes `[[String: String]]`
+        // rolling 10-message window. `dashyChat` takes `[[String: String]]`
         // because `[String: Any]` isn't `Encodable`.
         let historyPayload: [[String: String]] = conversationHistory.map { message in
             ["role": message.role, "content": message.content]
@@ -246,12 +247,12 @@ public class DashyViewModel: NSObject, ObservableObject {
             // alongside rather than padding the delay.
             processingProgress = 0.3
 
-            // S11-19: real API call replaces the simulated response. The
-            // endpoint path is still `/api/v1/sparky/chat` because the
-            // backend service rename is deferred to S12; the iOS-side role
-            // literal is "sparky" for the same reason.
+            // S11-19: real API call replaces the simulated response.
+            // S12-07/08: endpoint path + role literal both flipped to "dashy"
+            // in a single coordinated commit range alongside the backend
+            // service rename — no in-flight skew.
             let response: DashyResponse = try await apiRouter.request(
-                .sparkyChat(message: userMessage, history: historyPayload)
+                .dashyChat(message: userMessage, history: historyPayload)
             )
 
             processingProgress = 0.8
@@ -259,7 +260,7 @@ public class DashyViewModel: NSObject, ObservableObject {
             // Dashy's reply message, stamped with the server-side emotion
             // when present so the character animation has a signal.
             let dashyMessage = ChatMessage(
-                role: "sparky",
+                role: "dashy",
                 content: response.message,
                 emotion: response.emotion
             )

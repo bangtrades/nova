@@ -24,7 +24,7 @@ import {
 import {
   createRateLimiter,
   globalRateLimiter,
-  sparkyRateLimiter,
+  dashyRateLimiter,
   pipelineRateLimiter,
   authRateLimiter,
 } from '../src/middleware/rateLimiter';
@@ -46,12 +46,12 @@ describe('Feature Flags Service (NOVA-300)', () => {
       expect(flags.length).toBeGreaterThan(0);
     });
 
-    it('should have sparky_voice_chat flag', async () => {
+    it('should have dashy_voice_chat flag', async () => {
       await initializeFlags();
       const flags = getAllFlags();
-      const sparkyFlag = flags.find((f: FeatureFlag) => f.key === 'sparky_voice_chat');
-      expect(sparkyFlag).toBeDefined();
-      expect(sparkyFlag?.enabled).toBe(true);
+      const dashyFlag = flags.find((f: FeatureFlag) => f.key === 'dashy_voice_chat');
+      expect(dashyFlag).toBeDefined();
+      expect(dashyFlag?.enabled).toBe(true);
     });
 
     it('should have ai_image_generation flag', async () => {
@@ -90,7 +90,7 @@ describe('Feature Flags Service (NOVA-300)', () => {
     });
 
     it('should return true for enabled flags with 100% rollout', () => {
-      const enabled = isFeatureEnabled('sparky_voice_chat', 'user-123', 'free');
+      const enabled = isFeatureEnabled('dashy_voice_chat', 'user-123', 'free');
       expect(enabled).toBe(true);
     });
 
@@ -132,9 +132,9 @@ describe('Feature Flags Service (NOVA-300)', () => {
 
   describe('Flag Updates', () => {
     it('should update flag enabled status', () => {
-      setFlag('sparky_voice_chat', { enabled: false });
+      setFlag('dashy_voice_chat', { enabled: false });
       const flags = getAllFlags();
-      const flag = flags.find((f: FeatureFlag) => f.key === 'sparky_voice_chat');
+      const flag = flags.find((f: FeatureFlag) => f.key === 'dashy_voice_chat');
       expect(flag?.enabled).toBe(false);
     });
 
@@ -154,9 +154,9 @@ describe('Feature Flags Service (NOVA-300)', () => {
 
     it('should update metadata', () => {
       const metadata = { version: '2.0', description: 'Updated description' };
-      setFlag('sparky_voice_chat', { metadata });
+      setFlag('dashy_voice_chat', { metadata });
       const flags = getAllFlags();
-      const flag = flags.find((f: FeatureFlag) => f.key === 'sparky_voice_chat');
+      const flag = flags.find((f: FeatureFlag) => f.key === 'dashy_voice_chat');
       expect(flag?.metadata).toEqual(metadata);
     });
 
@@ -347,8 +347,8 @@ describe('Rate Limiter Middleware (NOVA-305)', () => {
   });
 
   describe('Per-Route Limiters', () => {
-    it('sparkyRateLimiter should use userId as key', () => {
-      expect(sparkyRateLimiter).toBeDefined();
+    it('dashyRateLimiter should use userId as key', () => {
+      expect(dashyRateLimiter).toBeDefined();
     });
 
     it('pipelineRateLimiter should use userId as key', () => {

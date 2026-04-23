@@ -23,11 +23,11 @@ let flagCache: Map<string, FeatureFlag> = new Map();
 // Default flags configuration
 const DEFAULT_FLAGS: FeatureFlag[] = [
   {
-    key: 'sparky_voice_chat',
+    key: 'dashy_voice_chat',
     enabled: true,
     rolloutPercentage: 100,
     allowedTiers: ['free', 'pro', 'premium'],
-    metadata: { description: 'Voice chat with Sparky AI assistant' },
+    metadata: { description: 'Voice chat with Dashy AI assistant' },
   },
   {
     key: 'ai_image_generation',

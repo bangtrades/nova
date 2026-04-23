@@ -50,7 +50,7 @@ model ChildProfile {
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   learningSessions  LearningSession[]
   earnedBadges      EarnedBadge[]
-  sparkyConversations SparkyConversation[]
+  dashyConversations DashyConversation[]
   childConcepts     ChildConcept[]
   engagementProfile EngagementProfile?   // S10-03
   parentGuidance    ParentGuidance?      // S10-04
@@ -349,7 +349,7 @@ model LlmUsageLog {
   userId            String
   provider          String              // "openai", "anthropic"
   model             String              // "gpt-4o-mini", "claude-sonnet", "dall-e-3", "tts-1"
-  feature           String              // "content_analysis", "card_generation", "sparky_chat", "image_gen", "tts"
+  feature           String              // "content_analysis", "card_generation", "dashy_chat", "image_gen", "tts"
   promptTokens      Int                 @default(0)
   completionTokens  Int                 @default(0)
   totalTokens       Int                 @default(0)
@@ -364,7 +364,7 @@ model LlmUsageLog {
   @@map("llm_usage_logs")
 }
 
-model SparkyConversation {
+model DashyConversation {
   id                String              @id @default(uuid())
   childId           String
   transcript        String
@@ -377,7 +377,7 @@ model SparkyConversation {
   child             ChildProfile        @relation(fields: [childId], references: [id], onDelete: Cascade)
 
   @@index([childId])
-  @@map("sparky_conversations")
+  @@map("dashy_conversations")
 }
 
 model FeatureFlag {

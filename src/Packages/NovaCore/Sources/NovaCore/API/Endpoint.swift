@@ -378,17 +378,17 @@ public struct Endpoint {
         )
     }
 
-    // MARK: - Sparky Chat Endpoints
+    // MARK: - Dashy Chat Endpoints
 
-    /// Send a message to Sparky for AI response.
-    public static func sparkyChat(message: String, history: [[String: String]]) -> Endpoint {
+    /// Send a message to Dashy for AI response.
+    public static func dashyChat(message: String, history: [[String: String]]) -> Endpoint {
         struct Body: Encodable {
             let message: String
             let history: [[String: String]]
             let childAge: Int
         }
         return Endpoint(
-            path: "/sparky/chat",
+            path: "/dashy/chat",
             method: .POST,
             body: Body(message: message, history: history, childAge: 4),
             requiresAuth: true

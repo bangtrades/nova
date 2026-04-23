@@ -250,4 +250,6 @@ export const CARD_TYPE_TO_SKILL: Partial<
 > = {
   story: 'story-writer',
   quiz: 'quiz-maker',
+  experiment: 'experiment-designer',
+  voice: 'voice-persona',
 };

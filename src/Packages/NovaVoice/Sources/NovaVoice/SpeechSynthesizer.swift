@@ -4,7 +4,7 @@ import AVFoundation
 /// Synthesizes text to speech with kid-friendly voices.
 ///
 /// Wraps AVSpeechSynthesizer to provide voice narration for learning content.
-/// Supports different voice styles (Sparky, Narrator, Celebration).
+/// Supports different voice styles (Dashy, Narrator, Celebration).
 public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     /// Currently playing speech utterance.
     @Published public var isSpeaking: Bool = false
@@ -14,15 +14,15 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
 
     /// Voice style for the synthesizer.
     public enum VoiceStyle {
-        case sparky      // Kid-friendly, energetic
+        case dashy      // Kid-friendly, energetic
         case narrator    // Calm, clear adult voice
         case celebration // Excited, upbeat
 
         /// Get AVSpeechSynthesisVoice for this style.
         func getVoice() -> AVSpeechSynthesisVoice? {
             switch self {
-            case .sparky:
-                // Prefer female voice for Sparky
+            case .dashy:
+                // Prefer female voice for Dashy
                 return AVSpeechSynthesisVoice(language: "en-US") ?? AVSpeechSynthesisVoice()
 
             case .narrator:
@@ -39,7 +39,7 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
         /// Get speech rate for this style.
         func getSpeechRate() -> Float {
             switch self {
-            case .sparky:
+            case .dashy:
                 return 0.45 // Slightly slower for clarity
             case .narrator:
                 return 0.40 // Deliberate pace
@@ -51,8 +51,8 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
         /// Get pitch multiplier for this style.
         func getPitchMultiplier() -> Float {
             switch self {
-            case .sparky:
-                return 1.2 // Higher pitch for Sparky
+            case .dashy:
+                return 1.2 // Higher pitch for Dashy
             case .narrator:
                 return 1.0 // Normal pitch
             case .celebration:

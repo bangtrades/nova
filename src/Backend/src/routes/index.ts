@@ -13,7 +13,7 @@ import { pipelineRoutes } from './pipeline';
 import { providersRoutes } from './providers';
 import { syncRoutes } from './sync';
 import { webhookRoutes } from './webhooks';
-import sparkyRoutes from './sparky';
+import dashyRoutes from './dashy';
 import entitlementRoutes from './entitlements';
 import analyticsRoutes from './analytics';
 import dataRightsRoutes from './dataRights';
@@ -72,8 +72,8 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
       // Sync routes (require auth) - Sprint 4
       await fastify.register(syncRoutes, { prefix: '/sync' });
 
-      // Sparky conversation routes (require auth) - Sprint 6
-      await fastify.register(sparkyRoutes, { prefix: '/sparky' });
+      // Dashy conversation routes (require auth) - Sprint 6; renamed S12-07/08
+      await fastify.register(dashyRoutes, { prefix: '/dashy' });
 
       // Entitlement routes (require auth) - Sprint 6
       await fastify.register(entitlementRoutes, { prefix: '/entitlements' });

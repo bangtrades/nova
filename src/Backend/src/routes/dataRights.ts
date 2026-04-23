@@ -122,7 +122,7 @@ export default async function dataRightsRoutes(fastify: FastifyInstance): Promis
         });
 
         // Get voice conversations
-        const conversations = await prisma.sparkyConversation.findMany({
+        const conversations = await prisma.dashyConversation.findMany({
           where: { childId },
           select: {
             id: true,
@@ -266,7 +266,7 @@ export default async function dataRightsRoutes(fastify: FastifyInstance): Promis
           }
 
           // Anonymize conversations
-          await prisma.sparkyConversation.updateMany({
+          await prisma.dashyConversation.updateMany({
             where: { childId },
             data: {
               transcript: '[REDACTED]',

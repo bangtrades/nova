@@ -1,0 +1,14 @@
+{
+  "name": "curriculum-architect",
+  "version": "0.1.0",
+  "description": "Stage-3 pipeline skill — decomposes an analyzed topic into a sequenced set of 3–6 teachable concept atoms. Each atom names a single idea, a teaching strategy, a recommended card type, and its prerequisites, so the downstream card generator can route each atom through the right per-card skill (story-writer / quiz-maker / experiment-designer). This is the child-context-aware replacement for the legacy heuristic decomposer.",
+  "modelHint": "pro",
+  "temperatureHint": 0.5,
+  "inputs": {
+    "requires": ["topic", "summary", "suggestedStage"],
+    "optional": ["keyConcepts", "suggestedCardCount", "sourceExcerpt"]
+  },
+  "ageProfiles": [4, 6, 8],
+  "difficulties": ["easy", "medium", "hard"],
+  "handlesConceptTypes": []
+}

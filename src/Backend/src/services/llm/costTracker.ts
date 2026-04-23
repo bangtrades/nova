@@ -31,7 +31,7 @@ export type CostFeature =
   | 'concept_decomposition'
   | 'card_generation'
   | 'card_regeneration'
-  | 'sparky_chat'
+  | 'dashy_chat'
   | 'image_gen'
   | 'tts'
   | 'quality_gate'

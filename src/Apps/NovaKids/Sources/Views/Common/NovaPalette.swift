@@ -105,7 +105,7 @@ public struct NovaPalette {
             dark:  .init(red: 0.42, green: 0.78, blue: 0.42)
         )
 
-        /// Dashy (née Sparky) purple
+        /// Dashy purple
         public static let purple = Color(
             light: .init(red: 0.61, green: 0.35, blue: 0.71),
             dark:  .init(red: 0.72, green: 0.48, blue: 0.82)

@@ -4,16 +4,9 @@
  * Handles voice conversations with Dashy, a friendly AI buddy for kids aged 4-8.
  * Dashy explains technology concepts in simple, fun ways and celebrates curiosity.
  *
- * > S11-09 / S12 rename note:
- * > The child-facing character name is "Dashy" as of S11-09 — every string
- * > the LLM produces or logs toward the child uses that name. The *file path*
- * > (`services/sparky/`), exported identifiers (`SPARKY_SYSTEM_PROMPT`,
- * > `SparkyResponse`, `processSparkyMessage`), and the wire-protocol route
- * > slug (`sparky_chat`, `/api/v1/sparky/chat`) are retained on purpose: the
- * > iOS client's stored `role: "sparky"` literal and all in-flight requests
- * > keep routing cleanly while backend + iOS flip together in S12. When S12
- * > lands, move this file to `services/dashy/`, rename the identifiers, and
- * > update the iOS `role`/route literals in the same commit.
+ * See the S12-07/08 rename note in the sprint runs index for the
+ * coordinated-deploy history of this file + its exported identifiers +
+ * the `/dashy/chat` route + the iOS `role` literal.
  */
 
 import { routeRequest } from '@services/llm/providerRouter';
@@ -25,7 +18,7 @@ import {
 import { getGuidance } from '@services/guidance/parentGuidance';
 import { buildSessionContext } from '@services/context/sessionContext';
 
-export const SPARKY_SYSTEM_PROMPT = `You are Dashy, a friendly AI buddy for kids aged 4-8. You explain technology concepts in simple, fun ways. You celebrate curiosity. You NEVER discuss violence, politics, adult content, or anything inappropriate for children. If asked about something off-topic, gently redirect to learning about technology and science.
+export const DASHY_SYSTEM_PROMPT = `You are Dashy, a friendly AI buddy for kids aged 4-8. You explain technology concepts in simple, fun ways. You celebrate curiosity. You NEVER discuss violence, politics, adult content, or anything inappropriate for children. If asked about something off-topic, gently redirect to learning about technology and science.
 
 When responding:
 1. Use simple, playful language with short sentences
@@ -41,7 +34,7 @@ Format your response as JSON:
   "emotion": "happy|curious|excited|thinking"
 }`;
 
-export interface SparkyResponse {
+export interface DashyResponse {
   text: string;
   followUpQuestions: string[];
   emotion: 'happy' | 'curious' | 'excited' | 'thinking';
@@ -54,14 +47,14 @@ export interface ConversationMessage {
 }
 
 /**
- * Process a message from a child and get Sparky's response
+ * Process a message from a child and get Dashy's response
  */
-export async function processSparkyMessage(
+export async function processDashyMessage(
   childId: string,
   transcript: string,
   conversationHistory: ConversationMessage[] = [],
   providerId?: string
-): Promise<SparkyResponse> {
+): Promise<DashyResponse> {
   // Validate transcript
   if (!transcript || transcript.trim().length === 0) {
     throw new Error('Transcript cannot be empty');
@@ -80,7 +73,7 @@ export async function processSparkyMessage(
   ];
 
   // S10-04 / S10-05: fetch parent guidance + session context for this turn.
-  // Failures degrade to "no preamble" — Sparky never dies on a missing row.
+  // Failures degrade to "no preamble" — Dashy never dies on a missing row.
   let preamble = '';
   try {
     const [guidance, sessionContext] = await Promise.all([
@@ -93,7 +86,7 @@ export async function processSparkyMessage(
   } catch (err) {
     // Swallow — no preamble is the old Sprint 6 behavior.
     console.warn(
-      `[Sparky] Failed to compose guidance/context preamble for child ${childId}: ${
+      `[Dashy] Failed to compose guidance/context preamble for child ${childId}: ${
         err instanceof Error ? err.message : 'Unknown'
       }`
     );
@@ -106,7 +99,7 @@ export async function processSparkyMessage(
       messages: [
         {
           role: 'system',
-          content: preamble + SPARKY_SYSTEM_PROMPT,
+          content: preamble + DASHY_SYSTEM_PROMPT,
         },
         ...messages,
       ],
@@ -115,7 +108,7 @@ export async function processSparkyMessage(
     };
 
     // Route to appropriate LLM provider
-    const response: LLMResponse = await routeRequest(childId, llmRequest, 'sparky_chat');
+    const response: LLMResponse = await routeRequest(childId, llmRequest, 'dashy_chat');
 
     // Parse the response
     const responseText = response.content;
@@ -161,7 +154,7 @@ export async function processSparkyMessage(
       emotion,
     };
   } catch (error) {
-    console.error(`Error processing Sparky message for child ${childId}:`, error);
+    console.error(`Error processing Dashy message for child ${childId}:`, error);
 
     // Fallback response if LLM fails
     return {

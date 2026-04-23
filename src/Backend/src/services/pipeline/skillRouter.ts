@@ -196,6 +196,18 @@ const STRATEGY_TO_CONCEPT_TYPE: Record<TeachingStrategy, ConceptType> = {
 const SKILL_MAX_TOKENS: Record<string, number> = {
   'story-writer': 800,
   'quiz-maker': 600,
+  // experiment-designer emits title + instructions + up to 5 dragItems +
+  // up to 3 dropTargets with acceptsItemIds + conceptSummary +
+  // rationalePerTarget. Larger envelope than quiz-maker because the
+  // rationale section is long; still well under story-writer's.
+  'experiment-designer': 900,
+  // voice-persona emits title + promptText (≤180) + up to 5 short
+  // expectedResponses + celebration (≤80) + retryHint (≤80) +
+  // optional phonetics + conceptSummary (≤280). Empirically lands at
+  // 300–500 tokens; 700 is ~50% headroom. Shorter than experiment
+  // because there's no parallel rationale array; longer than quiz
+  // because the three Dashy voice lines each have their own envelope.
+  'voice-persona': 700,
 };
 
 /**
@@ -207,6 +219,8 @@ const SKILL_MAX_TOKENS: Record<string, number> = {
 const SKILL_TO_MODEL: Record<string, string> = {
   'story-writer': 'claude-sonnet',
   'quiz-maker': 'claude-sonnet',
+  'experiment-designer': 'claude-sonnet',
+  'voice-persona': 'claude-sonnet',
 };
 
 /** Default when a skill isn't in the table above. */
@@ -619,6 +633,36 @@ function buildSkillInputs(
     if (lastStoryExcerpt) inputs.lastStoryExcerpt = lastStoryExcerpt;
     return inputs;
   }
+  if (skillName === 'experiment-designer') {
+    // The experiment-designer probes concept grasp via a drag-and-drop
+    // sort. It needs the concept + its type, and optionally the broader
+    // topic frame + the prior story excerpt so it can re-use character
+    // or setting scaffolding the child just met.
+    const conceptType = STRATEGY_TO_CONCEPT_TYPE[atom.teachingStrategy] ?? 'process';
+    const inputs: Record<string, unknown> = {
+      concept: atom.name,
+      conceptType,
+    };
+    if (analysis.topic) inputs.topic = analysis.topic;
+    if (lastStoryExcerpt) inputs.lastStoryExcerpt = lastStoryExcerpt;
+    return inputs;
+  }
+  if (skillName === 'voice-persona') {
+    // The voice-persona skill probes verbal recall. It needs the
+    // concept + its type, and optionally the topic frame + the prior
+    // story excerpt so Dashy can reference shared context in her
+    // wondering-aloud prompt. STRATEGY_TO_CONCEPT_TYPE maps the
+    // `voice` strategy to `abstract` by default; vocabulary / factual
+    // strategies override that via their own mapping upstream.
+    const conceptType = STRATEGY_TO_CONCEPT_TYPE[atom.teachingStrategy] ?? 'abstract';
+    const inputs: Record<string, unknown> = {
+      concept: atom.name,
+      conceptType,
+    };
+    if (analysis.topic) inputs.topic = analysis.topic;
+    if (lastStoryExcerpt) inputs.lastStoryExcerpt = lastStoryExcerpt;
+    return inputs;
+  }
   // Unknown skill — pass through the atom's name/description as a
   // best-effort hint. The skill's own required-input validation will
   // reject if that's insufficient.
@@ -677,6 +721,71 @@ function buildCardFromSkillOutput(
         text: v.question,
         options: v.options,
         correctIndex: v.correctIndex,
+      },
+      voiceScript,
+      sortOrder: atomIndex,
+    };
+  }
+
+  if (skillName === 'experiment-designer') {
+    const v = value as {
+      title: string;
+      instructions: string;
+      dragItems: Array<{ id: string; label: string }>;
+      dropTargets: Array<{ id: string; label: string; acceptsItemIds: string[] }>;
+      conceptSummary: string;
+      rationalePerTarget: string[];
+    };
+    // Voice script: instructions (what to do) + conceptSummary (why the
+    // sort works). Keeps the narration educational without leaking the
+    // classification on the way in.
+    const voiceScript = `${v.instructions} ${v.conceptSummary}`.trim();
+
+    return {
+      type: 'experiment',
+      content: {
+        title: v.title,
+        instructions: v.instructions,
+        // Note: backend uses camelCase. The iOS transformer maps this
+        // to `drag_items` / `drop_targets` at the app boundary (same
+        // pattern as quiz's `correct_option_index`).
+        dragItems: v.dragItems,
+        dropTargets: v.dropTargets,
+      },
+      voiceScript,
+      sortOrder: atomIndex,
+    };
+  }
+
+  if (skillName === 'voice-persona') {
+    const v = value as {
+      title?: string;
+      promptText: string;
+      expectedResponses: string[];
+      celebration: string;
+      retryHint: string;
+      phonetics?: string;
+      conceptSummary: string;
+    };
+    // Voice script = the full TTS flow the iPad will speak aloud:
+    // Dashy introduces her wondering (promptText) and on a correct
+    // match will say the celebration line. The retryHint only fires
+    // on a miss, so it's NOT part of the default voiceScript — it
+    // lives on `content.retryHint` and the iPad reads it on-demand.
+    const voiceScript = `${v.promptText} ${v.celebration}`.trim();
+
+    return {
+      type: 'voice',
+      content: {
+        title: v.title,
+        // iOS VoiceCardView decodes camelCase promptText /
+        // expectedResponses directly — no rename at the transformer
+        // because these are already camelCase-clean field names.
+        promptText: v.promptText,
+        expectedResponses: v.expectedResponses,
+        celebration: v.celebration,
+        retryHint: v.retryHint,
+        phonetics: v.phonetics,
       },
       voiceScript,
       sortOrder: atomIndex,

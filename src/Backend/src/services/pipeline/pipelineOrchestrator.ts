@@ -42,6 +42,11 @@ import {
 import { buildChildContext } from './childContextBuilder';
 import type { ChildContext } from '@services/skills/types';
 import type { AtomTrace, SkipReason } from './skillRouter';
+import {
+  routeDecomposition,
+  isSkillEngineStage3Enabled,
+  type DecompositionTrace,
+} from './decompositionRouter';
 import type { Prisma } from '@prisma/client';
 
 export interface PipelineResult {
@@ -58,6 +63,13 @@ export interface PipelineResult {
   skillSkippedAtoms?: Array<{ atomId: string; reason: SkipReason }>;
   /** Full per-atom trace for Dev Console (R7). Present only when skill engine ran. */
   skillTraces?: AtomTrace[];
+  /**
+   * S12-05 — curriculum-architect trace from Stage 3, present whenever the
+   * Stage-3 skill engine path was attempted (success OR controlled failure).
+   * Absent when the skill engine was skipped outright (no childContext, flag
+   * off, or missing analysis fields).
+   */
+  decompositionTrace?: DecompositionTrace;
 }
 
 export interface PipelineStepResult {
@@ -213,19 +225,62 @@ export async function runPipeline(
       };
     }
 
-    // Stage 3: Concept decomposition (S9-06) ─────────────────────────────
+    // Stage 3: Concept decomposition (S9-06 → S12-05) ────────────────────
+    // S12-05 — when we have a ChildContext AND the Stage-3 feature flag is
+    // on, route through the curriculum-architect skill. On controlled
+    // failure (Zod exhausted / skill-runtime-error / missing-input / parse
+    // error) we fall back to the legacy heuristic `decomposeConcepts()`.
+    // Transient LLM errors still bubble via `runStage` + its retry layer,
+    // and a total Stage-3 failure (both paths) is non-fatal — Stage 4's
+    // legacy generator tolerates `decomposition = undefined`.
     await updateIngestStatus(ingestId, 'decomposing');
     let decomposition: ConceptDecomposition | undefined;
-    try {
-      decomposition = await runStage(
-        'decompose',
-        () => decomposeConcepts(userId, analysis, scraped, guidance, sessionContext),
-        stageOpts
-      );
-    } catch (err) {
-      // Non-fatal: the card generator has a legacy code path that works
-      // without a decomposition. Log and continue.
-      console.warn(`[Pipeline] Decomposition failed, falling back: ${errMsg(err)}`);
+    let decompositionTrace: DecompositionTrace | undefined;
+    const useSkillEngineStage3 =
+      !!opts.childId && !!childContext && isSkillEngineStage3Enabled();
+
+    if (useSkillEngineStage3 && childContext) {
+      try {
+        const routeResult = await runStage(
+          'decompose',
+          () =>
+            routeDecomposition({
+              userId,
+              baseContext: childContext!,
+              analysis,
+              scraped,
+            }),
+          stageOpts
+        );
+        decompositionTrace = routeResult.trace;
+        if (routeResult.kind === 'ok') {
+          decomposition = routeResult.decomposition;
+        } else {
+          console.warn(
+            `[Pipeline] Stage-3 skill engine failed (${routeResult.reason}); falling back to legacy decomposeConcepts. Detail: ${routeResult.trace.error ?? 'n/a'}`
+          );
+        }
+      } catch (err) {
+        // Transient exhaustion from runStage — skill-engine path is out.
+        // Legacy fallback below still gets a shot.
+        console.warn(
+          `[Pipeline] Stage-3 skill engine threw transiently; falling back: ${errMsg(err)}`
+        );
+      }
+    }
+
+    if (!decomposition) {
+      try {
+        decomposition = await runStage(
+          'decompose',
+          () => decomposeConcepts(userId, analysis, scraped, guidance, sessionContext),
+          stageOpts
+        );
+      } catch (err) {
+        // Non-fatal: the card generator has a legacy code path that works
+        // without a decomposition. Log and continue.
+        console.warn(`[Pipeline] Decomposition failed, falling back: ${errMsg(err)}`);
+      }
     }
 
     // Stage 4: Card generation ───────────────────────────────────────────
@@ -308,17 +363,26 @@ export async function runPipeline(
     // S10-12 · R8 — when the skill engine ran, stash the per-atom trace and
     // skip list into aiAnalysis so the Dev Console (R7) can rebuild the view
     // for any lesson without needing a separate table.
+    // S12-05 — the `skillEngine` envelope now carries a Stage-3 slot so the
+    // Dev Console Pipeline tab can render a `curriculum-architect` row
+    // preceding per-atom rows. `used` stays true if *either* stage ran, so
+    // downstream consumers that gate on `skillEngine.used` keep working.
+    const stage3Used = !!decompositionTrace;
+    const skillEngineEnvelope =
+      stage3Used || skillEngineUsed
+        ? {
+            used: true,
+            stage3: decompositionTrace ?? null,
+            traces: skillTraces ?? [],
+            skipped: skillSkippedAtoms ?? [],
+          }
+        : null;
+
     const aiMeta = {
       ...analysis,
       decomposition: decomposition ?? null,
       qualityReport: qualityReport ?? null,
-      skillEngine: skillEngineUsed
-        ? {
-            used: true,
-            traces: skillTraces ?? [],
-            skipped: skillSkippedAtoms ?? [],
-          }
-        : null,
+      skillEngine: skillEngineEnvelope,
     };
 
     const lesson = await prisma.lesson.create({
@@ -380,12 +444,13 @@ export async function runPipeline(
       status: 'completed',
       message: `Successfully created lesson with ${cards.length} cards${
         regeneratedIndexes.length ? ` (${regeneratedIndexes.length} regenerated by quality gate)` : ''
-      }${skillEngineUsed ? ' [skill-engine]' : ''}`,
+      }${skillEngineUsed ? ' [skill-engine]' : ''}${decompositionTrace ? ' [s12-05]' : ''}`,
       regeneratedCardIndexes: regeneratedIndexes,
       qualityScore: qualityReport?.overallScore,
       skillEngineUsed,
       skillSkippedAtoms,
       skillTraces,
+      decompositionTrace,
     };
   } catch (error) {
     try {

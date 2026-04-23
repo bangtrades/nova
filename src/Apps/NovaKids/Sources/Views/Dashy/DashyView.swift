@@ -27,11 +27,10 @@ import NovaVoice
 ///      coral (ready) ↔ sun (listening) without a gradient, and the listening
 ///      pulse ring is motion-gated.
 ///
-/// > Asymmetric rename note (S11-09): The on-wire `role` string for
-/// > Dashy-authored messages is still `"sparky"` because the backend
-/// > pipeline under `services/sparky/` hasn't been renamed yet (S12
-/// > work). Comparing `message.role == "sparky"` below is intentional
-/// > and will flip to `"dashy"` when the backend catches up.
+/// > Coordinated-rename note: as of S12-07/08 the backend service moved
+/// > to `services/dashy/` and the on-wire `role` literal flipped to
+/// > `"dashy"` in the same commit range. S11-09's asymmetric carve-out
+/// > is now closed.
 public struct DashyView: View {
     @StateObject private var viewModel: DashyViewModel
     @EnvironmentObject var apiRouter: APIRouter
@@ -219,9 +218,8 @@ public struct DashyView: View {
 
     private func chatBubble(_ message: ChatMessage) -> some View {
         HStack(spacing: Spacing.sm) {
-            // Wire-protocol literal "sparky" — S12 rename will flip this to "dashy"
-            // once the backend catches up. See S11-09 delivery note.
-            if message.role == "sparky" {
+            // Wire-protocol role literal: "user" vs "dashy" (server-authored).
+            if message.role == "dashy" {
                 dashyBubble(message: message)
             } else {
                 childBubble(message: message)

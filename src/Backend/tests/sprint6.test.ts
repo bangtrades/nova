@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { createTestServer, generateTestToken, TEST_USER_ID, TEST_CHILD_ID } from './setup';
 import {
-  processSparkyMessage,
-  SPARKY_SYSTEM_PROMPT,
-  type SparkyResponse,
+  processDashyMessage,
+  DASHY_SYSTEM_PROMPT,
+  type DashyResponse,
   type ConversationMessage,
-} from '../src/services/sparky/conversationEngine';
+} from '../src/services/dashy/conversationEngine';
 import {
   resolveTier,
   checkUsageLimit,
@@ -19,24 +19,24 @@ import {
 } from '../src/services/entitlement/entitlementEngine';
 
 // ============================================================================
-// SPARKY CONVERSATION ENGINE TESTS
+// DASHY CONVERSATION ENGINE TESTS
 // ============================================================================
 
-describe('Sparky Conversation Engine', () => {
+describe('Dashy Conversation Engine', () => {
   it('should have a valid system prompt', () => {
-    expect(SPARKY_SYSTEM_PROMPT).toBeDefined();
-    expect(SPARKY_SYSTEM_PROMPT).toContain('Sparky');
-    expect(SPARKY_SYSTEM_PROMPT).toContain('friendly');
-    expect(SPARKY_SYSTEM_PROMPT).toContain('4-8');
+    expect(DASHY_SYSTEM_PROMPT).toBeDefined();
+    expect(DASHY_SYSTEM_PROMPT).toContain('Dashy');
+    expect(DASHY_SYSTEM_PROMPT).toContain('friendly');
+    expect(DASHY_SYSTEM_PROMPT).toContain('4-8');
   });
 
   it('should reject empty transcripts', async () => {
-    const result = await processSparkyMessage(TEST_CHILD_ID, '', []).catch((e: any) => e);
+    const result = await processDashyMessage(TEST_CHILD_ID, '', []).catch((e: any) => e);
     expect(result).toBeInstanceOf(Error);
   });
 
   it('should process a basic message', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'What is a robot?',
       []
@@ -50,7 +50,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should return valid emotion values', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'Tell me about computers',
       []
@@ -61,7 +61,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should provide follow-up questions', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'What is artificial intelligence?',
       []
@@ -78,7 +78,7 @@ describe('Sparky Conversation Engine', () => {
       content: `Message ${i}`,
     }));
 
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'Another question?',
       longHistory
@@ -89,7 +89,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should limit response length to approximately 150 words', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'Tell me everything you know about robotics',
       []
@@ -100,7 +100,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should redirect off-topic conversations', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'Tell me about video games and fun',
       []
@@ -118,7 +118,7 @@ describe('Sparky Conversation Engine', () => {
       { role: 'assistant', content: 'AI can process information but thinks differently than people.' },
     ];
 
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'What else can AI do?',
       history
@@ -130,7 +130,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should generate follow-up questions on topic', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'How do robots work?',
       []
@@ -145,7 +145,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should use kid-friendly language in fallback', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'What is code?',
       []
@@ -158,7 +158,7 @@ describe('Sparky Conversation Engine', () => {
   });
 
   it('should handle special characters in input', async () => {
-    const response = await processSparkyMessage(
+    const response = await processDashyMessage(
       TEST_CHILD_ID,
       'What is C++ & Python?!',
       []
@@ -720,14 +720,14 @@ describe('Sprint 6 Routes', () => {
     await fastify.close();
   });
 
-  describe('Sparky Chat Route', () => {
+  describe('Dashy Chat Route', () => {
     it('should require authentication', async () => {
       const response = await fastify.inject({
         method: 'POST',
-        url: '/api/v1/sparky/chat',
+        url: '/api/v1/dashy/chat',
         payload: {
           childId: TEST_CHILD_ID,
-          transcript: 'Hello Sparky!',
+          transcript: 'Hello Dashy!',
         },
       });
 
@@ -737,11 +737,11 @@ describe('Sprint 6 Routes', () => {
     it('should return 404 for non-existent child', async () => {
       const response = await fastify.inject({
         method: 'POST',
-        url: '/api/v1/sparky/chat',
+        url: '/api/v1/dashy/chat',
         headers: { authorization: `Bearer ${token}` },
         payload: {
           childId: 'nonexistent-child-id-uuid-format',
-          transcript: 'Hello Sparky!',
+          transcript: 'Hello Dashy!',
         },
       });
 
@@ -751,7 +751,7 @@ describe('Sprint 6 Routes', () => {
     it('should reject empty transcript', async () => {
       const response = await fastify.inject({
         method: 'POST',
-        url: '/api/v1/sparky/chat',
+        url: '/api/v1/dashy/chat',
         headers: { authorization: `Bearer ${token}` },
         payload: {
           childId: TEST_CHILD_ID,

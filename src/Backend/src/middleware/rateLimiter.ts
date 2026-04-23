@@ -120,8 +120,8 @@ export const globalRateLimiter = createRateLimiter({
  * Route-specific rate limiters
  */
 
-// /sparky/chat: 30 req/min per user
-export const sparkyRateLimiter = createRateLimiter({
+// /dashy/chat: 30 req/min per user
+export const dashyRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   maxRequests: 30,
   keyGenerator: (request: FastifyRequest) => {

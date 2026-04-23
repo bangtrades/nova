@@ -69,6 +69,80 @@ describe('skill registry — real defs tree', () => {
     expect(reg.has('story-writer')).toBe(true);
     expect(reg.has('nope')).toBe(false);
   });
+
+  // ---- S12-05 — curriculum-architect boots with the rest of the tree ----
+  //
+  // The curriculum-architect skill runs at Stage 3 (decomposition), one
+  // stage earlier than story-writer/quiz-maker/experiment-designer. The
+  // loader doesn't care about stage — it just walks `defs/` — so a
+  // missing age-profile or malformed manifest here would cascade into
+  // every Stage-3 skill-engine attempt at runtime. Catching it at the
+  // registry boot step means Dev Console can always preview this skill.
+
+  it('boots curriculum-architect from the real defs tree', () => {
+    const names = getSkillRegistry()
+      .list()
+      .map((s) => s.manifest.name);
+    expect(names).toContain('curriculum-architect');
+  });
+
+  it('curriculum-architect manifest requires topic/summary/suggestedStage and ships an outputSchema', () => {
+    const skill = getSkillRegistry().get('curriculum-architect');
+    expect(skill.manifest.name).toBe('curriculum-architect');
+    expect(skill.manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
+    // Stage-3 inputs — these three are non-negotiable; the decomposition
+    // router refuses to call the LLM without topic + summary in hand.
+    expect(skill.manifest.inputs.requires).toEqual(
+      expect.arrayContaining(['topic', 'summary', 'suggestedStage'])
+    );
+    expect(skill.manifest.ageProfiles).toEqual([4, 6, 8]);
+    expect(skill.manifest.difficulties).toEqual(['easy', 'medium', 'hard']);
+    // A Zod validator is the contract for the retry-on-validation path —
+    // without it, the router's Zod guard short-circuits to "no schema, OK"
+    // and we lose every structural invariant.
+    expect(skill.outputSchema).toBeDefined();
+  });
+
+  // ---- S12-06 — voice-persona boots with the rest of the tree ----------
+  //
+  // voice-persona closes the 5-modality skill-engine. The skill is the
+  // single-sourced-truth for Dashy's character voice (any time Dashy
+  // speaks in the app, her tone should trace back to this prompt). Boot
+  // failure here means every `card.type === 'voice'` atom falls back to
+  // the legacy inline voice branch in cardGenerator.ts, which emits the
+  // wrong field names for the iOS VoiceCardView.
+
+  it('boots voice-persona from the real defs tree', () => {
+    const names = getSkillRegistry()
+      .list()
+      .map((s) => s.manifest.name);
+    expect(names).toContain('voice-persona');
+  });
+
+  it('voice-persona manifest requires concept/conceptType and ships an outputSchema', () => {
+    const skill = getSkillRegistry().get('voice-persona');
+    expect(skill.manifest.name).toBe('voice-persona');
+    expect(skill.manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
+    // Stage-4 inputs — voice-persona follows the per-atom skill contract
+    // (concept + conceptType required; topic + lastStoryExcerpt optional
+    // for Dashy's shared-context scaffolding).
+    expect(skill.manifest.inputs.requires).toEqual(
+      expect.arrayContaining(['concept', 'conceptType'])
+    );
+    expect(skill.manifest.ageProfiles).toEqual([4, 6, 8]);
+    expect(skill.manifest.difficulties).toEqual(['easy', 'medium', 'hard']);
+    // voice-persona handles vocabulary / factual / abstract concepts —
+    // NOT process / comparison / causeEffect (those belong to
+    // experiment-designer and story-writer because they need diagram
+    // or narrative scaffolding that voice can't provide).
+    expect(skill.manifest.handlesConceptTypes).toEqual(
+      expect.arrayContaining(['vocabulary', 'factual', 'abstract'])
+    );
+    expect(skill.manifest.handlesConceptTypes).not.toContain('process');
+    // A Zod validator gates the Dashy-voice contract (first-person
+    // markers + banned voice-of-god phrases). No validator = no Dashy.
+    expect(skill.outputSchema).toBeDefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -561,6 +635,167 @@ describe('quiz-maker — buildPrompt variance by context', () => {
     expect(system).toMatch(/none of the above/i);
     // And the ban must be phrased as a prohibition, not a permission.
     expect(system).toMatch(/never|No option may contain|Never/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// experiment-designer render tests (S12-04) —
+// the drag-drop sort-and-classify skill. Boots the real registry and
+// exercises the age × difficulty matrix plus the strategy → concept-type
+// / modality / parent-avoid rendering surface.
+// ---------------------------------------------------------------------------
+
+describe('experiment-designer — buildPrompt variance by context', () => {
+  beforeAll(async () => {
+    const reg = __resetSkillRegistryForTests(resolveDefsDir());
+    await reg.load();
+  });
+
+  it('splits system/user on USER_PROMPT_MARKER and echoes concept + conceptType', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+    const { system, user } = skill.buildPrompt({
+      ctx: makeCtx(),
+      inputs: {
+        concept: 'classifying states of matter',
+        conceptType: 'process',
+      },
+    });
+    // System side names the Experiment Designer and the JSON output rules.
+    expect(system).toMatch(/Experiment Designer/i);
+    expect(system).toMatch(/dropTargets/);
+    expect(system).toMatch(/acceptsItemIds/);
+    // User side carries the concrete task + the concept name.
+    expect(user).toMatch(/Concept to probe/i);
+    expect(user).toMatch(/classifying states of matter/);
+    // Marker itself must NOT appear in either half.
+    expect(system.includes(USER_PROMPT_MARKER)).toBe(false);
+    expect(user.includes(USER_PROMPT_MARKER)).toBe(false);
+  });
+
+  it('selects the age-4 profile for a 4-year-old and emits single-attribute sort guidance', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+    const { system, meta } = skill.buildPrompt({
+      ctx: makeCtx({ ageYears: 4, effectiveAgeYears: 4 }),
+      inputs: { concept: 'where animals live', conceptType: 'vocabulary' },
+    });
+    expect(meta.ageProfileUsed).toBe(4);
+    expect(system).toMatch(/single-attribute sorts|picture-first/i);
+    expect(system).toMatch(/10.{0,3}16 words/);
+  });
+
+  it('selects the age-6 profile for a 6-year-old and allows one counterexample', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+    const { system, meta } = skill.buildPrompt({
+      ctx: makeCtx({ ageYears: 6, effectiveAgeYears: 6 }),
+      inputs: { concept: 'living vs not living', conceptType: 'comparison' },
+    });
+    expect(meta.ageProfileUsed).toBe(6);
+    expect(system).toMatch(/early reader|two-attribute/i);
+    expect(system).toMatch(/counterexample|counterexamples/i);
+  });
+
+  it('selects the age-8 profile for an 8-year-old and welcomes multi-attribute sorts', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+    const { system, meta } = skill.buildPrompt({
+      ctx: makeCtx({ ageYears: 8, effectiveAgeYears: 8 }),
+      inputs: { concept: 'states of matter', conceptType: 'process' },
+    });
+    expect(meta.ageProfileUsed).toBe(8);
+    expect(system).toMatch(/fluent reader|multi-attribute/i);
+  });
+
+  it('difficultyOffset -2 picks easy (3 items × 2 bins); 0 picks medium (4×2); +2 picks hard (5×3)', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+
+    const easy = skill.buildPrompt({
+      ctx: makeCtx({ difficultyOffset: -2 }),
+      inputs: { concept: 'floating and sinking', conceptType: 'comparison' },
+    });
+    expect(easy.meta.difficultyUsed).toBe('easy');
+    expect(easy.system).toMatch(/3 items × 2 bins/);
+    expect(easy.system).toMatch(/Recognition-level/i);
+
+    const medium = skill.buildPrompt({
+      ctx: makeCtx({ difficultyOffset: 0 }),
+      inputs: { concept: 'floating and sinking', conceptType: 'comparison' },
+    });
+    expect(medium.meta.difficultyUsed).toBe('medium');
+    expect(medium.system).toMatch(/4 items × 2 bins/);
+    expect(medium.system).toMatch(/Application-level/i);
+
+    const hard = skill.buildPrompt({
+      ctx: makeCtx({ difficultyOffset: 2 }),
+      inputs: { concept: 'states of matter', conceptType: 'process' },
+    });
+    expect(hard.meta.difficultyUsed).toBe('hard');
+    expect(hard.system).toMatch(/5 items × 3 bins/);
+    expect(hard.system).toMatch(/Transfer-level/i);
+  });
+
+  it('renders parent avoid list when populated, omits when empty', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+
+    const noAvoid = skill.buildPrompt({
+      ctx: makeCtx(),
+      inputs: { concept: 'seasons', conceptType: 'process' },
+    });
+    expect(noAvoid.system).not.toMatch(/Do NOT mention/);
+
+    const withAvoid = skill.buildPrompt({
+      ctx: makeCtx({
+        parentGuidance: {
+          ...makeCtx().parentGuidance,
+          topicAvoid: ['sharp tools', 'medicine'],
+        },
+      }),
+      inputs: { concept: 'seasons', conceptType: 'process' },
+    });
+    expect(withAvoid.system).toMatch(/Do NOT mention/);
+    expect(withAvoid.system).toMatch(/sharp tools, medicine/);
+  });
+
+  it('threads optional lastStoryExcerpt into the user turn when supplied', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+
+    const withStory = skill.buildPrompt({
+      ctx: makeCtx(),
+      inputs: {
+        concept: 'floating and sinking',
+        conceptType: 'comparison',
+        lastStoryExcerpt: 'Maya dropped an apple in the pond and it bobbed.',
+      },
+    });
+    expect(withStory.user).toMatch(/story the child just heard/i);
+    expect(withStory.user).toMatch(/Maya dropped an apple/);
+
+    const noStory = skill.buildPrompt({
+      ctx: makeCtx(),
+      inputs: { concept: 'floating and sinking', conceptType: 'comparison' },
+    });
+    expect(noStory.user).not.toMatch(/story the child just heard/i);
+  });
+
+  it('echoes modelHint=flash and the manifest temperatureHint in meta', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+    const { meta } = skill.buildPrompt({
+      ctx: makeCtx(),
+      inputs: { concept: 'sorting animals', conceptType: 'vocabulary' },
+    });
+    expect(meta.modelHint).toBe('flash');
+    expect(meta.temperatureHint).toBeCloseTo(0.5, 2);
+  });
+
+  it('throws when a required input is missing', () => {
+    const skill = getSkillRegistry().get('experiment-designer');
+    expect(() =>
+      skill.buildPrompt({ ctx: makeCtx(), inputs: {} })
+    ).toThrow(/missing required input/);
+    expect(() =>
+      skill.buildPrompt({
+        ctx: makeCtx(),
+        inputs: { concept: 'only half populated' },
+      })
+    ).toThrow(/missing required input "conceptType"/);
   });
 });
 

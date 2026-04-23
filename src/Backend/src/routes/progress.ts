@@ -128,7 +128,7 @@ export async function progressRoutes(fastify: FastifyInstance): Promise<void> {
         //   - action === 'answer'
         //   - result.correct is a boolean
         //   - the card has a conceptId (mastery-bearing cards only)
-        // Non-quiz interactions (views, story completions, sparky chats) are ignored.
+        // Non-quiz interactions (views, story completions, dashy chats) are ignored.
         const quizInteractions = interactions.filter(
           (i) => i.action === 'answer' && typeof i.result?.correct === 'boolean'
         );
