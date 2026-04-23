@@ -105,8 +105,24 @@ public struct Card: Codable, Identifiable, Equatable {
         /// Prompt text asking for voice input.
         public var promptText: String?
 
-        /// Expected voice responses for validation.
+        /// Expected voice responses for validation. The speech-recognition
+        /// transcript is matched against this list (case-insensitive,
+        /// whitespace-normalized, prefix + contains match) to decide
+        /// whether to play `celebration` or `retryHint`.
         public var expectedResponses: [String]?
+
+        /// S12-06 voice-persona: Dashy's shared-win line spoken via TTS
+        /// on a successful match. 6–80 chars, first-person.
+        public var celebration: String?
+
+        /// S12-06 voice-persona: Dashy's soft-reset line spoken via TTS
+        /// on a miss. 6–80 chars, first-person, no hard corrections.
+        public var retryHint: String?
+
+        /// S12-06 voice-persona: optional kebab-syllable pronunciation
+        /// hint (e.g. "pho-to-syn-the-sis") passed to AVSpeechUtterance
+        /// for clean TTS articulation of multi-syllable target words.
+        public var phonetics: String?
 
         // Video-specific
         /// URL to the video content.
@@ -130,6 +146,9 @@ public struct Card: Codable, Identifiable, Equatable {
             case correctOptionIndex = "correct_option_index"
             case promptText = "prompt_text"
             case expectedResponses = "expected_responses"
+            case celebration
+            case retryHint = "retry_hint"
+            case phonetics
             case videoURL = "video_url"
             case pausePoints = "pause_points"
         }
@@ -149,6 +168,9 @@ public struct Card: Codable, Identifiable, Equatable {
             correctOptionIndex: Int? = nil,
             promptText: String? = nil,
             expectedResponses: [String]? = nil,
+            celebration: String? = nil,
+            retryHint: String? = nil,
+            phonetics: String? = nil,
             videoURL: URL? = nil,
             pausePoints: [Double]? = nil
         ) {
@@ -165,6 +187,9 @@ public struct Card: Codable, Identifiable, Equatable {
             self.correctOptionIndex = correctOptionIndex
             self.promptText = promptText
             self.expectedResponses = expectedResponses
+            self.celebration = celebration
+            self.retryHint = retryHint
+            self.phonetics = phonetics
             self.videoURL = videoURL
             self.pausePoints = pausePoints
         }
