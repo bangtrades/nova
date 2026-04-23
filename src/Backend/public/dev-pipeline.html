@@ -1374,6 +1374,7 @@
     <button class="tab-btn" data-tab="context" role="tab" onclick="switchTab('context')">Session Context</button>
     <button class="tab-btn" data-tab="strategy" role="tab" onclick="switchTab('strategy')">Strategy</button>
     <button class="tab-btn" data-tab="skills" role="tab" onclick="switchTab('skills')">Skills</button>
+    <button class="tab-btn" data-tab="author" role="tab" onclick="switchTab('author')">Author Lesson</button>
     <button class="tab-btn" data-tab="inspector" role="tab" onclick="switchTab('inspector')">Progress Inspector</button>
     <button class="tab-btn" data-tab="cost" role="tab" onclick="switchTab('cost')">Cost / LLM</button>
   </nav>
@@ -1966,6 +1967,89 @@
 
   </section>
   <!-- ===================== /SKILLS TAB ===================== -->
+
+  <!-- ===================== AUTHOR LESSON TAB (S12-09) ===================== -->
+  <section class="tab-pane" id="tab-author" role="tabpanel">
+
+    <div class="dc-controls">
+      <button class="dc-toggle active" id="authorRefreshBtn" onclick="NovaDevConsole.loadAuthor()">Refresh</button>
+      <span class="dc-child-meta" id="authorMeta"></span>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Author a lesson from a URL</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.4;">
+        Pipeline: scrape → analyze → Stage-3 decompose → Stage-4 per-atom generate → quality gate → persist.
+        Per-stage pills light up as Server-Sent Events arrive. On completion the new lesson lands under the chosen path and the iPad picks it up on pull-to-refresh.
+      </div>
+    </div>
+
+    <div class="dc-grid-2">
+      <div class="dc-panel">
+        <div class="dc-panel-title">Child (drives age profile + guidance + session context)</div>
+        <select id="authorChildSelect" style="width:100%;padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;">
+          <option value="">— Loading…</option>
+        </select>
+        <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">Age profile is resolved from the child's birthDate + parent guidance difficultyOffset.</div>
+      </div>
+
+      <div class="dc-panel">
+        <div class="dc-panel-title">
+          Path (lesson attaches here)
+          <span class="spacer"></span>
+          <button class="dc-toggle" style="padding:4px 10px;font-size:11px;" onclick="NovaDevConsole.toggleNewPathForm()">+ New Path</button>
+        </div>
+        <select id="authorPathSelect" style="width:100%;padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;">
+          <option value="">— Loading…</option>
+        </select>
+        <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">Paths are parent-scoped — all children under your account share them.</div>
+      </div>
+    </div>
+
+    <div class="dc-panel" id="authorNewPathForm" style="display:none;">
+      <div class="dc-panel-title">Create a new path</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-top:8px;">
+        <input type="text" id="newPathTitle" placeholder="Path title (e.g. 'Science Stage 1')" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+        <input type="text" id="newPathIcon" placeholder="Icon (🔬)" maxlength="10" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+        <input type="text" id="newPathColor" placeholder="#FF8C5A" pattern="^#[0-9A-Fa-f]{6}$" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+      </div>
+      <textarea id="newPathDescription" rows="2" placeholder="Description (optional)" style="width:100%;margin-top:10px;padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="dc-toggle active" onclick="NovaDevConsole.createPath()">Create path</button>
+        <button class="dc-toggle dim" onclick="NovaDevConsole.toggleNewPathForm()">Cancel</button>
+        <span id="newPathStatus" style="font-size:11px;color:var(--text-muted);align-self:center;"></span>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Content URL</div>
+      <input type="url" id="authorUrl" placeholder="https://simple.wikipedia.org/wiki/Photosynthesis" style="width:100%;padding:10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:13px;" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <input type="text" id="authorTitleOverride" placeholder="Title override (optional — defaults to scraped title)" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+        <input type="text" id="authorDescOverride" placeholder="Description override (optional)" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;align-items:center;">
+        <button class="dc-toggle active" id="authorSubmitBtn" onclick="NovaDevConsole.startAuthor()" style="padding:10px 18px;font-size:13px;">Author lesson</button>
+        <button class="dc-toggle dim" id="authorCancelBtn" onclick="NovaDevConsole.cancelAuthor()" disabled>Cancel</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);">
+          <input type="checkbox" id="authorSkipQuality" /> Skip quality gate (faster iteration)
+        </label>
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">
+        Pipeline stream
+        <span class="spacer"></span>
+        <span id="authorStreamStatus" style="font-size:11px;color:var(--text-muted);"></span>
+      </div>
+      <div id="authorStream" style="margin-top:10px;min-height:120px;">
+        <div class="empty-state"><div class="empty-icon">◇</div>Pick a child + path, paste a URL, click Author lesson.</div>
+      </div>
+    </div>
+
+  </section>
+  <!-- ===================== /AUTHOR LESSON TAB ===================== -->
 
   <!-- ===================== PROGRESS INSPECTOR TAB (DC-04) ===================== -->
   <section class="tab-pane" id="tab-inspector" role="tabpanel">
@@ -2806,7 +2890,7 @@ const KG_STATE = {
   domain: 'all',      // active filter
 };
 
-const VALID_TABS = new Set(['pipeline', 'knowledge', 'engagement', 'mastery', 'guidance', 'context', 'strategy', 'skills', 'inspector', 'cost']);
+const VALID_TABS = new Set(['pipeline', 'knowledge', 'engagement', 'mastery', 'guidance', 'context', 'strategy', 'skills', 'author', 'inspector', 'cost']);
 
 function switchTab(name) {
   if (!VALID_TABS.has(name)) return;
@@ -2837,6 +2921,8 @@ function switchTab(name) {
     NovaDevConsole.loadStrategy();
   } else if (name === 'skills') {
     NovaDevConsole.loadSkills();
+  } else if (name === 'author') {
+    NovaDevConsole.loadAuthor();
   } else if (name === 'inspector') {
     NovaDevConsole.loadInspector();
   } else if (name === 'cost') {
@@ -4402,6 +4488,370 @@ const NovaDevConsole = (() => {
     // Skills tab in realChild mode will use the new child on the next manual Render click.
   });
 
+  // ============================================================
+  // Author Lesson tab (S12-09)
+  //
+  // Drives the Dev Console authoring loop: pick a child, pick a
+  // path (or create one inline), enter a URL, and watch per-stage
+  // SSE pills light up as the pipeline runs end-to-end.
+  //
+  // Why `fetch()` + ReadableStream instead of `new EventSource(...)`:
+  //   EventSource is GET-only per the HTML spec. Our endpoint takes
+  //   a POST body (url + childId + pathId etc). The standard
+  //   workaround is to open a streaming fetch, read the ReadableStream,
+  //   and parse `data: <json>\n\n` frames manually. Same on-the-wire
+  //   shape; same per-event rendering; we just skip the cached-
+  //   reconnect that EventSource gives us for free (not needed here
+  //   because the pipeline is one-shot, not a long-lived stream).
+  // ============================================================
+
+  const AUTHOR_STATE = {
+    children: [],
+    paths: [],
+    abortController: null,
+  };
+
+  async function loadAuthor() {
+    // Children first (needed for skill-engine path) …
+    try {
+      const childRes = await fetch(`${API}/children`);
+      const childJson = await childRes.json();
+      AUTHOR_STATE.children = childJson.data || childJson.children || [];
+      const childSelect = document.getElementById('authorChildSelect');
+      if (childSelect) {
+        childSelect.innerHTML = AUTHOR_STATE.children.length === 0
+          ? '<option value="">(no children — add one in Guidance tab)</option>'
+          : AUTHOR_STATE.children
+              .map((c) => `<option value="${escAttr(c.id)}">${escHtml(c.name)} (stage ${c.currentStage ?? '—'})</option>`)
+              .join('');
+        // Default to the globally selected child if it's in the list
+        if (STATE.childId && AUTHOR_STATE.children.some((c) => c.id === STATE.childId)) {
+          childSelect.value = STATE.childId;
+        }
+      }
+    } catch (err) {
+      const sel = document.getElementById('authorChildSelect');
+      if (sel) sel.innerHTML = `<option value="">Failed to load: ${escHtml(err.message)}</option>`;
+    }
+    await loadAuthorPaths();
+  }
+
+  async function loadAuthorPaths() {
+    try {
+      const pathRes = await fetch(`${API}/paths`);
+      const pathJson = await pathRes.json();
+      AUTHOR_STATE.paths = pathJson.data || pathJson.paths || pathJson || [];
+      const pathSelect = document.getElementById('authorPathSelect');
+      if (pathSelect) {
+        pathSelect.innerHTML = AUTHOR_STATE.paths.length === 0
+          ? '<option value="">(no paths — click + New Path to create one)</option>'
+          : AUTHOR_STATE.paths
+              .map((p) => {
+                const prefix = p.icon ? `${p.icon} ` : '';
+                const count = p.lessonCount != null ? ` (${p.lessonCount})` : '';
+                return `<option value="${escAttr(p.id)}">${escHtml(prefix)}${escHtml(p.title)}${escHtml(count)}</option>`;
+              })
+              .join('');
+      }
+    } catch (err) {
+      const sel = document.getElementById('authorPathSelect');
+      if (sel) sel.innerHTML = `<option value="">Failed to load: ${escHtml(err.message)}</option>`;
+    }
+  }
+
+  function toggleNewPathForm() {
+    const form = document.getElementById('authorNewPathForm');
+    if (!form) return;
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function createPath() {
+    const title = (document.getElementById('newPathTitle').value || '').trim();
+    const description = (document.getElementById('newPathDescription').value || '').trim();
+    const icon = (document.getElementById('newPathIcon').value || '').trim();
+    const color = (document.getElementById('newPathColor').value || '').trim();
+    const statusEl = document.getElementById('newPathStatus');
+
+    if (!title) {
+      statusEl.textContent = 'Title required';
+      statusEl.style.color = '#fca5a5';
+      return;
+    }
+
+    const body = { title };
+    if (description) body.description = description;
+    if (icon) body.icon = icon;
+    if (color) body.color = color;
+
+    statusEl.textContent = 'Creating…';
+    statusEl.style.color = 'var(--text-muted)';
+
+    try {
+      const res = await fetch(`${API}/paths`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || res.statusText);
+      }
+      const created = await res.json();
+      statusEl.textContent = `✓ Created "${created.title || title}"`;
+      statusEl.style.color = '#86efac';
+
+      document.getElementById('newPathTitle').value = '';
+      document.getElementById('newPathDescription').value = '';
+      document.getElementById('newPathIcon').value = '';
+      document.getElementById('newPathColor').value = '';
+
+      await loadAuthorPaths();
+      const pathSelect = document.getElementById('authorPathSelect');
+      if (created.id && pathSelect) pathSelect.value = created.id;
+
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    } catch (err) {
+      statusEl.textContent = `Failed: ${err.message}`;
+      statusEl.style.color = '#fca5a5';
+    }
+  }
+
+  function authorPillStyle(status) {
+    // Color palette matches the Pipeline tab's skill-trace pills so a
+    // glance across tabs gives consistent semantic cues.
+    switch (status) {
+      case 'start':    return 'background:#f59e0b22;color:#fcd34d;border:1px solid #f59e0b55;';
+      case 'done':     return 'background:#16a34a22;color:#86efac;border:1px solid #16a34a55;';
+      case 'failed':
+      case 'blocked':  return 'background:#dc262622;color:#fca5a5;border:1px solid #dc262655;';
+      default:         return 'background:#6b728022;color:#cbd5e1;border:1px solid #6b728055;';
+    }
+  }
+
+  function authorStageName(stage, event) {
+    switch (stage) {
+      case 'connection': return 'SSE connection';
+      case 'ingest':     return 'Create ingest row';
+      case 'scrape':     return 'Scrape URL';
+      case 'analyze':    return 'Analyze content';
+      case 'decompose':  return `Decompose concepts${event.source ? ' (' + event.source + ')' : ''}`;
+      case 'generate':   return `Generate cards${event.source ? ' (' + event.source + ')' : ''}`;
+      case 'quality':    return 'Quality gate';
+      case 'persist':    return 'Persist lesson';
+      case 'pipeline':   return 'Pipeline';
+      default:           return stage;
+    }
+  }
+
+  function authorStageDetail(event) {
+    const parts = [];
+    if (event.bytes != null) parts.push(`${event.bytes} bytes`);
+    if (event.title && event.stage === 'scrape') {
+      const t = String(event.title);
+      parts.push(`"${t.slice(0, 40)}${t.length > 40 ? '…' : ''}"`);
+    }
+    if (event.topic) parts.push(`topic: ${event.topic}`);
+    if (event.ageAppropriate === false) parts.push('age-inappropriate');
+    if (event.suggestedStage) parts.push(`stage ${event.suggestedStage}`);
+    if (event.atomCount != null) parts.push(`${event.atomCount} atoms`);
+    if (event.cardCount != null) parts.push(`${event.cardCount} cards`);
+    if (event.validatorStatus) parts.push(`validator: ${event.validatorStatus}`);
+    if (event.retryCount && event.retryCount > 0) parts.push(`retry×${event.retryCount}`);
+    if (event.retryOkCount) parts.push(`${event.retryOkCount} retry-ok`);
+    if (event.retryFailedCount) parts.push(`${event.retryFailedCount} retry-failed`);
+    if (event.skippedCount) parts.push(`${event.skippedCount} skipped`);
+    if (event.regeneratedCount) parts.push(`${event.regeneratedCount} regenerated`);
+    if (event.overallScore != null) parts.push(`score: ${Number(event.overallScore).toFixed(2)}`);
+    if (event.elapsedMs != null) parts.push(`${(event.elapsedMs / 1000).toFixed(1)}s`);
+    if (event.reason) parts.push(`reason: ${String(event.reason).slice(0, 60)}`);
+    if (event.error) parts.push(`error: ${String(event.error).slice(0, 80)}`);
+    return parts.map(escHtml).join(' · ');
+  }
+
+  function handleAuthorEvent(event) {
+    const streamEl = document.getElementById('authorStream');
+    const statusEl = document.getElementById('authorStreamStatus');
+    const stage = event.stage || 'unknown';
+    const status = event.status || 'unknown';
+
+    if (statusEl) {
+      statusEl.textContent = `${stage} · ${status}`;
+      statusEl.style.color = status === 'failed' ? '#fca5a5' : '#fcd34d';
+    }
+
+    // Terminal 'complete' event — render the final lesson card
+    if (stage === 'complete') {
+      if (status === 'done') {
+        const traces = event.skillTraces || 0;
+        const skipped = event.skillSkippedAtoms || 0;
+        const quality = event.qualityScore != null ? `<br>qualityScore: <span style="color:var(--text);">${Number(event.qualityScore).toFixed(2)}</span>` : '';
+        const html = `
+          <div style="padding:16px;margin-top:12px;background:#16a34a11;border:1px solid #16a34a55;border-radius:8px;">
+            <div style="font-weight:600;color:#86efac;margin-bottom:8px;font-size:14px;">✓ Lesson created</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);line-height:1.6;">
+              lessonId: <span style="color:var(--text);">${escHtml(event.lessonId || '—')}</span><br>
+              cards: <span style="color:var(--text);">${event.cardCount ?? '—'}</span><br>
+              skillEngineUsed: <span style="color:var(--text);">${event.skillEngineUsed ? 'yes' : 'no'}</span>${traces > 0 ? ` · ${traces} trace${traces === 1 ? '' : 's'}` : ''}${skipped > 0 ? ` · ${skipped} skipped` : ''}${quality}
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button class="dc-toggle" onclick="NovaDevConsole.jumpToPipelineWithLesson('${escAttr(event.lessonId || '')}')">Jump to Pipeline tab →</button>
+              <span style="font-size:11px;color:var(--text-muted);">Pull to refresh on iPad to pick it up.</span>
+            </div>
+          </div>`;
+        streamEl.insertAdjacentHTML('beforeend', html);
+        if (statusEl) { statusEl.textContent = 'done'; statusEl.style.color = '#86efac'; }
+      } else if (status === 'failed') {
+        streamEl.insertAdjacentHTML(
+          'beforeend',
+          `<div style="padding:12px 14px;margin-top:12px;background:#dc262611;border:1px solid #dc262655;border-radius:8px;color:#fca5a5;font-size:12px;">✗ Pipeline failed: ${escHtml(event.error || 'Unknown')}</div>`,
+        );
+      }
+      return;
+    }
+
+    // Regular stage-event row. One row per (stage, source) so a
+    // skill-engine decompose failure followed by a legacy decompose
+    // retry produce two distinct rows (not an overwrite).
+    const rowId = `author-stage-${stage}${event.source ? '-' + event.source : ''}`;
+    const pillStyle = authorPillStyle(status);
+    const detail = authorStageDetail(event);
+    const rowHtml = `
+      <div id="${rowId}" style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-family:var(--mono);color:var(--text-dim);font-size:10px;min-width:80px;">${escHtml(stage)}</span>
+        <span style="font-weight:600;font-size:13px;">${escHtml(authorStageName(stage, event))}</span>
+        <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-family:var(--mono);${pillStyle}">${escHtml(status)}</span>
+        ${detail ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">${detail}</span>` : ''}
+      </div>`;
+    const existing = document.getElementById(rowId);
+    if (existing) {
+      existing.outerHTML = rowHtml;
+    } else {
+      streamEl.insertAdjacentHTML('beforeend', rowHtml);
+    }
+  }
+
+  async function startAuthor() {
+    const childSelect = document.getElementById('authorChildSelect');
+    const pathSelect = document.getElementById('authorPathSelect');
+    const urlInput = document.getElementById('authorUrl');
+    const titleInput = document.getElementById('authorTitleOverride');
+    const descInput = document.getElementById('authorDescOverride');
+    const skipQuality = document.getElementById('authorSkipQuality').checked;
+    const streamEl = document.getElementById('authorStream');
+    const statusEl = document.getElementById('authorStreamStatus');
+    const submitBtn = document.getElementById('authorSubmitBtn');
+    const cancelBtn = document.getElementById('authorCancelBtn');
+
+    const childId = childSelect.value;
+    const pathId = pathSelect.value;
+    const url = urlInput.value.trim();
+    const title = titleInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!childId) {
+      streamEl.innerHTML = '<div class="empty-state" style="color:#fca5a5;"><div class="empty-icon">✗</div>Pick a child first.</div>';
+      return;
+    }
+    if (!pathId) {
+      streamEl.innerHTML = '<div class="empty-state" style="color:#fca5a5;"><div class="empty-icon">✗</div>Pick a path (or click + New Path above to create one).</div>';
+      return;
+    }
+    if (!url) {
+      streamEl.innerHTML = '<div class="empty-state" style="color:#fca5a5;"><div class="empty-icon">✗</div>URL required.</div>';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    cancelBtn.disabled = false;
+    streamEl.innerHTML = '';
+    statusEl.textContent = 'connecting…';
+    statusEl.style.color = '#fcd34d';
+
+    const body = { url, childId, pathId, skipQualityGate: skipQuality };
+    if (title) body.title = title;
+    if (description) body.description = description;
+
+    AUTHOR_STATE.abortController = new AbortController();
+
+    try {
+      const res = await fetch(`${API}/dev/author-lesson`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AUTHOR_STATE.abortController.signal,
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${res.status}`);
+      }
+      if (!res.body) throw new Error('No response body — SSE not supported by this client');
+
+      // Manual SSE frame parser over a streaming fetch. Chunks may
+      // arrive mid-frame, so buffer until we see the `\n\n` delimiter
+      // and hold the trailing partial until the next chunk.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop() || '';
+        for (const frame of frames) {
+          const line = frame.trim();
+          if (!line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          try {
+            handleAuthorEvent(JSON.parse(payload));
+          } catch (e) {
+            console.warn('[author] bad SSE frame', payload, e);
+          }
+        }
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        statusEl.textContent = 'cancelled';
+        statusEl.style.color = 'var(--text-muted)';
+        streamEl.insertAdjacentHTML(
+          'beforeend',
+          '<div style="padding:8px 12px;color:var(--text-muted);font-size:12px;">— cancelled —</div>',
+        );
+      } else {
+        statusEl.textContent = `error: ${err.message}`;
+        statusEl.style.color = '#fca5a5';
+        streamEl.insertAdjacentHTML(
+          'beforeend',
+          `<div style="padding:8px 12px;color:#fca5a5;font-size:12px;">✗ ${escHtml(err.message)}</div>`,
+        );
+      }
+    } finally {
+      submitBtn.disabled = false;
+      cancelBtn.disabled = true;
+      AUTHOR_STATE.abortController = null;
+    }
+  }
+
+  function cancelAuthor() {
+    if (AUTHOR_STATE.abortController) {
+      AUTHOR_STATE.abortController.abort();
+    }
+  }
+
+  function jumpToPipelineWithLesson(lessonId) {
+    if (lessonId) {
+      // Sync the Pipeline tab's cross-cutting global so the skill-trace
+      // panel refreshes against the newly-authored lesson.
+      currentLessonId = lessonId;
+      if (typeof refreshSkillTrace === 'function') {
+        refreshSkillTrace();
+      }
+    }
+    switchTab('pipeline');
+  }
+
   return {
     getChildId, getChildren, setChildren, setChildId,
     loadEngagement, toggleEngagementRaw,
@@ -4410,6 +4860,7 @@ const NovaDevConsole = (() => {
     loadContext, toggleContextAuto,
     loadStrategy, onStrategyDifficultyInput,
     loadSkills, onSkillSelect, onSkillsModeChange, renderSkill, reloadSkill, reseedInputsForSkill,
+    loadAuthor, toggleNewPathForm, createPath, startAuthor, cancelAuthor, jumpToPipelineWithLesson,
     loadInspector, toggleInspectorTail, toggleInspectorChildFilter, resetRings,
     loadCost, setCostWindow,
   };

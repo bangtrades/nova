@@ -24,6 +24,7 @@ import { knowledgeRoutes } from './knowledge';
 import { engagementRoutes } from './engagement';
 import { devConsoleRoutes } from './devConsole';
 import { devSkillsRoutes } from './devSkills';
+import devAuthorRoutes from './devAuthor';
 import { parentGuidanceRoutes } from './parentGuidance';
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
@@ -108,6 +109,9 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
 
       // Dev console — Skill Engine routes (require auth) - Sprint 10 (S10-06/07)
       await fastify.register(devSkillsRoutes, { prefix: '/dev' });
+
+      // Dev console — Author Lesson SSE route (require auth) - Sprint 12 (S12-09)
+      await fastify.register(devAuthorRoutes, { prefix: '/dev' });
     },
     { prefix: '/api/v1' }
   );

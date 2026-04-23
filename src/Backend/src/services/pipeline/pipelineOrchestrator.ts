@@ -93,6 +93,36 @@ const DEFAULTS = {
   retryBackoffMs: 750,
 } as const;
 
+/**
+ * S12-09 — structured event stream a caller can subscribe to. The Dev
+ * Console's Author Lesson tab wires this to SSE (`reply.raw.write('data:
+ * {json}\n\n')`) so the user sees per-stage pills light up as the
+ * pipeline progresses. Keeping the events as a discriminated union
+ * (stage + status) means the frontend can ship one switch-based
+ * renderer without having to sniff property shapes.
+ */
+export type PipelineStageEvent =
+  | { stage: 'scrape'; status: 'start' }
+  | { stage: 'scrape'; status: 'done'; bytes: number; title: string }
+  | { stage: 'scrape'; status: 'failed'; error: string }
+  | { stage: 'analyze'; status: 'start' }
+  | { stage: 'analyze'; status: 'done'; topic: string; ageAppropriate: boolean; suggestedStage: number }
+  | { stage: 'analyze'; status: 'failed'; error: string }
+  | { stage: 'analyze'; status: 'blocked'; reason: string } // age-inappropriate content
+  | { stage: 'decompose'; status: 'start'; source: 'skill-engine' | 'legacy' }
+  | { stage: 'decompose'; status: 'done'; source: 'skill-engine' | 'legacy'; atomCount: number; validatorStatus?: string; retryCount?: number }
+  | { stage: 'decompose'; status: 'failed'; source: 'skill-engine' | 'legacy'; error: string }
+  | { stage: 'generate'; status: 'start'; source: 'skill-engine' | 'legacy'; atomCount: number }
+  | { stage: 'generate'; status: 'done'; source: 'skill-engine' | 'legacy'; cardCount: number; skippedCount?: number; retryOkCount?: number; retryFailedCount?: number }
+  | { stage: 'generate'; status: 'failed'; source: 'skill-engine' | 'legacy'; error: string }
+  | { stage: 'quality'; status: 'start' }
+  | { stage: 'quality'; status: 'done'; regeneratedCount: number; overallScore?: number }
+  | { stage: 'quality'; status: 'failed'; error: string }
+  | { stage: 'persist'; status: 'start' }
+  | { stage: 'persist'; status: 'done'; lessonId: string; cardCount: number }
+  | { stage: 'pipeline'; status: 'done'; lessonId: string; cardCount: number; elapsedMs: number }
+  | { stage: 'pipeline'; status: 'failed'; error: string };
+
 export interface PipelineOptions {
   stageTimeoutMs?: number;
   pipelineTimeoutMs?: number;
@@ -104,6 +134,27 @@ export interface PipelineOptions {
    * Without a childId the pipeline behaves as before (generic prompts).
    */
   childId?: string;
+  /**
+   * S12-09 — optional callback invoked at every stage boundary. The Dev
+   * Console Author Lesson tab uses this to drive SSE output. The
+   * callback is synchronous + fire-and-forget from the orchestrator's
+   * perspective — if the caller's handler throws, the error is swallowed
+   * so a broken SSE connection can't crash the pipeline mid-run.
+   */
+  onStageEvent?: (event: PipelineStageEvent) => void;
+}
+
+/** Internal: emit helper that swallows callback errors (SSE disconnect shouldn't kill the pipeline). */
+function emit(opts: PipelineOptions, event: PipelineStageEvent): void {
+  if (!opts.onStageEvent) return;
+  try {
+    opts.onStageEvent(event);
+  } catch (err) {
+    // Swallow — a broken SSE connection or a buggy listener must not
+    // take down the pipeline. The orchestrator's state machine is the
+    // source of truth; event streaming is advisory.
+    console.warn(`[Pipeline] onStageEvent handler threw: ${errMsg(err)}`);
+  }
 }
 
 /**
@@ -183,12 +234,20 @@ export async function runPipeline(
     }
 
     // Stage 1: Scrape ────────────────────────────────────────────────────
+    emit(opts, { stage: 'scrape', status: 'start' });
     const scraped = await runStage('scrape', () => scrapeUrl(ingest.url), stageOpts).catch(
       async (err) => {
         await updateIngestStatus(ingestId, 'failed');
+        emit(opts, { stage: 'scrape', status: 'failed', error: errMsg(err) });
         throw new Error(`Scrape failed: ${errMsg(err)}`);
       }
     );
+    emit(opts, {
+      stage: 'scrape',
+      status: 'done',
+      bytes: scraped.content.length,
+      title: scraped.title,
+    });
 
     await prisma.urlIngest.update({
       where: { id: ingestId },
@@ -197,12 +256,14 @@ export async function runPipeline(
 
     // Stage 2: Analyze content (with internal safety second-pass) ────────
     await updateIngestStatus(ingestId, 'analyzing');
+    emit(opts, { stage: 'analyze', status: 'start' });
     const analysis = await runStage(
       'analyze',
       () => analyzeContent(userId, scraped),
       stageOpts
     ).catch(async (err) => {
       await updateIngestStatus(ingestId, 'failed');
+      emit(opts, { stage: 'analyze', status: 'failed', error: errMsg(err) });
       throw new Error(`Analysis failed: ${errMsg(err)}`);
     });
 
@@ -214,8 +275,21 @@ export async function runPipeline(
       },
     });
 
+    emit(opts, {
+      stage: 'analyze',
+      status: 'done',
+      topic: analysis.topic,
+      ageAppropriate: analysis.ageAppropriate,
+      suggestedStage: analysis.suggestedStage,
+    });
+
     if (!analysis.ageAppropriate) {
       await updateIngestStatus(ingestId, 'completed');
+      emit(opts, {
+        stage: 'analyze',
+        status: 'blocked',
+        reason: analysis.safetyFlags.join(', '),
+      });
       return {
         ingestId,
         lessonId: '',
@@ -240,6 +314,7 @@ export async function runPipeline(
       !!opts.childId && !!childContext && isSkillEngineStage3Enabled();
 
     if (useSkillEngineStage3 && childContext) {
+      emit(opts, { stage: 'decompose', status: 'start', source: 'skill-engine' });
       try {
         const routeResult = await runStage(
           'decompose',
@@ -255,10 +330,24 @@ export async function runPipeline(
         decompositionTrace = routeResult.trace;
         if (routeResult.kind === 'ok') {
           decomposition = routeResult.decomposition;
+          emit(opts, {
+            stage: 'decompose',
+            status: 'done',
+            source: 'skill-engine',
+            atomCount: decomposition.atoms.length,
+            validatorStatus: routeResult.trace.validatorStatus,
+            retryCount: routeResult.trace.retryCount,
+          });
         } else {
           console.warn(
             `[Pipeline] Stage-3 skill engine failed (${routeResult.reason}); falling back to legacy decomposeConcepts. Detail: ${routeResult.trace.error ?? 'n/a'}`
           );
+          emit(opts, {
+            stage: 'decompose',
+            status: 'failed',
+            source: 'skill-engine',
+            error: `${routeResult.reason}: ${routeResult.trace.error ?? 'n/a'}`,
+          });
         }
       } catch (err) {
         // Transient exhaustion from runStage — skill-engine path is out.
@@ -266,20 +355,39 @@ export async function runPipeline(
         console.warn(
           `[Pipeline] Stage-3 skill engine threw transiently; falling back: ${errMsg(err)}`
         );
+        emit(opts, {
+          stage: 'decompose',
+          status: 'failed',
+          source: 'skill-engine',
+          error: errMsg(err),
+        });
       }
     }
 
     if (!decomposition) {
+      emit(opts, { stage: 'decompose', status: 'start', source: 'legacy' });
       try {
         decomposition = await runStage(
           'decompose',
           () => decomposeConcepts(userId, analysis, scraped, guidance, sessionContext),
           stageOpts
         );
+        emit(opts, {
+          stage: 'decompose',
+          status: 'done',
+          source: 'legacy',
+          atomCount: decomposition.atoms.length,
+        });
       } catch (err) {
         // Non-fatal: the card generator has a legacy code path that works
         // without a decomposition. Log and continue.
         console.warn(`[Pipeline] Decomposition failed, falling back: ${errMsg(err)}`);
+        emit(opts, {
+          stage: 'decompose',
+          status: 'failed',
+          source: 'legacy',
+          error: errMsg(err),
+        });
       }
     }
 
@@ -302,6 +410,12 @@ export async function runPipeline(
       isSkillEngineStage4Enabled();
 
     if (useSkillEngine && childContext && decomposition) {
+      emit(opts, {
+        stage: 'generate',
+        status: 'start',
+        source: 'skill-engine',
+        atomCount: decomposition.atoms.length,
+      });
       const skillResult = await runStage(
         'generate',
         () =>
@@ -317,6 +431,12 @@ export async function runPipeline(
         stageOpts
       ).catch(async (err) => {
         await updateIngestStatus(ingestId, 'failed');
+        emit(opts, {
+          stage: 'generate',
+          status: 'failed',
+          source: 'skill-engine',
+          error: errMsg(err),
+        });
         throw new Error(`Card generation failed: ${errMsg(err)}`);
       });
       cards = skillResult.cards;
@@ -328,14 +448,46 @@ export async function runPipeline(
           `[Pipeline] Skill engine produced ${skillResult.cards.length} cards; legacy fallback was invoked for ${skillResult.skipped.length} skipped atom(s).`
         );
       }
+      // Per-atom retry tallies for the Dev Console — computed here so the
+      // frontend doesn't need to re-iterate the trace array to render the
+      // stage pill badge.
+      const retryOkCount = skillTraces.filter((t) => t.validatorStatus === 'retry-ok').length;
+      const retryFailedCount = skillTraces.filter((t) => t.validatorStatus === 'retry-failed').length;
+      emit(opts, {
+        stage: 'generate',
+        status: 'done',
+        source: 'skill-engine',
+        cardCount: cards.length,
+        skippedCount: skillResult.skipped.length,
+        retryOkCount,
+        retryFailedCount,
+      });
     } else {
+      emit(opts, {
+        stage: 'generate',
+        status: 'start',
+        source: 'legacy',
+        atomCount: decomposition?.atoms.length ?? 0,
+      });
       cards = await runStage(
         'generate',
         () => generateCards(userId, analysis, scraped, decomposition, guidance, sessionContext),
         stageOpts
       ).catch(async (err) => {
         await updateIngestStatus(ingestId, 'failed');
+        emit(opts, {
+          stage: 'generate',
+          status: 'failed',
+          source: 'legacy',
+          error: errMsg(err),
+        });
         throw new Error(`Card generation failed: ${errMsg(err)}`);
+      });
+      emit(opts, {
+        stage: 'generate',
+        status: 'done',
+        source: 'legacy',
+        cardCount: cards.length,
       });
     }
 
@@ -344,6 +496,7 @@ export async function runPipeline(
     let regeneratedIndexes: number[] = [];
     if (!opts.skipQualityGate) {
       await updateIngestStatus(ingestId, 'quality_gate');
+      emit(opts, { stage: 'quality', status: 'start' });
       try {
         const gateResult = await runStage(
           'quality_gate',
@@ -353,9 +506,20 @@ export async function runPipeline(
         cards = gateResult.cards;
         qualityReport = gateResult.report;
         regeneratedIndexes = gateResult.regeneratedIndexes;
+        emit(opts, {
+          stage: 'quality',
+          status: 'done',
+          regeneratedCount: regeneratedIndexes.length,
+          overallScore: qualityReport?.overallScore,
+        });
       } catch (err) {
         // Non-fatal: proceed with original cards
         console.warn(`[Pipeline] Quality gate failed, proceeding without: ${errMsg(err)}`);
+        emit(opts, {
+          stage: 'quality',
+          status: 'failed',
+          error: errMsg(err),
+        });
       }
     }
 
@@ -385,6 +549,7 @@ export async function runPipeline(
       skillEngine: skillEngineEnvelope,
     };
 
+    emit(opts, { stage: 'persist', status: 'start' });
     const lesson = await prisma.lesson.create({
       data: {
         userId,
@@ -409,6 +574,12 @@ export async function runPipeline(
 
     const lessonId = lesson.id;
     await updateIngestStatus(ingestId, 'completed');
+    emit(opts, {
+      stage: 'persist',
+      status: 'done',
+      lessonId,
+      cardCount: cards.length,
+    });
 
     // Stage 5: Kick off asset generation (fire-and-forget) ───────────────
     const config = getConfig();
@@ -437,6 +608,14 @@ export async function runPipeline(
       );
     }
 
+    emit(opts, {
+      stage: 'pipeline',
+      status: 'done',
+      lessonId,
+      cardCount: cards.length,
+      elapsedMs,
+    });
+
     return {
       ingestId,
       lessonId,
@@ -458,6 +637,7 @@ export async function runPipeline(
     } catch {
       /* swallow */
     }
+    emit(opts, { stage: 'pipeline', status: 'failed', error: errMsg(error) });
     throw error;
   }
 }
