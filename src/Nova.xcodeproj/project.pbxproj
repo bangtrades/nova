@@ -118,11 +118,25 @@
 		FEFB5C6BD521DB2D111CD550 /* Sources/App/NovaCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C490ABC033D2FF49576124D8 /* Sources/App/NovaCompanionApp.swift */; };
 		DE51617100000011000000B1 /* Sources/Views/Common/DesignSystem/NovaCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C1 /* Sources/Views/Common/DesignSystem/NovaCard.swift */; };
 		DE51617100000011000000B2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift */; };
+		DE51617100000011000000B3 /* Sources/Views/Common/DesignSystem/NovaHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C3 /* Sources/Views/Common/DesignSystem/NovaHaptics.swift */; };
+		DE51617100000011000000B4 /* Sources/Views/Flipbook/QuizAnswerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C4 /* Sources/Views/Flipbook/QuizAnswerButton.swift */; };
+		DE51617100000011000000B5 /* Sources/Views/Flipbook/QuizPowReaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C5 /* Sources/Views/Flipbook/QuizPowReaction.swift */; };
+		DE51617100000011000000B6 /* Sources/Views/Common/DesignSystem/ProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C6 /* Sources/Views/Common/DesignSystem/ProgressRing.swift */; };
+		DE51617100000011000000B7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */; };
+		DE51617100000011000000B8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */; };
+		DE51617100000011000000B9 /* Sources/Views/Dashy/DashySpeechBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		DE51617100000011000000C1 /* Sources/Views/Common/DesignSystem/NovaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaCard.swift; sourceTree = "<group>"; };
 		DE51617100000011000000C2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaButtonStyles.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C3 /* Sources/Views/Common/DesignSystem/NovaHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaHaptics.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C4 /* Sources/Views/Flipbook/QuizAnswerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/QuizAnswerButton.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C5 /* Sources/Views/Flipbook/QuizPowReaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/QuizPowReaction.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C6 /* Sources/Views/Common/DesignSystem/ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/ProgressRing.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/BadgeUnlockBurst.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift; sourceTree = "<group>"; };
+		DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashy/DashySpeechBubble.swift; sourceTree = "<group>"; };
 		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
 		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
 		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
@@ -309,6 +323,7 @@
 				5AA2151E3925C7D5ABF4BF1A /* Sources/Views/Dashy/DashyCharacterView.swift */,
 				150C4C0D4DDC171E6C3474C3 /* Sources/Views/Flipbook/DashyHintButton.swift */,
 				A7EC0078CB117A40396E8737 /* Sources/Views/Flipbook/DashyHintSheet.swift */,
+				DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */,
 				72031029B6E29935FC0046E3 /* Sources/Views/Dashy/DashyView.swift */,
 				591B8859205724FF6CB587E0 /* Sources/ViewModels/DashyViewModel.swift */,
 				B6C38E81B60274B118D63FC0 /* Sources/Views/Flipbook/StoryCardView.swift */,
@@ -319,6 +334,12 @@
 				82F262894EC476F14EF5E76C /* Sources/Views/Home/WelcomeHeader.swift */,
 				DE51617100000011000000C1 /* Sources/Views/Common/DesignSystem/NovaCard.swift */,
 				DE51617100000011000000C2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift */,
+				DE51617100000011000000C3 /* Sources/Views/Common/DesignSystem/NovaHaptics.swift */,
+				DE51617100000011000000C4 /* Sources/Views/Flipbook/QuizAnswerButton.swift */,
+				DE51617100000011000000C5 /* Sources/Views/Flipbook/QuizPowReaction.swift */,
+				DE51617100000011000000C6 /* Sources/Views/Common/DesignSystem/ProgressRing.swift */,
+				DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */,
+				DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */,
 			);
 			name = NovaKids;
 			path = Apps/NovaKids;
@@ -550,6 +571,13 @@
 				574A3C73EBF31040AE2E8E83 /* Sources/Views/Home/WelcomeHeader.swift in Sources */,
 				DE51617100000011000000B1 /* Sources/Views/Common/DesignSystem/NovaCard.swift in Sources */,
 				DE51617100000011000000B2 /* Sources/Views/Common/DesignSystem/NovaButtonStyles.swift in Sources */,
+				DE51617100000011000000B3 /* Sources/Views/Common/DesignSystem/NovaHaptics.swift in Sources */,
+				DE51617100000011000000B4 /* Sources/Views/Flipbook/QuizAnswerButton.swift in Sources */,
+				DE51617100000011000000B5 /* Sources/Views/Flipbook/QuizPowReaction.swift in Sources */,
+				DE51617100000011000000B6 /* Sources/Views/Common/DesignSystem/ProgressRing.swift in Sources */,
+				DE51617100000011000000B7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift in Sources */,
+				DE51617100000011000000B8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift in Sources */,
+				DE51617100000011000000B9 /* Sources/Views/Dashy/DashySpeechBubble.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

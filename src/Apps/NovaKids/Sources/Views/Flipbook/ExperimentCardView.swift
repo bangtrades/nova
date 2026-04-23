@@ -227,7 +227,10 @@ public struct ExperimentCardView: View {
         // Validate drop
         if target.acceptsItemIds.contains(item.id) {
             // Correct drop
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            // S11-16: snap spring reduces to instant state change under reduce-motion —
+            // the placement still renders, just without the bounce. Haptic + confetti
+            // carry the success cue for users who'd otherwise miss the motion feedback.
+            withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.6)) {
                 if let index = dragItems.firstIndex(where: { $0.id == item.id }) {
                     dragItems[index].isPlaced = true
                     dragItems[index].placedOnTargetId = target.id
@@ -238,9 +241,12 @@ public struct ExperimentCardView: View {
                 }
             }
 
-            // Haptic feedback
-            let impact = UIImpactFeedbackGenerator(style: .heavy)
-            impact.impactOccurred()
+            // S11-15: each correct snap fires commit() (medium), NOT success().
+            // Individual snaps are commitments — the user committed a piece;
+            // full-completion celebration fires once in celebrateCompletion().
+            // Using success() here would stack two VoiceOver "success" cues
+            // on the final drop (one per-snap, one full-complete).
+            NovaHaptics.commit()
 
             // Check if all items placed
             if dragItems.allSatisfy({ $0.isPlaced }) {
@@ -249,24 +255,34 @@ public struct ExperimentCardView: View {
         } else {
             // Wrong drop - bounce back
             bouncingItemId = item.id
-            shakeAnimation = true
+            // S11-16: shake-animation driver is skipped entirely under reduce-motion —
+            // the ShakeModifier's Timer publisher would otherwise jitter the tile
+            // with random ±10pt offsets even without an explicit withAnimation call.
+            shakeAnimation = !reduceMotion
 
-            withAnimation(.easeInOut(duration: 0.3)) {
+            // S11-16: wrong-drop bounce-back is ambient motion — the wrong() haptic
+            // is the primary try-again cue. Skipping the scale animation under
+            // reduce-motion leaves the snap-back visually instant but still audible
+            // via haptic + VoiceOver.
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                 showBounceBack = true
             }
 
             bounceBackTask = Task {
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                     showBounceBack = false
                 }
                 bouncingItemId = nil
             }
 
-            // Gentle warning haptic
-            let impact = UIImpactFeedbackGenerator(style: .light)
-            impact.impactOccurred()
+            // S11-15: wrong-drop is a try-again beat, not an acknowledgement.
+            // Previous code used .light ("gentle warning") but that's the tap
+            // ladder rung — it read as "you did a thing" rather than "not
+            // there, try again". Routed through NovaHaptics.wrong() (rigid)
+            // for correct semantic mapping.
+            NovaHaptics.wrong()
 
             // Shake animation
             shakeTask = Task {
@@ -281,19 +297,26 @@ public struct ExperimentCardView: View {
         completionMessage = "All set!"
         showConfetti = true
 
+        // S11-16: celebration fade-in is a one-shot discrete-event per Apple HIG
+        // motion-semantics — the user's completion moment should feel special
+        // regardless of reduce-motion preference. Confetti + success() haptic +
+        // opacity transition all survive the audit as celebration carve-outs.
         withAnimation(.easeInOut(duration: 0.5)) {
             completionOpacity = 1.0
         }
 
-        // Haptic success
-        let impact = UIImpactFeedbackGenerator(style: .heavy)
-        impact.impactOccurred()
+        // S11-15: full-completion celebrate — heavy impact + system success
+        // notification so VoiceOver users get the "you did it" cue that
+        // sighted users get from the confetti.
+        NovaHaptics.success()
 
         // Auto-dismiss after 2 seconds
         dismissTask = Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             guard !Task.isCancelled else { return }
-            withAnimation {
+            // S11-16: auto-dismiss fade is ambient cleanup, not celebration —
+            // gated so reduce-motion users get an instant hide.
+            withAnimation(reduceMotion ? nil : .default) {
                 completionOpacity = 0
             }
         }

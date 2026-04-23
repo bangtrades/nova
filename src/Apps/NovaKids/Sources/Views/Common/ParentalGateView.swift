@@ -242,9 +242,8 @@ public struct ParentalGateView: View {
                 showSuccess = true
             }
 
-            // Haptic success
-            let impact = UIImpactFeedbackGenerator(style: .heavy)
-            impact.impactOccurred()
+            // S11-15: parent verified — celebrate beat + VoiceOver success cue.
+            NovaHaptics.success()
 
             // Dismiss and trigger callback after delay
             dismissTask = Task {
@@ -254,9 +253,9 @@ public struct ParentalGateView: View {
                 onSuccess()
             }
         } else {
-            // Wrong answer - shake and reset
-            let impact = UIImpactFeedbackGenerator(style: .rigid)
-            impact.impactOccurred()
+            // S11-15: wrong math answer — try-again beat. Using .wrong() (rigid)
+            // so the feel is "not quite, try again" rather than "ERROR".
+            NovaHaptics.wrong()
 
             // Check for lockout
             if attempts % maxAttemptsBeforeLockout == 0 {

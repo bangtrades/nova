@@ -4,6 +4,19 @@ import SwiftUI
 ///
 /// Shows 50 particles bursting from center with gravity and drift.
 /// Duration: 1.5 seconds with opacity fade-out in last 0.3s.
+///
+/// ## Reduce-motion (S11-16 carve-out)
+///
+/// The particle animations deliberately do NOT gate on
+/// `@Environment(\.accessibilityReduceMotion)`. Per Apple HIG motion
+/// semantics, a one-shot discrete-event celebration (the moment the user
+/// completes an experiment card) should survive reduce-motion — it's not
+/// ambient motion, it's the "you did it" beat. The parent gates *whether*
+/// to show a celebration; once shown, the celebration runs.
+///
+/// If a future caller wants a reduce-motion-friendly celebration variant
+/// (e.g. a static star burst with no particle physics), build it as a
+/// sibling view — don't weaken ConfettiView's semantics.
 public struct ConfettiView: View {
     @Binding var isActive: Bool
 

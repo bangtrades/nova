@@ -12,7 +12,12 @@ public class FlipbookViewModel: ObservableObject {
     @Published var cards: [Card] = []
     @Published var currentCardIndex: Int = 0
     @Published var completedCardIndices: Set<Int> = []
+    // S11-19: `isLoading` now has a real fetch path — when the injected
+    // lesson arrives without embedded cards (the Tier-1 `fetchLessons`
+    // list endpoint returns summaries, not full card arrays), the view
+    // model lazily fetches `/api/v1/lessons/:id/cards` via `loadCardsIfNeeded()`.
     @Published var isLoading: Bool = false
+    @Published var loadError: APIError?
     @Published var showDashyHint: Bool = false
     @Published var autoNarrate: Bool {
         didSet {
@@ -23,6 +28,12 @@ public class FlipbookViewModel: ObservableObject {
     /// Voice manager for TTS capabilities.
     public let voiceManager: VoiceManager
 
+    /// Injected post-construction via `attach(apiRouter:)`. The init is kept
+    /// zero-router so `StateObject(wrappedValue: FlipbookViewModel(lesson:…))`
+    /// callsites + previews stay intact. When nil, `loadCardsIfNeeded()`
+    /// falls back to mock cards so previews still render a full flipbook.
+    private var apiRouter: APIRouter?
+
     public init(lesson: Lesson, voiceManager: VoiceManager) {
         self.lesson = lesson
         self.voiceManager = voiceManager
@@ -30,20 +41,73 @@ public class FlipbookViewModel: ObservableObject {
         // Load auto-narrate preference
         self.autoNarrate = UserDefaults.standard.bool(forKey: "flipbook.autoNarrate")
 
-        // Load cards from lesson
-        if let lessonCards = lesson.cards {
+        // Load cards from lesson synchronously if the caller already has
+        // them. When `lesson.cards` is nil we defer to `loadCardsIfNeeded()`
+        // so the View can await the fetch and surface `isLoading`.
+        if let lessonCards = lesson.cards, !lessonCards.isEmpty {
             self.cards = lessonCards.sorted { $0.sortOrder < $1.sortOrder }
-        } else {
-            // Generate mock cards if not available
-            self.cards = generateMockCards()
-        }
 
-        // Auto-narrate the first card if enabled
-        if autoNarrate && !cards.isEmpty {
-            Task {
-                try? await speakCurrentCard()
+            // Auto-narrate the first card if enabled and we have content now.
+            if autoNarrate {
+                Task {
+                    try? await speakCurrentCard()
+                }
             }
         }
+        // If cards are nil/empty we do NOT pre-populate with mock data here
+        // — `loadCardsIfNeeded()` handles the router-vs-preview decision.
+    }
+
+    /// Wire the API router in post-construction. Idempotent — re-calling
+    /// (e.g. a `.task` re-trigger on tab switch) is a no-op after the first.
+    public func attach(apiRouter: APIRouter) {
+        guard self.apiRouter == nil else { return }
+        self.apiRouter = apiRouter
+    }
+
+    /// Fetches cards if the lesson arrived without them. Called from the
+    /// View's `.task` after `attach(apiRouter:)`. Safe to call multiple times
+    /// — once cards are non-empty, subsequent calls short-circuit.
+    ///
+    /// Live path: `GET /api/v1/lessons/:id/cards` via `apiRouter.fetchCards`.
+    /// Preview / nil-router path: falls through to `generateMockCards()` so
+    /// `#Preview { FlipbookView(lesson:) }` renders a full flipbook without
+    /// needing a backend.
+    public func loadCardsIfNeeded() async {
+        guard cards.isEmpty else { return }
+
+        guard let apiRouter else {
+            // Preview / unit-test path — the mock generator produces a 5-card
+            // deck so the Flipbook can exercise swipe + progress dots.
+            self.cards = generateMockCards()
+            if autoNarrate {
+                try? await speakCurrentCard()
+            }
+            return
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let fetched = try await apiRouter.fetchCards(lessonId: lesson.id)
+            self.cards = fetched.sorted { $0.sortOrder < $1.sortOrder }
+            self.loadError = nil
+            if autoNarrate && !cards.isEmpty {
+                try? await speakCurrentCard()
+            }
+        } catch let error as APIError {
+            self.loadError = error
+        } catch {
+            self.loadError = .custom(error.localizedDescription)
+        }
+    }
+
+    /// Retry handler for the error banner's "Try Again" button. Clears the
+    /// error and re-runs the fetch.
+    public func retryLoad() async {
+        loadError = nil
+        await loadCardsIfNeeded()
     }
 
     /// Generates mock cards for demonstration.

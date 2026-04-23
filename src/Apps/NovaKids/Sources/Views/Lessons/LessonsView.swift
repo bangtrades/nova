@@ -1,13 +1,26 @@
 import SwiftUI
 import NovaCore
 
-/// Lessons tab showing all available lessons in a masonry grid.
+/// Lessons tab showing all available lessons in a Pinterest-style masonry grid.
 ///
-/// Allows filtering by learning path and displays completion status.
+/// S11-12 refresh lands three things on top of the existing structure:
+///   1. `LessonTileView` now consumes the DS visual language (ink outline +
+///      accent stripe + page background + optional "NEW" badge + iPad hover).
+///   2. `PathFilterPill` replaces the earlier `PathFilterButton` — ink-outline
+///      default, coral-fill when selected, keyed to the 3+1 palette.
+///   3. Spacing routes through the `Spacing` enum so the grid breathes at the
+///      same rhythm as Home / Trophy / Quiz.
+///
+/// Masonry math is untouched — `MasonryGrid` still derives column width from
+/// the enclosing `GeometryReader`, and tile content size still drives row
+/// height, so the gestalt preserves even as the tile chrome changes.
 public struct LessonsView: View {
     @StateObject private var viewModel = LessonsViewModel()
+    @EnvironmentObject private var apiRouter: APIRouter
     @State private var selectedLesson: Lesson?
     @State private var showFlipbook = false
+
+    public init() {}
 
     public var body: some View {
         NavigationStack {
@@ -16,93 +29,183 @@ public struct LessonsView: View {
                     .ignoresSafeArea()
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        // Learning paths filter
-                        if !viewModel.learningPaths.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Filter by Path")
-                                    .font(NovaPalette.headingFont())
-                                    .foregroundStyle(.primary)
-
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 10) {
-                                        // All lessons button
-                                        PathFilterButton(
-                                            title: "All",
-                                            isSelected: viewModel.selectedPath == nil
-                                        ) {
-                                            viewModel.selectPath(nil)
-                                        }
-
-                                        // Path filter buttons
-                                        ForEach(viewModel.learningPaths) { path in
-                                            PathFilterButton(
-                                                title: path.title,
-                                                isSelected: viewModel.selectedPath?.id == path.id
-                                            ) {
-                                                viewModel.selectPath(path)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal, 4)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
+                    VStack(spacing: Spacing.lg) {
+                        // S11-19: surface fetch failures without hiding cached
+                        // content. `loadError` is typed `APIError?` so the
+                        // banner can speak the semantic message (unauthorized /
+                        // not found / network down) instead of a raw string.
+                        if let error = viewModel.loadError {
+                            errorBanner(message: error.errorDescription ?? "Something went wrong")
                         }
 
-                        // Masonry grid
-                        if viewModel.filteredLessons.isEmpty {
-                            EmptyStateView(
-                                title: "No lessons yet!",
-                                subtitle: "Ask your parent to add some!",
-                                icon: "sparkles"
-                            )
-                            .frame(minHeight: 400)
+                        if viewModel.isLoading {
+                            // S11-14: pull-to-refresh skeleton. Grid mode
+                            // lines up with the 2-column masonry below, so
+                            // the shimmer reads as "those lesson tiles are
+                            // coming back" instead of a generic spinner.
+                            // `LoadingSkeletonView` applies its own 20pt
+                            // padding, so no extra wrapper needed.
+                            LoadingSkeletonView(itemCount: 6, isGrid: true)
                         } else {
-                            MasonryGrid(items: viewModel.filteredLessons, columns: 2, spacing: 12) { lesson in
-                                NavigationLink(destination: {
-                                    FlipbookView(lesson: lesson)
-                                }) {
-                                    LessonTileView(
-                                        lesson: lesson,
-                                        isComplete: viewModel.isLessonComplete(lesson)
-                                    ) {
-                                        selectedLesson = lesson
-                                        showFlipbook = true
-                                    }
-                                }
-                            }
-                            .padding(20)
+                            lessonContent
                         }
                     }
                 }
+                .refreshable {
+                    await viewModel.refresh()
+                }
             }
-            .navigationTitle("Lessons")
-            .navigationBarTitleDisplayMode(.inline)
+            .novaNavigationStyle(title: "Lessons")
+            // S11-19: `.task` is the wire-up point. Attach is idempotent so
+            // re-appearing the view (tab switch) is a no-op after first hit;
+            // `refresh()` then does the real fetch (or mock fallback when no
+            // router is present — e.g. `#Preview`).
+            .task {
+                viewModel.attach(apiRouter: apiRouter)
+                await viewModel.refresh()
+            }
+        }
+    }
+
+    /// Thin error banner. Matches the Dashy error card language (S11-13):
+    /// page fill + ink stroke + coral icon + `.novaSecondary()` retry button.
+    @ViewBuilder
+    private func errorBanner(message: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(NovaPalette.coral)
+            Text(message)
+                .font(NovaPalette.captionFont())
+                .foregroundStyle(NovaPalette.ink)
+                .lineLimit(2)
+            Spacer()
+            Button("Try Again") {
+                Task { await viewModel.refresh() }
+            }
+            .novaSecondary()
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.page)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.ink, lineWidth: 2)
+        )
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.md)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Error loading lessons: \(message)")
+    }
+
+    /// The non-loading body — filter row + masonry grid.
+    ///
+    /// Extracted so the `isLoading` branch above can cleanly swap between
+    /// skeleton and real content without nesting another VStack layer.
+    @ViewBuilder
+    private var lessonContent: some View {
+        // Learning-paths filter row
+        if !viewModel.learningPaths.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("Filter by Path")
+                    .font(NovaPalette.headingFont())
+                    .foregroundStyle(NovaPalette.ink)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.sm) {
+                        // "All" sentinel — maps to `selectedPath == nil`.
+                        PathFilterPill(
+                            title: "All",
+                            isSelected: viewModel.selectedPath == nil
+                        ) {
+                            viewModel.selectPath(nil)
+                        }
+
+                        ForEach(viewModel.learningPaths) { path in
+                            PathFilterPill(
+                                title: path.title,
+                                isSelected: viewModel.selectedPath?.id == path.id
+                            ) {
+                                viewModel.selectPath(path)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Spacing.xs)
+                }
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.top, Spacing.lg)
+        }
+
+        // Masonry grid
+        if viewModel.filteredLessons.isEmpty {
+            EmptyStateView(
+                title: "No lessons yet!",
+                subtitle: "Ask your parent to add some!",
+                icon: "sparkles"
+            )
+            .frame(minHeight: 400)
+        } else {
+            MasonryGrid(
+                items: viewModel.filteredLessons,
+                columns: 2,
+                spacing: Spacing.md
+            ) { lesson in
+                NavigationLink(destination: {
+                    FlipbookView(lesson: lesson)
+                }) {
+                    LessonTileView(
+                        lesson: lesson,
+                        isComplete: viewModel.isLessonComplete(lesson)
+                    ) {
+                        selectedLesson = lesson
+                        showFlipbook = true
+                    }
+                }
+            }
+            .padding(Spacing.lg)
         }
     }
 }
 
-/// Filter button for learning paths.
-private struct PathFilterButton: View {
+/// Learning-path filter pill.
+///
+/// S11-12 redesign — ink-outline/page-fill by default, coral-fill/page-text
+/// when selected. The silhouette is a capsule (not a rounded-rect) so the
+/// ink stroke reads as a drawn outline rather than a button. Matches the
+/// "selection = coral" rule established by the Quiz answer chip in S11-06.
+private struct PathFilterPill: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(NovaPalette.smallHeadingFont())
-                .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 16)
-                .background(isSelected ? NovaPalette.novaBlue : NovaPalette.ink.opacity(0.1))
-                .cornerRadius(8)
+                .foregroundStyle(isSelected ? NovaPalette.page : NovaPalette.ink)
+                .padding(.vertical, Spacing.sm)
+                .padding(.horizontal, Spacing.md)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(isSelected ? NovaPalette.coral : NovaPalette.page)
+                )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.ink, lineWidth: 2)
+                )
         }
+        .buttonStyle(PlainButtonStyle())
+        // Light spring on selection matches the "commit" feel of the rest of
+        // the app — subtle, not bouncy. Respects reduce-motion.
+        .animation(reduceMotion ? .none : .easeInOut(duration: 0.2), value: isSelected)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(.isButton)
     }
 }
 

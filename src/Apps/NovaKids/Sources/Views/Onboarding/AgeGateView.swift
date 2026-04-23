@@ -190,15 +190,15 @@ public struct AgeGateView: View {
         let parentAge = currentYear - parentBirthYear
 
         if parentAge >= 18 {
-            // Success
+            // Success — parent verified. Celebrate beat; the system success
+            // notification also gives VoiceOver users the "you're through" cue.
             hasPassedAgeGate = true
-            let impact = UIImpactFeedbackGenerator(style: .heavy)
-            impact.impactOccurred()
+            NovaHaptics.success()
         } else {
-            // Fail
+            // Fail — try-again beat (NOT an error alert; we invite retry rather
+            // than signal "you broke something"). See NovaHaptics.wrong docs.
             errorMessage = "Please ask a parent or guardian (18+) to help set up Nova"
-            let impact = UIImpactFeedbackGenerator(style: .rigid)
-            impact.impactOccurred()
+            NovaHaptics.wrong()
         }
     }
 }

@@ -53,7 +53,13 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
-        const { pathId, status, page, limit } = request.params as unknown as ListLessonsQuery;
+        // S11-19: the list endpoint is a GET, so the validated pagination +
+        // filter values live on `request.query` (not `request.params`, which
+        // carry URL path segments). Reading `.params` here was silently
+        // coercing to `undefined` and defaulting every list call to page 1
+        // with no filter applied — fine by accident, but wrong in principle
+        // and guaranteed to break the first time someone passes `?path_id=`.
+        const { pathId, status, page, limit } = request.query as unknown as ListLessonsQuery;
         const prisma = getPrismaClient();
         const skip = (page - 1) * limit;
 

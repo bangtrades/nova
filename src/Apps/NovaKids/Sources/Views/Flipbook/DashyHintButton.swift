@@ -20,16 +20,25 @@ public struct DashyHintButton: View {
             showHintSheet = true
         }) {
             ZStack {
-                // Background circle with purple
+                // S11-10 reskin: `coral` fill + `ink` 2pt stroke puts this
+                // gateway button in the same comic-palette family as the
+                // character body. Coral reads as "action" in the 3+1
+                // system, which fits — tapping this IS the Dashy action
+                // on the flipbook card.
                 Circle()
-                    .fill(NovaPalette.novaPurple)
+                    .fill(NovaPalette.coral)
                     .frame(width: 50, height: 50)
+                    .overlay(
+                        Circle()
+                            .strokeBorder(NovaPalette.ink, lineWidth: 2)
+                    )
 
-                // Dashy speech-bubble icon
+                // Glyph in ink so it reads against the coral fill with the
+                // same weight as the body silhouette stroke.
                 VStack(spacing: 2) {
                     Image(systemName: "bubble.left.fill")
                         .font(.title3)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NovaPalette.ink)
                         .accessibilityHidden(true)
                 }
             }

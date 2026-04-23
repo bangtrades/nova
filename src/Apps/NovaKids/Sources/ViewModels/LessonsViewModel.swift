@@ -4,16 +4,41 @@ import NovaCore
 /// ViewModel for the Lessons tab.
 ///
 /// Manages lesson display, filtering by path, and completion tracking.
+///
+/// S11-19 wire-up: the VM keeps its zero-arg `init()` so every call site
+/// (`@StateObject private var viewModel = LessonsViewModel()`) and every
+/// `#Preview` continues to work without constructor-injection gymnastics.
+/// The View passes `apiRouter` in via the idempotent `attach(apiRouter:)`
+/// from inside a `.task`, where `@EnvironmentObject` is already available.
+/// `refresh()` branches on `apiRouter == nil` — a nil router falls through
+/// to the mock path, so previews stay green and unit tests don't require
+/// a live backend.
 @MainActor
 public class LessonsViewModel: ObservableObject {
     @Published var allLessons: [Lesson] = []
     @Published var learningPaths: [LearningPath] = []
     @Published var selectedPath: LearningPath?
     @Published var isLoading: Bool = false
+    /// Surfaced by the View as a small error banner above the grid. Cleared
+    /// on a successful fetch. Typed `APIError?` (not `Error?`) so the View
+    /// can render a semantic message via `errorDescription` without a cast.
+    @Published var loadError: APIError?
+
+    /// Injected after construction. Stays optional so previews and tests can
+    /// exercise the mock path without wiring a router. `attach(_:)` is
+    /// idempotent — repeat calls from `.task` (which fires on every view
+    /// appear) are no-ops after the first.
+    private var apiRouter: APIRouter?
 
     /// Initialize with mock data.
     public init() {
         loadMockData()
+    }
+
+    /// Wire the router in from the View's `.task`. Safe to call repeatedly.
+    public func attach(apiRouter: APIRouter) {
+        guard self.apiRouter == nil else { return }
+        self.apiRouter = apiRouter
     }
 
     /// Loads mock data for preview and development.
@@ -156,6 +181,43 @@ public class LessonsViewModel: ObservableObject {
                 cards: []
             ),
         ]
+    }
+
+    /// Refreshes the lesson catalog.
+    ///
+    /// S11-14 wired the `isLoading` flag so `LessonsView` could surface
+    /// `LoadingSkeletonView` during pull-to-refresh. S11-19 swaps the
+    /// mock sleep for a real dual-fetch — paths and lessons in parallel
+    /// via `async let` because they're independent GETs; we want the
+    /// filter row to appear at the same time as the grid, not staggered.
+    /// The `nil` router branch stays so previews + unit tests keep the
+    /// visible-skeleton beat without a live backend.
+    func refresh() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let apiRouter else {
+            // Preview / test path — the 400ms sleep is what gives the
+            // skeleton its visible-work beat when there's no network
+            // latency to provide it. Delete this branch when mock data
+            // is no longer needed for previews.
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            loadMockData()
+            return
+        }
+
+        do {
+            async let pathsFetch = apiRouter.fetchPaths()
+            async let lessonsFetch = apiRouter.fetchLessons(pathId: nil)
+            let (paths, lessons) = try await (pathsFetch, lessonsFetch)
+            self.learningPaths = paths
+            self.allLessons = lessons
+            self.loadError = nil
+        } catch let error as APIError {
+            self.loadError = error
+        } catch {
+            self.loadError = .custom(error.localizedDescription)
+        }
     }
 
     /// Gets filtered lessons based on selected path.

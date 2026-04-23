@@ -303,9 +303,10 @@ public struct VoiceCardView: View {
             sparkleOpacity = 0
         }
 
-        // Haptic feedback
-        let impact = UIImpactFeedbackGenerator(style: .medium)
-        impact.impactOccurred()
+        // S11-15: voice record commit — commit beat (medium) matches the
+        // ladder for "user made a decisive input". Not a celebration; the
+        // celebration comes from downstream evaluation.
+        NovaHaptics.commit()
     }
 
     private func setupAnimations() {

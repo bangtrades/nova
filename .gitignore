@@ -77,3 +77,8 @@ coverage/
 # *.m4a
 # *.png
 # *.jpg
+
+# ─── Skill packaging artifacts (built with sprint-runner skill, not Novai code)
+sprint-runner-skill/
+sprint-runner-skill.zip
+sprint-runner.tar.gz

@@ -99,8 +99,7 @@ public struct TrophiesView: View {
                     .padding(24)
                 }
             }
-            .navigationTitle("Trophies")
-            .navigationBarTitleDisplayMode(.inline)
+            .novaNavigationStyle(title: "Trophies")
         }
     }
 }

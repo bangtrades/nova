@@ -216,66 +216,80 @@ public class DashyViewModel: NSObject, ObservableObject {
         }
     }
 
+    /// Decoded response shape from `POST /api/v1/sparky/chat`.
+    /// Kept at type scope (not nested inside `fetchDashyResponse`) so the
+    /// Swift 6 decoder doesn't drag an async-context generic binding across
+    /// a function body every call.
+    private struct DashyResponse: Decodable {
+        let message: String
+        let emotion: String?
+        let suggestions: [String]?
+    }
+
     private func fetchDashyResponse(userMessage: String) async {
         state = .processing
 
-        // Build request payload
-        let historyPayload = conversationHistory.map { message in
-            ["role": message.role, "content": message.content] as [String: Any]
+        // Build the history payload in the wire shape the backend expects:
+        // an array of `{role, content}` dicts, one per message in the
+        // rolling 10-message window. `sparkyChat` takes `[[String: String]]`
+        // because `[String: Any]` isn't `Encodable`.
+        let historyPayload: [[String: String]] = conversationHistory.map { message in
+            ["role": message.role, "content": message.content]
         }
 
-        _ = [
-            "message": userMessage,
-            "history": historyPayload,
-            "childAge": 4
-        ] as [String: Any]
-
         do {
-            // POST to /api/v1/sparky/chat — wire-protocol path, S12 renames to /api/v1/dashy/chat
-            // In production: let response = try await apiRouter.request(endpoint)
-            // For now, using mock response below
-
-            // Parse response
-            struct DashyResponse: Decodable {
-                let message: String
-                let emotion: String?
-                let suggestions: [String]?
-            }
-
             state = .responding
 
-            // Simulate processing with progress animation
-            for i in 0...10 {
-                processingProgress = Double(i) / 10.0
-                try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms
-            }
+            // Kick the progress ring to ~0.3 immediately so the user sees
+            // motion while the network round-trip is in flight. The API
+            // call is the actual long pole; the decorative animation runs
+            // alongside rather than padding the delay.
+            processingProgress = 0.3
 
-            // Create Dashy's response message. Role literal "sparky" is the
-            // wire-protocol value — S12 flips both ends to "dashy".
+            // S11-19: real API call replaces the simulated response. The
+            // endpoint path is still `/api/v1/sparky/chat` because the
+            // backend service rename is deferred to S12; the iOS-side role
+            // literal is "sparky" for the same reason.
+            let response: DashyResponse = try await apiRouter.request(
+                .sparkyChat(message: userMessage, history: historyPayload)
+            )
+
+            processingProgress = 0.8
+
+            // Dashy's reply message, stamped with the server-side emotion
+            // when present so the character animation has a signal.
             let dashyMessage = ChatMessage(
                 role: "sparky",
-                content: "Thanks for asking! That's a great question about AI. I love learning with you!",
-                emotion: "happy"
+                content: response.message,
+                emotion: response.emotion
             )
 
             addMessageToHistory(dashyMessage)
-            updateEmotion(from: dashyMessage.emotion ?? "happy")
+            updateEmotion(from: response.emotion ?? "happy")
 
-            // Simulate suggestions
-            suggestions = [
-                "Tell me more!",
-                "How does that work?",
-                "Let's learn together",
-                "Show me an example"
-            ]
+            // Follow-up prompts — server may return nil (older backend) or
+            // an empty array (nothing to suggest). Capped at `maxSuggestions`
+            // so a chatty model can't flood the carousel.
+            let incoming = response.suggestions ?? []
+            suggestions = Array(incoming.prefix(maxSuggestions))
 
-            // Play Dashy's response via voice manager
-            try await voiceManager.speak(text: dashyMessage.content, preferRemote: false)
+            // Play Dashy's response via voice manager. `preferRemote: false`
+            // uses on-device TTS for latency.
+            try await voiceManager.speak(text: response.message, preferRemote: false)
 
+            processingProgress = 1.0
             state = .ready
+            processingProgress = 0
+            errorMessage = nil
+        } catch let error as APIError {
+            // Surface the semantic reason so the UI can say "Dashy is
+            // offline" vs "no network" vs "Dashy is taking a break"
+            // accurately. The chat view's error pill reads `errorMessage`.
+            setState(.error(error.errorDescription ?? "Dashy is thinking..."))
             processingProgress = 0
         } catch {
             setState(.error("Oops! Dashy is thinking... try again soon!"))
+            processingProgress = 0
         }
     }
 

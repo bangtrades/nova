@@ -49,36 +49,38 @@ public struct DashyHintSheet: View {
 
             Spacer()
 
-            // Speech bubble with Dashy avatar
+            // Speech bubble with Dashy avatar — S11-10 reskin:
+            //   - Avatar: sun fill + ink 2pt stroke, bubble glyph in ink.
+            //     Matches DashyCharacterView's silhouette treatment so the
+            //     hint sheet reads as "same character, closer view".
+            //   - Body: DashySpeechBubble (no tail here — the avatar sits
+            //     above, not beside, so a tail would be misleading). This
+            //     replaces the ad-hoc rounded-rect + opacity(0.1) ink tint
+            //     that gave a muddy appearance in dark mode.
             VStack(spacing: 16) {
-                // Dashy avatar
                 ZStack {
                     Circle()
-                        .fill(NovaPalette.novaPurple)
+                        .fill(NovaPalette.sun)
                         .frame(width: 60, height: 60)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(NovaPalette.ink, lineWidth: 2)
+                        )
 
                     Image(systemName: "bubble.left.fill")
                         .font(NovaPalette.titleFont())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NovaPalette.ink)
                         .accessibilityHidden(true)
                 }
                 .padding(.bottom, 8)
 
-                // Speech bubble with hint text
-                VStack(alignment: .leading, spacing: 12) {
+                DashySpeechBubble(tailSide: .none, horizontalPadding: 20, verticalPadding: 16) {
                     Text(hintText)
                         .font(NovaPalette.largeBodyFont())
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(NovaPalette.ink)
                         .lineLimit(nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-                .background(NovaPalette.ink.opacity(0.1))
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(NovaPalette.ink.opacity(0.2), lineWidth: 2)
-                )
             }
             .padding(.horizontal, 24)
 

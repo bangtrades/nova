@@ -29,16 +29,20 @@ public struct KidsLoginView: View {
                     .frame(maxHeight: .infinity)
 
                 // Nova Logo and Branding
-                VStack(spacing: 16) {
-                    // Large colorful Nova logo
+                VStack(spacing: Spacing.md) {
+                    // Large Nova brand mark — coral→sun warm gradient over ink
+                    // outline. S11-17 flip: was novaBlue→novaPurple rainbow,
+                    // now honours the 3+1 palette so the first impression reads
+                    // as "comic-book ink on paper" from the moment the app
+                    // launches.
                     ZStack {
                         Circle()
                             .fill(
                                 LinearGradient(
                                     gradient: Gradient(
                                         colors: [
-                                            NovaPalette.novaBlue,
-                                            NovaPalette.novaPurple
+                                            NovaPalette.coral,
+                                            NovaPalette.sun
                                         ]
                                     ),
                                     startPoint: .topLeading,
@@ -46,17 +50,21 @@ public struct KidsLoginView: View {
                                 )
                             )
                             .frame(width: 120, height: 120)
+                            .overlay(
+                                Circle()
+                                    .stroke(NovaPalette.ink, lineWidth: 2)
+                            )
 
                         VStack(spacing: 2) {
                             Image(systemName: "sparkles")
                                 .font(.largeTitle.weight(.semibold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(NovaPalette.ink)
                             Text("Nova")
                                 .font(.title3.weight(.bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(NovaPalette.ink)
                         }
                     }
-                    .padding(.bottom, 8)
+                    .padding(.bottom, Spacing.sm)
 
                     Text("Nova Kids")
                         .font(NovaPalette.titleFont())
@@ -67,13 +75,17 @@ public struct KidsLoginView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, Spacing.xl)
 
                 Spacer()
                     .frame(maxHeight: .infinity)
 
                 // Sign In Button
-                VStack(spacing: 24) {
+                VStack(spacing: Spacing.lg) {
+                    // Sign In with Apple keeps its native ASAuthorization styling
+                    // — per Apple HIG we don't re-skin this button, so the ink
+                    // outline pattern doesn't apply here. The palette flip
+                    // surrounds it; the button itself stays stock.
                     SignInWithAppleButton(
                         onRequest: { request in
                             request.requestedScopes = []
@@ -87,17 +99,17 @@ public struct KidsLoginView: View {
                     .cornerRadius(14)
 
                     if viewModel.isLoading {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Spacing.sm) {
                             ProgressView()
-                                .tint(NovaPalette.novaBlue)
+                                .tint(NovaPalette.coral)
                             Text("Signing in...")
                                 .font(NovaPalette.bodyFont())
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 48)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.bottom, Spacing.xxl)
             }
         }
         .alert("Oops! Let's try again", isPresented: $showError) {
@@ -136,59 +148,72 @@ public struct KidsLoginView: View {
 // MARK: - Animated Background
 
 /// Floating shape animation for background.
+///
+/// S11-17 flip: the four shapes previously used the rainbow (novaBlue,
+/// novaOrange, novaPurple, novaGreen) which stopped making sense once the 3+1
+/// palette became the app's visual language. They now ride on `ink.opacity(…)`
+/// / `coral.opacity(…)` / `sun.opacity(…)` so the login screen reads as the
+/// same comic-book-ink world as the rest of the app. `.page` is the surface
+/// (no more hand-rolled off-white gradient) so the dark-mode flip inherits the
+/// adaptive pair from `NovaPalette`.
+///
+/// Reduce-motion: when the user has "Reduce Motion" enabled in iOS accessibility,
+/// we skip the `repeatForever(autoreverses: true)` loop entirely and render the
+/// shapes in their neutral (offset: 0) resting pose. Source-level branching (not
+/// a modifier-gated `withAnimation(reduceMotion ? nil : …)`) so the shapes
+/// don't wobble for a single frame at view-appear before settling.
 private struct AnimatedBackgroundView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isAnimating = false
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(
-                    colors: [
-                        NovaPalette.novaBackground,
-                        Color(red: 0.95, green: 0.96, blue: 1.0)
-                    ]
-                ),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Flat page surface — lets the shapes carry the visual interest
+            // without a gradient competing with them.
+            NovaPalette.page
 
             // Floating shapes
             VStack {
                 HStack {
                     Circle()
-                        .fill(NovaPalette.novaBlue.opacity(0.15))
+                        .fill(NovaPalette.ink.opacity(0.08))
                         .frame(width: 100)
                         .offset(y: isAnimating ? -20 : 20)
 
                     Spacer()
 
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(NovaPalette.novaOrange.opacity(0.15))
+                        .fill(NovaPalette.coral.opacity(0.18))
                         .frame(width: 80, height: 80)
                         .offset(y: isAnimating ? 20 : -20)
                 }
-                .padding(.horizontal, -40)
+                .padding(.horizontal, -Spacing.xxl)
 
                 Spacer()
 
                 HStack {
                     RoundedRectangle(cornerRadius: 15)
-                        .fill(NovaPalette.novaPurple.opacity(0.15))
+                        .fill(NovaPalette.ink.opacity(0.06))
                         .frame(width: 70, height: 70)
                         .offset(y: isAnimating ? 20 : -20)
 
                     Spacer()
 
                     Circle()
-                        .fill(NovaPalette.novaGreen.opacity(0.15))
+                        .fill(NovaPalette.sun.opacity(0.28))
                         .frame(width: 90)
                         .offset(y: isAnimating ? -20 : 20)
                 }
-                .padding(.horizontal, -40)
+                .padding(.horizontal, -Spacing.xxl)
             }
             .ignoresSafeArea()
         }
         .onAppear {
+            // Reduce-motion: keep shapes at rest. Doing this in onAppear (not
+            // at declaration time) is deliberate — @Environment is only valid
+            // inside body/onAppear, and a future toggle while the view is on
+            // screen should still win without re-mounting.
+            guard !reduceMotion else { return }
             withAnimation(
                 Animation.easeInOut(duration: 3.5)
                     .repeatForever(autoreverses: true)

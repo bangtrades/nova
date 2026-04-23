@@ -4,12 +4,23 @@ import NovaCore
 /// ViewModel for the trophy room feature.
 ///
 /// Manages badge display, earning tracking, and progress statistics.
+///
+/// S11-19: zero-arg `init()` preserved for previews. View attaches router
+/// + current childId in its `.task`. When no router is attached the VM
+/// falls through to mock data so the trophy grid renders in `#Preview`.
 @MainActor
 public class TrophyRoomViewModel: ObservableObject {
     @Published var badges: [BadgeDisplayItem] = []
     @Published var currentStreak: Int = 0
     @Published var isLoading: Bool = false
     @Published var totalLessonsCompleted: Int = 0
+    @Published var loadError: APIError?
+
+    private var apiRouter: APIRouter?
+    /// Without a childId we can still fetch the badge catalog, but we can't
+    /// fetch earned-badge records. The VM handles that gracefully: the list
+    /// renders with every badge in "unearned" state and zero progress.
+    private var childId: UUID?
 
     /// Displayable badge item with earned status.
     public struct BadgeDisplayItem: Identifiable {
@@ -36,16 +47,76 @@ public class TrophyRoomViewModel: ObservableObject {
         loadMockData()
     }
 
-    /// Loads badges (in real app, would fetch from API).
+    /// Wire the router + current child in from the View's `.task`.
+    public func attach(apiRouter: APIRouter, childId: UUID?) {
+        self.apiRouter = apiRouter
+        self.childId = childId
+    }
+
+    /// Loads badges.
+    ///
+    /// Live path: fetch the badge catalog + earned records in parallel, zip
+    /// into `BadgeDisplayItem` rows. Preview / nil-router path falls through
+    /// to mock data with a 500ms sleep so the skeleton has a visible-work
+    /// beat during pull-to-refresh.
     public func loadBadges() async {
         isLoading = true
         defer { isLoading = false }
 
-        // Simulate API call
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        guard let apiRouter else {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            loadMockData()
+            return
+        }
 
-        // Load mock data for now
-        loadMockData()
+        do {
+            async let catalogFetch = apiRouter.fetchBadges()
+            async let earnedFetch: [EarnedBadge] = {
+                if let childId = childId {
+                    return try await apiRouter.fetchEarnedBadges(childId: childId)
+                } else {
+                    return []
+                }
+            }()
+
+            let (catalog, earned) = try await (catalogFetch, earnedFetch)
+            // Index earned-by-badge-id so the zip is O(N+M) not O(N*M).
+            let earnedByBadgeId: [UUID: EarnedBadge] = Dictionary(
+                uniqueKeysWithValues: earned.map { ($0.badgeId, $0) }
+            )
+
+            self.badges = catalog.map { badge in
+                if let record = earnedByBadgeId[badge.id] {
+                    return BadgeDisplayItem(
+                        badge: badge,
+                        isEarned: true,
+                        earnedDate: record.earnedAt,
+                        progress: 1.0
+                    )
+                } else {
+                    // Progress for unearned badges is unknown until S12 ships
+                    // per-criterion progress endpoints — render 0 for now.
+                    return BadgeDisplayItem(
+                        badge: badge,
+                        isEarned: false,
+                        earnedDate: nil,
+                        progress: 0
+                    )
+                }
+            }
+
+            // currentStreak + totalLessonsCompleted are not yet surfaced by
+            // the API; kept as mock values until S12 ships the progress
+            // aggregation endpoint. This is called out in the S11-19 run
+            // summary as known follow-up.
+            self.currentStreak = 5
+            self.totalLessonsCompleted = earned.count
+            self.loadError = nil
+        } catch let error as APIError {
+            self.loadError = error
+        } catch {
+            self.loadError = .custom(error.localizedDescription)
+        }
     }
 
     /// Refreshes badges from server.

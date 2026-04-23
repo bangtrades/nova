@@ -41,13 +41,19 @@ struct NovaKidsApp: App {
 
     /// Initialize the app with all necessary managers.
     init() {
+        // S11-19: backend base URL is resolved once through `APIHost.baseURL()`
+        // so an iPad on the LAN can point at the Mac's dev server without a
+        // recompile. Honors `NOVA_BACKEND_HOST` in the scheme's environment
+        // variables, falls back to localhost for simulator runs.
+        let backendBaseURL = APIHost.baseURL()
+
         // Create API client (requires TokenProvider)
         let authManager = AuthManager(
             apiClient: APIClient(
-                baseURL: URL(string: "http://localhost:3000/api/v1")!,
+                baseURL: backendBaseURL,
                 tokenProvider: AuthManager(
                     apiClient: APIClient(
-                        baseURL: URL(string: "http://localhost:3000/api/v1")!,
+                        baseURL: backendBaseURL,
                         tokenProvider: _TokenProvider()
                     )
                 )
@@ -56,7 +62,7 @@ struct NovaKidsApp: App {
 
         let apiRouter = APIRouter(
             apiClient: APIClient(
-                baseURL: URL(string: "http://localhost:3000/api/v1")!,
+                baseURL: backendBaseURL,
                 tokenProvider: authManager
             )
         )
@@ -202,4 +208,40 @@ private class _TokenProvider: TokenProvider {
     func updateTokens(accessToken: String, refreshToken: String) async {}
 
     func clearTokens() async {}
+}
+
+// MARK: - APIHost
+
+/// Resolves the backend base URL at launch.
+///
+/// ## Why this lives here
+///
+/// Before S11-19 the `http://localhost:3000/api/v1` string was hard-coded in
+/// three places inside `NovaKidsApp.init()` — which is fine for the simulator
+/// but fatal for the MVP testing loop bang asked for: iPad on the LAN needs
+/// to hit the Mac's dev server, not `localhost` (which on the iPad resolves
+/// to the iPad itself).
+///
+/// ## Resolution order
+///
+/// 1. `NOVA_BACKEND_HOST` env var, set in the Xcode scheme's "Arguments →
+///    Environment Variables" — e.g. `NOVA_BACKEND_HOST=192.168.1.42:3000`.
+///    The helper prepends `http://` and appends `/api/v1` so the scheme
+///    value stays short and copy-pastable.
+/// 2. `http://localhost:3000/api/v1` fallback for simulator + unit tests.
+///
+/// ## Why an env var, not Info.plist or a build setting
+///
+/// Env vars flip without a recompile — bang can change Mac IP (Wi-Fi roam,
+/// coffee shop, home) and relaunch the iPad target without bumping a build.
+/// Info.plist values bake into the bundle; build settings require a rebuild.
+enum APIHost {
+    static func baseURL() -> URL {
+        if let host = ProcessInfo.processInfo.environment["NOVA_BACKEND_HOST"],
+           !host.isEmpty,
+           let url = URL(string: "http://\(host)/api/v1") {
+            return url
+        }
+        return URL(string: "http://localhost:3000/api/v1")!
+    }
 }

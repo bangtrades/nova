@@ -12,7 +12,9 @@ public struct FlipbookView: View {
 
     @StateObject private var viewModel: FlipbookViewModel
     @Environment(\.dismiss) var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject var voiceManager: VoiceManager
+    @EnvironmentObject private var apiRouter: APIRouter
 
     public init(lesson: Lesson) {
         self.lesson = lesson
@@ -29,13 +31,36 @@ public struct FlipbookView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
-                FlipbookHeader(lesson: lesson) {
+                // Header — pass current card type so the Bangers label + color
+                // bar track the TabView's selected card (S11-11).
+                FlipbookHeader(
+                    lesson: lesson,
+                    cardType: viewModel.currentCard?.type
+                ) {
                     dismiss()
                 }
                 .padding(20)
 
                 Spacer()
+
+                // S11-19: error banner surfaces fetch failures without
+                // killing the card deck. Matches the Home / Lessons /
+                // Trophy language — page fill + ink stroke + coral icon +
+                // .novaSecondary() retry.
+                if let error = viewModel.loadError {
+                    errorBanner(message: error.errorDescription ?? "Something went wrong")
+                        .padding(.horizontal, Spacing.lg)
+                }
+
+                // S11-19: skeleton while the cards endpoint is in flight.
+                // Grid mode matches the mental shape of "a deck is on the
+                // way" better than a spinner does.
+                if viewModel.isLoading && viewModel.cards.isEmpty {
+                    Spacer()
+                    LoadingSkeletonView(itemCount: 3, isGrid: false)
+                        .padding(Spacing.lg)
+                    Spacer()
+                }
 
                 // Card display with TabView for swiping
                 if !viewModel.cards.isEmpty {
@@ -110,64 +135,63 @@ public struct FlipbookView: View {
                     .padding(20)
                 }
 
-                // Navigation buttons
+                // Navigation buttons — S11-11 moved these onto the
+                // shared `NovaSecondaryButtonStyle` so the prev / next pair
+                // picks up the ink-outline / page-fill / coral-text comic
+                // chrome. Two secondary buttons read cleanly here because
+                // neither is a top-of-screen primary CTA — the primary
+                // action is the card content itself.
                 if !viewModel.cards.isEmpty {
-                    HStack(spacing: 16) {
-                        // Previous button
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
+                    HStack(spacing: Spacing.md) {
+                        let isAtStart = viewModel.currentCardIndex == 0
+                        let isAtEnd = viewModel.isLastCard
+
+                        // Previous
+                        Button {
+                            // S11-16: card index transition animates under default,
+                            // snaps instant under reduce-motion. The TabView page
+                            // slide is ambient motion — progress dots + card
+                            // content change both convey the navigation either way.
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                                 viewModel.previousCard()
                             }
-                        }) {
+                        } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "chevron.left")
                                     .font(.headline)
                                     .accessibilityHidden(true)
                                 Text("Previous")
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                viewModel.currentCardIndex > 0
-                                    ? NovaPalette.ink.opacity(0.1)
-                                    : NovaPalette.ink.opacity(0.05)
-                            )
-                            .foregroundStyle(
-                                viewModel.currentCardIndex > 0
-                                    ? .primary
-                                    : .secondary
-                            )
-                            .cornerRadius(10)
                         }
-                        .disabled(viewModel.currentCardIndex == 0)
+                        .novaSecondary()
+                        .disabled(isAtStart)
+                        .opacity(isAtStart ? 0.5 : 1.0)
+                        .accessibilityLabel("Previous card")
 
-                        // Next button
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
+                        // Next / Finish
+                        Button {
+                            // S11-16: matches Previous — reduce-motion turns the
+                            // card swap into an instant state flip rather than a
+                            // horizontal slide.
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                                 viewModel.nextCard()
                             }
-                        }) {
+                        } label: {
                             HStack(spacing: 8) {
-                                if viewModel.isLastCard {
-                                    Text("Finish")
-                                } else {
-                                    Text("Next")
-                                }
-                                Image(systemName: viewModel.isLastCard ? "checkmark.circle.fill" : "chevron.right")
-                                    .font(.headline)
-                                    .accessibilityHidden(true)
+                                Text(isAtEnd ? "Finish" : "Next")
+                                Image(
+                                    systemName: isAtEnd
+                                        ? "checkmark.circle.fill"
+                                        : "chevron.right"
+                                )
+                                .font(.headline)
+                                .accessibilityHidden(true)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                viewModel.currentCardIndex < viewModel.cards.count - 1
-                                    ? NovaPalette.novaOrange
-                                    : NovaPalette.novaGreen
-                            )
-                            .foregroundStyle(.white)
-                            .cornerRadius(10)
                         }
-                        .disabled(viewModel.isLastCard)
+                        .novaSecondary()
+                        .disabled(isAtEnd)
+                        .opacity(isAtEnd ? 0.5 : 1.0)
+                        .accessibilityLabel(isAtEnd ? "Finish lesson" : "Next card")
                     }
                     .padding(20)
                 }
@@ -182,6 +206,41 @@ public struct FlipbookView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        // S11-19 wire-up. `attach` is idempotent; `loadCardsIfNeeded`
+        // short-circuits once `cards` is non-empty so a re-entered view
+        // doesn't re-fetch.
+        .task {
+            viewModel.attach(apiRouter: apiRouter)
+            await viewModel.loadCardsIfNeeded()
+        }
+    }
+
+    @ViewBuilder
+    private func errorBanner(message: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(NovaPalette.coral)
+            Text(message)
+                .font(NovaPalette.captionFont())
+                .foregroundStyle(NovaPalette.ink)
+                .lineLimit(2)
+            Spacer()
+            Button("Try Again") {
+                Task { await viewModel.retryLoad() }
+            }
+            .novaSecondary()
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.page)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.ink, lineWidth: 2)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Error loading cards: \(message)")
     }
 }
 

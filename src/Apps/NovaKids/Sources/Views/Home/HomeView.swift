@@ -11,6 +11,8 @@ import NovaCore
 /// consistent vertical rhythm.
 public struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @EnvironmentObject private var apiRouter: APIRouter
+    @EnvironmentObject private var appState: KidsAppState
 
     public init() {}
 
@@ -23,6 +25,13 @@ public struct HomeView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: Spacing.lg) {
                         WelcomeHeader(childName: viewModel.childName)
+
+                        // S11-19: fetch-error banner. Matches the language
+                        // of LessonsView / DashyView — page fill + ink
+                        // stroke + coral icon + Try Again on .novaSecondary.
+                        if let error = viewModel.loadError {
+                            errorBanner(message: error.errorDescription ?? "Something went wrong")
+                        }
 
                         // Featured lesson — NavigationLink owns the tap so
                         // the card itself stays "content, not control".
@@ -50,10 +59,47 @@ public struct HomeView: View {
                     }
                     .padding(Spacing.lg)
                 }
+                .refreshable {
+                    await viewModel.refresh()
+                }
             }
-            .navigationTitle("Nova Kids")
-            .navigationBarTitleDisplayMode(.inline)
+            .novaNavigationStyle(title: "Nova Kids")
+            // S11-19 wire-up: attach the router + currently-selected child
+            // and kick off the first fetch. `attach` is idempotent so a tab
+            // re-select (triggers `.task` again) is a no-op after the first.
+            .task {
+                viewModel.attach(apiRouter: apiRouter, childId: appState.currentChild?.id)
+                await viewModel.refresh()
+            }
         }
+    }
+
+    @ViewBuilder
+    private func errorBanner(message: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(NovaPalette.coral)
+            Text(message)
+                .font(NovaPalette.captionFont())
+                .foregroundStyle(NovaPalette.ink)
+                .lineLimit(2)
+            Spacer()
+            Button("Try Again") {
+                Task { await viewModel.refresh() }
+            }
+            .novaSecondary()
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.page)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.ink, lineWidth: 2)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Error loading home: \(message)")
     }
 }
 

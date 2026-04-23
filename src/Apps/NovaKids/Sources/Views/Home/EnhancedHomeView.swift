@@ -11,6 +11,8 @@ import NovaVoice
 /// greeting, `NovaCard` for surfaces, `Spacing.*` for vertical rhythm.
 public struct EnhancedHomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @EnvironmentObject private var apiRouter: APIRouter
+    @EnvironmentObject private var appState: KidsAppState
 
     public init() {}
 
@@ -30,10 +32,56 @@ public struct EnhancedHomeView: View {
                 } else {
                     content
                 }
+
+                // S11-19: Error overlay sits above `content` but below any
+                // nav chrome. Tiny surface so it doesn't eclipse the hero.
+                if let error = viewModel.loadError, !viewModel.isLoading {
+                    VStack {
+                        errorBanner(message: error.errorDescription ?? "Something went wrong")
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.top, Spacing.md)
+                        Spacer()
+                    }
+                }
             }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+            // Enhanced Home owns its chrome with the `greetingHeader` block.
+            // Empty title keeps the nav bar clean — modifier renders no
+            // principal item when `title` is empty.
+            .novaNavigationStyle()
+            // S11-19 wire-up point.
+            .task {
+                viewModel.attach(apiRouter: apiRouter, childId: appState.currentChild?.id)
+                await viewModel.refresh()
+            }
         }
+    }
+
+    @ViewBuilder
+    private func errorBanner(message: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(NovaPalette.coral)
+            Text(message)
+                .font(NovaPalette.captionFont())
+                .foregroundStyle(NovaPalette.ink)
+                .lineLimit(2)
+            Spacer()
+            Button("Try Again") {
+                Task { await viewModel.refresh() }
+            }
+            .novaSecondary()
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.page)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.ink, lineWidth: 2)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Error loading home: \(message)")
     }
 
     // MARK: - Root content

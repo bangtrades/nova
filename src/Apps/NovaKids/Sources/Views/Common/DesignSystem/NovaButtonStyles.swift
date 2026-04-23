@@ -53,8 +53,10 @@ public struct NovaPrimaryButtonStyle: ButtonStyle {
             .animation(.spring(response: 0.25, dampingFraction: 0.75), value: configuration.isPressed)
             .onChange(of: configuration.isPressed) { oldValue, newValue in
                 // Trigger haptic on press-down only (false → true), not on release.
+                // Routed through NovaHaptics.commit() (S11-15) so the whole app
+                // shares one sensory ladder — grep `NovaHaptics.` to audit.
                 if !oldValue && newValue {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    NovaHaptics.commit()
                 }
             }
     }
@@ -103,9 +105,10 @@ public struct NovaSecondaryButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { oldValue, newValue in
                 // Light haptic for secondary — softer feedback than primary so
                 // the user can feel which tier of action they triggered without
-                // looking.
+                // looking. Routed through NovaHaptics.tap() (S11-15) for ladder
+                // consistency.
                 if !oldValue && newValue {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    NovaHaptics.tap()
                 }
             }
     }
