@@ -136,6 +136,7 @@ public struct FlipbookHeader: View {
         case .experiment: return "EXPERIMENT"
         case .quiz: return "QUIZ"
         case .voice: return "VOICE"
+        case .video: return "VIDEO"
         }
     }
 
@@ -150,6 +151,7 @@ public struct FlipbookHeader: View {
         case .experiment: return NovaPalette.Category.green
         case .quiz: return NovaPalette.Category.orange
         case .voice: return NovaPalette.Category.pink
+        case .video: return NovaPalette.Category.blue
         }
     }
 }

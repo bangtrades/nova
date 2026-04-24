@@ -29,7 +29,7 @@ import SwiftUI
 /// *away* from the bubble body, so `.leading` puts the tail on the left
 /// edge pointing further left — i.e. toward a character standing to the
 /// left of the bubble.
-public enum SpeechBubbleTailSide {
+public enum SpeechBubbleTailSide: Sendable {
     case leading
     case trailing
     /// No tail — use for plain panels that reuse the comic-paper look

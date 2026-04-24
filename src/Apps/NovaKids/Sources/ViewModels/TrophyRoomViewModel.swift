@@ -69,11 +69,17 @@ public class TrophyRoomViewModel: ObservableObject {
             return
         }
 
+        // Capture @MainActor-isolated state into locals BEFORE the async lets
+        // fan out — the `async let` closures may execute off the main actor
+        // under Swift 6 strict concurrency, so they can't read instance
+        // properties directly. `UUID?` is Sendable so the capture is safe.
+        let capturedChildId = childId
+
         do {
             async let catalogFetch = apiRouter.fetchBadges()
             async let earnedFetch: [EarnedBadge] = {
-                if let childId = childId {
-                    return try await apiRouter.fetchEarnedBadges(childId: childId)
+                if let id = capturedChildId {
+                    return try await apiRouter.fetchEarnedBadges(childId: id)
                 } else {
                     return []
                 }
