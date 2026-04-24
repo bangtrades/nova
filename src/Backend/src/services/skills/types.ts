@@ -249,6 +249,15 @@ export const CARD_TYPE_TO_SKILL: Partial<
   Record<'story' | 'concept' | 'experiment' | 'quiz' | 'voice', string>
 > = {
   story: 'story-writer',
+  // S12-10 — concept atoms route through story-writer too. The skill
+  // produces free-form prose which is exactly what a concept card
+  // needs — an explanation. `buildCardFromSkillOutput` branches on
+  // the atom's `recommendedCardType` to emit `type: 'concept'` with
+  // the prose in `content.explanation` (where ConceptCardView reads
+  // from) instead of the default story shape. Deferred: a purpose-
+  // built `concept-explainer` skill is out of scope — when it lands
+  // in S13+, just point this entry at that skill's name.
+  concept: 'story-writer',
   quiz: 'quiz-maker',
   experiment: 'experiment-designer',
   voice: 'voice-persona',

@@ -688,15 +688,35 @@ function buildCardFromSkillOutput(
     const text = typeof value === 'string'
       ? value.trim()
       : rawResponse.trim();
+
+    // S12-10 — branch on the decomposer's target card type. story-writer
+    // now serves two atom kinds because `CARD_TYPE_TO_SKILL.concept`
+    // also maps here. Concept atoms need `content.explanation` (what
+    // ConceptCardView reads); story atoms need `content.narrativeText`
+    // (what StoryCardView reads). We also keep `content.text` populated
+    // in both cases for legacy back-compat + for any consumer that
+    // reads the generic field. `voiceScript` is the full prose either
+    // way — TTS narrates regardless of card type.
+    if (atom.recommendedCardType === 'concept') {
+      return {
+        type: 'concept',
+        content: {
+          title: atom.name,
+          explanation: text,
+          text,
+        },
+        voiceScript: text,
+        sortOrder: atomIndex,
+      };
+    }
+
     return {
       type: 'story',
       content: {
-        text,
         title: atom.name,
+        narrativeText: text,
+        text,
       },
-      // The story IS the narration track — TTS synthesis consumes
-      // voiceScript. Duplicating here keeps the persisted card shape
-      // consistent with the legacy generator's contract.
       voiceScript: text,
       sortOrder: atomIndex,
     };

@@ -50,6 +50,19 @@ export interface CardContent {
   options?: string[];
   correctIndex?: number;
   materials?: string[];
+  /**
+   * Story: the narrative body text. What iOS StoryCardView reads
+   * (`card.content.narrativeText`). S12-10 wiring — backend must
+   * emit this alongside legacy `text` or the story body renders
+   * blank on the iPad.
+   */
+  narrativeText?: string;
+  /**
+   * Concept: the explanation prose. What iOS ConceptCardView reads
+   * (`card.content.explanation`). S12-10 wiring — same rationale
+   * as `narrativeText`: the iOS decoder expects this exact key.
+   */
+  explanation?: string;
   /** Experiment: 1–2 sentence drag-and-drop instruction. S12-04. */
   instructions?: string;
   /** Experiment: 3/4/5 drag chips (easy/medium/hard). S12-04. */
@@ -373,15 +386,27 @@ function validateAndNormalizeCard(card: Record<string, unknown>, fallbackIndex: 
   let normalizedContent: CardContent = {};
 
   if (type === 'story') {
+    // S12-10 — preserve `narrativeText` alongside legacy `text` so iOS
+    // StoryCardView (which reads `content.narrativeText`) + any legacy
+    // consumer that reads `content.text` both resolve. Skill-engine
+    // story-writer emits both identically; legacy generators only
+    // emit `text` so we back-fill `narrativeText` from it.
+    const body = String(content.text || content.narrativeText || '').trim();
     normalizedContent = {
-      text: String(content.text || '').trim(),
+      text: body,
+      narrativeText: body,
       title: content.title ? String(content.title).trim() : undefined,
       imagePrompt: content.imagePrompt ? String(content.imagePrompt).trim() : undefined,
     };
   } else if (type === 'concept') {
+    // S12-10 — same double-write pattern as story. iOS ConceptCardView
+    // reads `content.explanation`; skill-engine emits both fields;
+    // legacy path only emits `text` so we back-fill `explanation`.
+    const body = String(content.text || content.explanation || '').trim();
     normalizedContent = {
       title: String(content.title || '').trim(),
-      text: String(content.text || '').trim(),
+      text: body,
+      explanation: body,
       imagePrompt: content.imagePrompt ? String(content.imagePrompt).trim() : undefined,
     };
   } else if (type === 'experiment') {

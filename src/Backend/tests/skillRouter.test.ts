@@ -181,11 +181,17 @@ describe('skillRouter — routeAtom', () => {
   // Skill lookup paths
   // -------------------------------------------------------------------------
 
-  it('skips atoms whose cardType has no skill mapping (concept/experiment/voice in S10-12)', async () => {
+  it('skips atoms whose cardType has no skill mapping (defensive guard)', async () => {
+    // S12-10 update: concept + voice + experiment are all mapped now,
+    // so we cast a synthetic non-mapped string to exercise the router's
+    // defensive guard. Protects us when curriculum-architect emits a
+    // future cardType we haven't wired yet.
     const result = await routeAtom({
       userId: 'u1',
       baseContext: makeCtx(),
-      atom: makeStoryAtom({ recommendedCardType: 'concept' }),
+      atom: makeStoryAtom({
+        recommendedCardType: 'unmapped-future-type' as unknown as 'story',
+      }),
       atomIndex: 0,
       analysis: makeAnalysis(),
     });
@@ -511,7 +517,10 @@ describe('skillRouter — routeAllAtoms', () => {
 
     const out = await routeAllAtoms(
       [
-        makeStoryAtom({ recommendedCardType: 'concept' }), // unmapped → skipped
+        // S12-10: synthetic unmapped cardType to force the skip path.
+        makeStoryAtom({
+          recommendedCardType: 'unmapped-future-type' as unknown as 'story',
+        }),
         makeQuizAtom(),
       ],
       {

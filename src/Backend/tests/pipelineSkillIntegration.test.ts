@@ -191,14 +191,18 @@ function makeQuizAtom(overrides: Partial<ConceptAtom> = {}): ConceptAtom {
 }
 
 function makeConceptAtom(overrides: Partial<ConceptAtom> = {}): ConceptAtom {
-  // `concept` is NOT in CARD_TYPE_TO_SKILL (S10-12) — routing this atom
-  // produces a `no-skill-mapping` skip, forcing the legacy path.
+  // S12-10 update: `concept` is now mapped via CARD_TYPE_TO_SKILL to
+  // story-writer, so to still exercise the "atom skips, legacy fills
+  // the gap" test scenarios we use a synthetic cardType cast through
+  // `as any`. The test intent — force a skip + prove the legacy
+  // fallback fires on that index — is preserved regardless of which
+  // specific cardType triggers the skip.
   return {
     id: 'atom-concept',
     name: 'force as a vector',
     description: 'gravity pulls straight down',
     teachingStrategy: 'explanation',
-    recommendedCardType: 'concept',
+    recommendedCardType: 'unmapped-future-type' as unknown as 'concept',
     engagementScore: 0.5,
     learningValue: 0.9,
     prerequisites: [],
