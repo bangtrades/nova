@@ -2670,6 +2670,24 @@ function renderBrowserLessonList() {
     const cardsLabel = typeof lesson.cardCount === 'number'
       ? `${lesson.cardCount} card${lesson.cardCount === 1 ? '' : 's'}`
       : (Array.isArray(lesson.cards) ? `${lesson.cards.length} cards` : '');
+    // S12-10 R3: row-level actions — Re-seed (pre-fills Author tab with
+    // this lesson's sourceUrl + pathId) and Delete (DELETE /lessons/:id
+    // with native confirm). Both `stopPropagation` so the row's
+    // selectBrowserLesson click handler doesn't also fire. Re-seed is
+    // disabled (grey + no-op + tooltip) for legacy rows that were
+    // created outside the Author-tab flow and have no sourceUrl.
+    const titleEscJs = (lesson.title || '(untitled)').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const hasSourceUrl = typeof lesson.sourceUrl === 'string' && lesson.sourceUrl.length > 0;
+    const reseedBtn = hasSourceUrl
+      ? `<button class="lesson-action-btn" title="Re-seed via Author tab (fills URL + path, you hit Submit)"
+               onclick="event.stopPropagation(); reseedLesson('${escAttr(lesson.id)}')"
+               style="background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">↻</button>`
+      : `<button class="lesson-action-btn" title="No sourceUrl on this lesson — author via the Author tab manually"
+               disabled
+               style="background:transparent;border:1px solid var(--border);color:var(--text-dim);opacity:0.35;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:not-allowed;flex-shrink:0;">↻</button>`;
+    const deleteBtn = `<button class="lesson-action-btn" title="Delete this lesson permanently"
+               onclick="event.stopPropagation(); deleteLesson('${escAttr(lesson.id)}', '${titleEscJs}')"
+               style="background:transparent;border:1px solid var(--border);color:#fca5a5;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">✕</button>`;
     return `
       <div class="browser-lesson-row" data-lesson-id="${escAttr(lesson.id)}"
            onclick="selectBrowserLesson('${escAttr(lesson.id)}')"
@@ -2679,6 +2697,8 @@ function renderBrowserLessonList() {
         ${cardsLabel ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);flex-shrink:0;">${escHtml(cardsLabel)}</span>` : ''}
         <span style="font-family:var(--mono);font-size:10px;color:${statusColor};text-transform:uppercase;flex-shrink:0;">${escHtml(lesson.status || 'draft')}</span>
         <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;">${escHtml(createdLabel)}</span>
+        ${reseedBtn}
+        ${deleteBtn}
       </div>`;
   }).join('');
 
@@ -2735,6 +2755,131 @@ function syncBrowserToCurrentLesson() {
   // Always re-render the list — the active row highlight depends on
   // `currentLessonId` which has just changed.
   renderBrowserLessonList();
+}
+
+/**
+ * S12-10 R3 — find a lesson in BROWSER_STATE by id. Scans every path
+ * bucket (including orphans). Returns the lesson object (shape from
+ * `GET /lessons` list payload) or null if not found.
+ */
+function findBrowserLesson(lessonId) {
+  if (!lessonId) return null;
+  const { lessonsByPath } = BROWSER_STATE;
+  for (const pathId of Object.keys(lessonsByPath)) {
+    const hit = (lessonsByPath[pathId] || []).find((l) => l.id === lessonId);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * S12-10 R3 — DELETE /lessons/:id with a native confirm dialog. Used
+ * by the trash button on each Content Browser lesson row. On success,
+ * clears currentLessonId (if this lesson was active) and refreshes the
+ * browser so the row disappears + stats line updates.
+ *
+ * We use window.confirm() here intentionally — the Dev Console is a
+ * developer tool, not a user-facing surface, and a native dialog is
+ * zero-overhead + survives F5 + keeps muscle memory simple. A custom
+ * modal is overkill for "are you sure you want to delete this lesson."
+ */
+async function deleteLesson(lessonId, title) {
+  if (!lessonId) return;
+  const label = title || '(untitled)';
+  const ok = window.confirm(
+    `Delete lesson "${label}"?\n\nThis removes the lesson and all of its cards. ` +
+    `The underlying UrlIngest row stays (it's the audit trail for what was scraped).\n\n` +
+    `This can't be undone.`
+  );
+  if (!ok) return;
+  try {
+    const res = await fetch(`${API}/lessons/${encodeURIComponent(lessonId)}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 204) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || `HTTP ${res.status}`);
+    }
+    // If the deleted lesson was the active one, clear the skill-trace panel.
+    if (currentLessonId === lessonId) {
+      currentLessonId = '';
+      const panel = document.getElementById('skillEnginePanel');
+      if (panel) {
+        panel.innerHTML = '<div class="empty-state" style="padding:12px;color:var(--text-muted);font-size:11px;">Lesson deleted — pick another lesson above to view its trace.</div>';
+      }
+    }
+    await refreshContentBrowser();
+  } catch (err) {
+    window.alert(`Failed to delete lesson: ${err.message}`);
+    console.error('[deleteLesson]', err);
+  }
+}
+
+/**
+ * S12-10 R3 — Re-seed a lesson by pre-filling the Author tab and
+ * switching focus to it. Does NOT auto-submit — bang inspects + hits
+ * Submit himself so the SSE stream is his to watch.
+ *
+ * Does NOT auto-delete the old lesson either — bang may want to A/B
+ * compare traces (e.g. "did the prompt tune fix the voice-persona
+ * retry-failed?"). If he wants a clean swap, the pattern is: click
+ * Delete on the old row first, then click Re-seed. Two clicks.
+ *
+ * Child dropdown stays whatever was last selected. Path dropdown
+ * flips to the lesson's owning path if it resolves; else stays.
+ * skipQualityGate is left at its current checkbox state.
+ */
+function reseedLesson(lessonId) {
+  const lesson = findBrowserLesson(lessonId);
+  if (!lesson) {
+    window.alert('Lesson not found in browser state — refresh and try again.');
+    return;
+  }
+  if (!lesson.sourceUrl) {
+    window.alert('This lesson has no sourceUrl — open the Author tab and author it manually.');
+    return;
+  }
+  // Switch to Author tab. This also triggers the lazy-load path for
+  // child + path dropdowns if the user hasn't opened the tab yet.
+  if (typeof switchTab === 'function') {
+    switchTab('author');
+  }
+  // Give the lazy-load a tick to populate dropdowns before we set values.
+  // If the tab was already loaded, the setters fire immediately; if not,
+  // 200ms covers the GET /children + GET /paths round-trips on localhost.
+  setTimeout(() => {
+    const urlInput = document.getElementById('authorUrl');
+    const pathSelect = document.getElementById('authorPathSelect');
+    const titleInput = document.getElementById('authorTitleOverride');
+    const descInput = document.getElementById('authorDescOverride');
+    if (urlInput) {
+      urlInput.value = lesson.sourceUrl;
+      urlInput.focus();
+      urlInput.select();
+    }
+    if (pathSelect && lesson.pathId) {
+      // Only set if the option exists in the dropdown — avoids leaving
+      // the select in an invalid state if the path was deleted or the
+      // dropdown hasn't finished loading yet.
+      const opt = Array.from(pathSelect.options).find((o) => o.value === lesson.pathId);
+      if (opt) pathSelect.value = lesson.pathId;
+    }
+    // Leave title + description blank — re-seed should regenerate from
+    // the pipeline, not reuse the prior override text. If bang wants
+    // the same override he can type it in.
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
+    // Drop a visible hint into the stream panel so bang knows what's
+    // queued up and can scan it before hitting Submit.
+    const streamEl = document.getElementById('authorStream');
+    if (streamEl) {
+      streamEl.innerHTML = `
+        <div style="padding:10px 12px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--text-dim);">
+          <div style="color:#fcd34d;font-weight:600;margin-bottom:4px;">↻ Re-seed queued</div>
+          <div style="font-family:var(--mono);font-size:11px;word-break:break-all;">${escHtml(lesson.sourceUrl)}</div>
+          <div style="margin-top:6px;font-size:11px;">Verify the path + child + skip-quality-gate toggle, then hit Submit. The old lesson (${escHtml(lesson.id.slice(0, 8))}) stays intact — delete it manually if you want a clean swap.</div>
+        </div>
+      `;
+    }
+  }, 200);
 }
 
 async function refreshSkillTrace() {

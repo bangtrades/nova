@@ -86,6 +86,14 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
               sortOrder: true,
               createdAt: true,
               publishedAt: true,
+              // S12-10 R3: surface sourceUrl on the list payload so the
+              // Content Browser's Re-seed action can pre-fill the Author
+              // tab without a per-row detail fetch. Pipeline-seeded
+              // lessons always have this (pipelineOrchestrator persists
+              // `sourceUrl: ingest.url`); manually-POSTed lessons may
+              // have it null, which the frontend handles by disabling
+              // the Re-seed button for that row.
+              sourceUrl: true,
               _count: { select: { cards: true } },
             },
             orderBy: { sortOrder: 'asc' },
