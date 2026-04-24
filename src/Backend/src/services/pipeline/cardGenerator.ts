@@ -15,10 +15,16 @@ import {
 import type { ContentAnalysis } from './contentAnalyzer';
 import type { ConceptDecomposition } from './conceptDecomposer';
 import type { ScrapedContent } from './scraper';
-import type { ChildContext } from '@services/skills/types';
+import type { ChildContext, CardType } from '@services/skills/types';
 import { routeAllAtoms, type AtomTrace, type SkipReason } from './skillRouter';
 
-export type CardType = 'story' | 'concept' | 'experiment' | 'quiz' | 'voice';
+// S12-16: `CardType` is canonically defined alongside `CARD_TYPES` in
+// `@services/skills/types`. Re-exported here for back-compat with the
+// `from './cardGenerator'` import sites in `skillRouter.ts` and
+// `conceptDecomposer.ts`. Single source of truth lives in skills/types
+// so the cross-skill regression test can iterate every cardType without
+// double-bookkeeping.
+export type { CardType };
 
 /**
  * Drag-item chip emitted by `experiment-designer` (S12-04).

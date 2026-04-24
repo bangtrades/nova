@@ -576,6 +576,275 @@ describe('isSkillEngineStage4Enabled — feature flag', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Suite — S12-16 cross-skill cardType coverage regression
+//
+// The S12-10 mid-sprint debug surfaced a structural gap: `curriculum-architect`
+// emits atoms with cardTypes drawn from {story, concept, experiment, quiz,
+// voice} but `CARD_TYPE_TO_SKILL` was missing the `concept` entry. Every
+// concept atom silently returned `skipped: no-skill-mapping` for an entire
+// sprint of testing because no integration test ran a full mixed-cardType
+// decomposition through per-atom dispatch. The two tests below close that
+// gap on both ends:
+//
+//   1. The `meta` test iterates `CARD_TYPES` and asserts every entry has a
+//      mapping in `CARD_TYPE_TO_SKILL` — catches a missing-mapping at the
+//      structural level (will fail the moment someone adds a cardType to
+//      the schema without wiring its routing).
+//   2. The `integration` test builds a 5-atom decomposition with one of
+//      each cardType and runs it through `generateCardsWithSkills` with
+//      mocked LLM responses. Asserts: zero skipped atoms, zero legacy
+//      fallback invocations, every emitted card has its canonical iOS-
+//      facing field populated. Catches routing regressions at the
+//      end-to-end fan-out level (in case dispatch logic breaks even when
+//      the map is complete).
+// ---------------------------------------------------------------------------
+
+import { CARD_TYPES, CARD_TYPE_TO_SKILL } from '@services/skills/types';
+
+// Helpers for the three cardTypes the existing fixture set didn't cover.
+// `makeConceptAtom` above uses a synthetic `as unknown as 'concept'` cast
+// to force a skip — this one uses the real `'concept'` cardType so the
+// CARD_TYPE_TO_SKILL.concept → story-writer routing is exercised.
+function makeMappedConceptAtom(overrides: Partial<ConceptAtom> = {}): ConceptAtom {
+  return {
+    id: 'atom-concept-mapped',
+    name: 'gravity is invisible',
+    description: 'a property of mass-mass interaction children can name',
+    teachingStrategy: 'explanation',
+    recommendedCardType: 'concept',
+    engagementScore: 0.5,
+    learningValue: 0.85,
+    prerequisites: [],
+    ...overrides,
+  };
+}
+
+function makeExperimentAtom(overrides: Partial<ConceptAtom> = {}): ConceptAtom {
+  return {
+    id: 'atom-experiment',
+    name: 'sort objects by floats vs sinks',
+    description: 'apply density intuition to a tactile drag-and-drop',
+    teachingStrategy: 'application',
+    recommendedCardType: 'experiment',
+    engagementScore: 0.85,
+    learningValue: 0.8,
+    prerequisites: [],
+    ...overrides,
+  };
+}
+
+function makeVoiceAtom(overrides: Partial<ConceptAtom> = {}): ConceptAtom {
+  return {
+    id: 'atom-voice',
+    name: 'name the milk-feeder category',
+    description: 'spoken-answer recall of a single vocabulary word',
+    teachingStrategy: 'reflection',
+    recommendedCardType: 'voice',
+    engagementScore: 0.75,
+    learningValue: 0.9,
+    prerequisites: [],
+    ...overrides,
+  };
+}
+
+// Valid skill outputs mirror what the per-skill router tests
+// (experimentDesignerRouter / voicePersonaRouter) queue for their happy
+// paths — the canonical "well-formed LLM response" shapes for each
+// skill. Lifted as inline fixtures here rather than imported from those
+// test files because vitest module-graph doesn't share helpers across
+// test files cleanly.
+const VALID_EXPERIMENT_JSON = JSON.stringify({
+  title: 'Sort by Floating',
+  instructions: 'Drag each object onto the bin that matches what it does in water.',
+  dragItems: [
+    { id: 'cork', label: 'Cork' },
+    { id: 'rock', label: 'Rock' },
+    { id: 'apple', label: 'Apple' },
+  ],
+  dropTargets: [
+    { id: 'floats', label: 'Floats', acceptsItemIds: ['cork', 'apple'] },
+    { id: 'sinks', label: 'Sinks', acceptsItemIds: ['rock'] },
+  ],
+  conceptSummary:
+    'Objects less dense than water float; denser objects sink. Shape and trapped air matter too.',
+  rationalePerTarget: [
+    'Cork and apples are lighter than the water they push out, so they ride on top.',
+    'A rock is denser than water, so it falls through and settles at the bottom.',
+  ],
+});
+
+const VALID_VOICE_JSON = JSON.stringify({
+  title: 'Mammal word',
+  promptText:
+    "I learned a word today for an animal that gives milk to its babies — but I can't remember it. Do you?",
+  expectedResponses: ['mammal', 'a mammal', 'mammals'],
+  celebration: "Yes! I was hoping you'd remember — it was stuck in my head.",
+  retryHint: "Hmm, not the one I meant — I was picturing a milk-feeder.",
+  conceptSummary:
+    'A mammal is an animal that feeds milk to its babies — the child named the category aloud.',
+});
+
+// Concept atoms route through story-writer per CARD_TYPE_TO_SKILL.concept
+// — the skill produces prose, and `buildCardFromSkillOutput` branches on
+// `atom.recommendedCardType === 'concept'` to emit `type: 'concept'`
+// with the prose in `content.explanation`. So the "concept output" mock
+// is just well-formed prose, same shape as VALID_STORY_PROSE.
+const VALID_CONCEPT_PROSE =
+  'Gravity is the invisible pull between things that have weight. The Earth ' +
+  'has so much weight that everything around it gets pulled toward its center, ' +
+  'which is why dropped objects always fall down rather than up or sideways.';
+
+describe('cross-skill cardType coverage (S12-16)', () => {
+  beforeAll(async () => {
+    const reg = __resetSkillRegistryForTests(resolveDefsDir());
+    await reg.load();
+  });
+
+  // -------------------------------------------------------------------------
+  // Meta — every cardType in the schema has a routing entry
+  // -------------------------------------------------------------------------
+
+  it('every CardType in CARD_TYPES has a non-empty mapping in CARD_TYPE_TO_SKILL', () => {
+    // Catches the S12-10 concept-skip class of bug at the structural
+    // level: if someone adds a new cardType to the schema without
+    // wiring its routing, this fails before any iPad ever sees the
+    // bug.
+    for (const cardType of CARD_TYPES) {
+      const skillName = CARD_TYPE_TO_SKILL[cardType];
+      expect(skillName, `CARD_TYPE_TO_SKILL is missing entry for "${cardType}"`).toBeDefined();
+      expect(typeof skillName).toBe('string');
+      expect(skillName!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('CARD_TYPE_TO_SKILL has no orphan keys outside the CARD_TYPES enum', () => {
+    // Inverse of the previous test — catches the case where a cardType
+    // was renamed in CARD_TYPES but a stale entry survives in the map.
+    const knownTypes = new Set<string>(CARD_TYPES);
+    for (const key of Object.keys(CARD_TYPE_TO_SKILL)) {
+      expect(knownTypes.has(key), `CARD_TYPE_TO_SKILL has orphan key "${key}" not in CARD_TYPES`).toBe(true);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Integration — all 5 cardTypes route through routeAllAtoms cleanly
+  // -------------------------------------------------------------------------
+
+  it('routes a 5-atom decomposition (one per cardType) through generateCardsWithSkills with zero skips and no legacy fallback', async () => {
+    // One atom of each cardType, in the natural opener→middle→closer
+    // order a real curriculum-architect output might emit.
+    const atoms = [
+      makeStoryAtom({ id: 'atom-1-story' }),
+      makeMappedConceptAtom({ id: 'atom-2-concept' }),
+      makeExperimentAtom({ id: 'atom-3-experiment' }),
+      makeQuizAtom({ id: 'atom-4-quiz' }),
+      makeVoiceAtom({ id: 'atom-5-voice' }),
+    ];
+
+    // Queue valid LLM responses in atom order. story + concept both
+    // route through story-writer and consume prose; experiment + quiz
+    // + voice consume their respective JSON fixtures.
+    queueResponse(VALID_STORY_PROSE);
+    queueResponse(VALID_CONCEPT_PROSE);
+    queueResponse(VALID_EXPERIMENT_JSON);
+    queueResponse(VALID_QUIZ_JSON);
+    queueResponse(VALID_VOICE_JSON);
+
+    const result = await generateCardsWithSkills(
+      'u-cross',
+      makeAnalysis(),
+      makeScraped(),
+      makeDecomposition(atoms),
+      makeCtx()
+    );
+
+    // Top-level invariants — zero skips, no legacy round-trip, one card
+    // per atom in atom-order.
+    expect(
+      result.skipped,
+      `expected zero skipped atoms but got: ${JSON.stringify(result.skipped)}`
+    ).toEqual([]);
+    expect(result.usedLegacyFallback).toBe(false);
+    expect(result.cards).toHaveLength(5);
+    expect(mockRouteRequest).toHaveBeenCalledTimes(5);
+
+    // Every trace recorded `validatorStatus: 'ok'` — no Zod retry fired
+    // anywhere along the chain.
+    for (const trace of result.traces) {
+      expect(trace.validatorStatus, `trace validator status for ${trace.atomId}`).toBe('ok');
+    }
+
+    // Per-card type assertions — each card matches its atom's
+    // recommendedCardType AND carries the canonical iOS-facing content
+    // field for that type. This is the field-name-drift gate that
+    // S12-10 patched in cardGenerator.normalizeCard's double-write:
+    // if the iOS-facing field disappears for any cardType, this fails.
+    expect(result.cards[0].type).toBe('story');
+    expect((result.cards[0].content as { narrativeText?: string }).narrativeText).toBeTruthy();
+
+    expect(result.cards[1].type).toBe('concept');
+    expect((result.cards[1].content as { explanation?: string }).explanation).toBeTruthy();
+
+    expect(result.cards[2].type).toBe('experiment');
+    expect(
+      (result.cards[2].content as { dragItems?: unknown[] }).dragItems
+    ).toBeTruthy();
+
+    expect(result.cards[3].type).toBe('quiz');
+    expect(
+      (result.cards[3].content as { options?: unknown[] }).options
+    ).toBeTruthy();
+
+    expect(result.cards[4].type).toBe('voice');
+    expect((result.cards[4].content as { promptText?: string }).promptText).toBeTruthy();
+  });
+
+  it('produces a per-atom AtomTrace with the correct skill name for every cardType', async () => {
+    // Pipeline-tab observability check — the Dev Console renders one
+    // row per atom keyed on (skill, validatorStatus). If any cardType's
+    // trace surfaces empty/null skill name (which is what `skipped`
+    // legacy-fallback rows show), the Pipeline tab can't distinguish
+    // "skill ran successfully" from "atom fell through to legacy" and
+    // the regression-test sweep this test exists to satisfy is broken.
+    const atoms = [
+      makeStoryAtom({ id: 't-story' }),
+      makeMappedConceptAtom({ id: 't-concept' }),
+      makeExperimentAtom({ id: 't-experiment' }),
+      makeQuizAtom({ id: 't-quiz' }),
+      makeVoiceAtom({ id: 't-voice' }),
+    ];
+    queueResponse(VALID_STORY_PROSE);
+    queueResponse(VALID_CONCEPT_PROSE);
+    queueResponse(VALID_EXPERIMENT_JSON);
+    queueResponse(VALID_QUIZ_JSON);
+    queueResponse(VALID_VOICE_JSON);
+
+    const result = await generateCardsWithSkills(
+      'u-cross',
+      makeAnalysis(),
+      makeScraped(),
+      makeDecomposition(atoms),
+      makeCtx()
+    );
+
+    expect(result.traces).toHaveLength(5);
+    const expected: Array<[string, string]> = [
+      ['t-story', 'story-writer'],
+      ['t-concept', 'story-writer'], // shares story-writer per CARD_TYPE_TO_SKILL.concept
+      ['t-experiment', 'experiment-designer'],
+      ['t-quiz', 'quiz-maker'],
+      ['t-voice', 'voice-persona'],
+    ];
+    for (let i = 0; i < expected.length; i++) {
+      const [atomId, skillName] = expected[i];
+      expect(result.traces[i].atomId, `trace[${i}] atomId`).toBe(atomId);
+      expect(result.traces[i].skillName, `trace[${i}] skill name`).toBe(skillName);
+      expect(result.traces[i].validatorStatus).toBe('ok');
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Silence the noisy console.warn from legacy-fallback-failed branch. Tests
 // that specifically want to assert on it can still spy manually.
 // ---------------------------------------------------------------------------

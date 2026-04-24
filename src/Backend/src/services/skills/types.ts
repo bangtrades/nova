@@ -234,29 +234,55 @@ export interface SkillRegistry {
 }
 
 // ---------------------------------------------------------------------------
-// Built-in mapping: ranked card type → skill name
+// Card type registry + skill mapping
 // ---------------------------------------------------------------------------
+
+/**
+ * S12-16 — the complete enumeration of card types that can appear on a
+ * lesson flipbook. Single source of truth for both the routing table
+ * below and any test that needs to iterate every cardType (e.g. the
+ * `tests/pipelineSkillIntegration.test.ts` cross-skill regression
+ * sweep).
+ *
+ * **Adding a new cardType is a three-step contract:**
+ *   1. Add the literal here (TypeScript widens `CardType` automatically).
+ *   2. Add a `<cardType>: '<skill-name>'` entry to `CARD_TYPE_TO_SKILL`.
+ *   3. Add a branch to `buildCardFromSkillOutput` (in `pipeline/skillRouter.ts`)
+ *      that emits the new card shape on the wire.
+ *
+ * The cross-skill coverage test (S12-16) runs through every entry in
+ * this array and asserts step 2 — so if you forget the routing entry,
+ * the test fails before the bug ever reaches the iPad. The S12-10
+ * concept-atom silent-skip regression that bit us late in S12 was a
+ * step-2 omission that lived under the `Partial<>` type; this const
+ * + the test together make that class of bug structurally impossible.
+ */
+export const CARD_TYPES = ['story', 'concept', 'experiment', 'quiz', 'voice'] as const;
+export type CardType = typeof CARD_TYPES[number];
 
 /**
  * The pipeline orchestrator (S10-12) walks the ranked list produced by
  * `rankCardTypesFor(...)` and invokes the matching skill. Maintained here
  * so card types never hard-code skill names directly.
  *
- * `experiment`, `voice`, and `concept` become wired in S10-08 / S10-09 /
- * S10-10. The map is allowed to be partial until then.
+ * The `Partial<>` wrapper preserves the runtime defensive guard in
+ * `routeAtom` (`no-skill-mapping` skip reason fires when an unmapped
+ * cardType reaches dispatch). At S12-10 every cardType in `CARD_TYPES`
+ * has a routing — the `Partial<>` exists for defense-in-depth, not
+ * gradual rollout. The `tests/pipelineSkillIntegration.test.ts`
+ * cross-skill coverage suite enforces fully-populated at runtime.
+ *
+ * S12-10 — concept atoms route through story-writer. The skill produces
+ * free-form prose which is exactly what a concept card needs — an
+ * explanation. `buildCardFromSkillOutput` branches on the atom's
+ * `recommendedCardType` to emit `type: 'concept'` with the prose in
+ * `content.explanation` (where ConceptCardView reads from) instead of
+ * the default story shape. Deferred: a purpose-built `concept-explainer`
+ * skill is out of scope — when it lands in S13+, just point this entry
+ * at that skill's name.
  */
-export const CARD_TYPE_TO_SKILL: Partial<
-  Record<'story' | 'concept' | 'experiment' | 'quiz' | 'voice', string>
-> = {
+export const CARD_TYPE_TO_SKILL: Partial<Record<CardType, string>> = {
   story: 'story-writer',
-  // S12-10 — concept atoms route through story-writer too. The skill
-  // produces free-form prose which is exactly what a concept card
-  // needs — an explanation. `buildCardFromSkillOutput` branches on
-  // the atom's `recommendedCardType` to emit `type: 'concept'` with
-  // the prose in `content.explanation` (where ConceptCardView reads
-  // from) instead of the default story shape. Deferred: a purpose-
-  // built `concept-explainer` skill is out of scope — when it lands
-  // in S13+, just point this entry at that skill's name.
   concept: 'story-writer',
   quiz: 'quiz-maker',
   experiment: 'experiment-designer',
