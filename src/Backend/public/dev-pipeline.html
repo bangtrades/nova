@@ -2522,7 +2522,7 @@ async function refreshContentBrowser() {
     // Parallel fetch — paths + lessons are independent reads.
     const [pathsRes, lessonsRes] = await Promise.all([
       fetch(`${API}/paths`),
-      fetch(`${API}/lessons?limit=200`),
+      fetch(`${API}/lessons?limit=100`),
     ]);
     if (!pathsRes.ok) throw new Error(`paths ${pathsRes.status}`);
     if (!lessonsRes.ok) throw new Error(`lessons ${lessonsRes.status}`);
