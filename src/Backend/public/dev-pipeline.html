@@ -1517,18 +1517,44 @@
       </div>
     </div>
 
-    <!-- Skill Engine trace (S10-12 · R7) -->
+    <!-- Content Browser — Paths → Lessons → Skill trace (S10-12·R7 + S12-10)
+         Replaces the single-lesson Skill Engine container with a three-level
+         browser: top row is the path rail (pill-select), middle is the
+         lesson list filtered by selected path, bottom is the atom trace for
+         whichever lesson is active. `currentLessonId` stays the source of
+         truth for the trace so external callers (Author tab's Jump-to-
+         Pipeline, inline Ingest+Generate flow) still drive the view. -->
     <div class="panel full">
       <div class="panel-header">
-        Skill Engine
-        <span class="tag" style="background:#6b46c122;color:#c4b5fd;border:1px solid #6b46c144;">S10-12</span>
-        <span id="skillEngineBadge" style="margin-left:8px;font-family:var(--mono);font-size:10px;color:var(--text-muted);"></span>
-        <button class="btn btn-secondary" onclick="refreshSkillTrace()" style="padding:5px 14px;margin-left:auto;font-size:10px;">Refresh</button>
+        Content Browser
+        <span class="tag" style="background:#6b46c122;color:#c4b5fd;border:1px solid #6b46c144;">S12-10</span>
+        <span id="browserBadge" style="margin-left:8px;font-family:var(--mono);font-size:10px;color:var(--text-muted);"></span>
+        <button class="btn btn-secondary" onclick="refreshContentBrowser()" style="padding:5px 14px;margin-left:auto;font-size:10px;">Refresh</button>
+      </div>
+
+      <!-- Path rail — horizontal pills; click to filter the lesson list -->
+      <div id="browserPathRail" style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:6px;overflow-x:auto;white-space:nowrap;">
+        <div class="empty-state" style="padding:8px 0;color:var(--text-muted);font-size:11px;">Loading paths…</div>
+      </div>
+
+      <!-- Lesson list — vertical; filtered by selected path; click to load trace -->
+      <div id="browserLessonList" style="max-height:180px;overflow-y:auto;border-bottom:1px solid var(--border);">
+        <div class="empty-state" style="padding:12px;color:var(--text-muted);font-size:11px;">Select a path above to see its lessons.</div>
+      </div>
+
+      <!-- Trace section — mini-header + panel-body. `skillEngineBadge` is
+           the summary line `renderSkillTrace` writes to (ok/retry-ok/skipped
+           counts + total tokens for the selected lesson). -->
+      <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg-alt, #0f0f12);">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Skill Trace</span>
+        <span id="skillEngineBadge" style="font-family:var(--mono);font-size:10px;color:var(--text-muted);"></span>
+        <span class="spacer" style="flex:1;"></span>
+        <button class="btn btn-secondary" onclick="refreshSkillTrace()" style="padding:3px 10px;font-size:10px;">Reload trace</button>
       </div>
       <div class="panel-body" id="skillEnginePanel" style="max-height:460px;">
         <div class="empty-state">
           <div class="empty-icon">✦</div>
-          Run a pipeline with a childId to see per-atom skill traces
+          Select a lesson above — or run a pipeline — to see its per-atom skill trace.
         </div>
       </div>
     </div>
@@ -2458,7 +2484,265 @@ function renderCards(cards) {
 //   1. No lessonId yet     → "Run a pipeline…"
 //   2. Lesson has no trace → "Skill engine did not run for this lesson"
 //   3. Parse error         → shows the parse message in red
+// ---------------------------------------------------------------------------
+// Content Browser (S12-10) — turns the old single-lesson Skill Engine panel
+// into a paths→lessons→trace viewer. State lives at module scope so the
+// render functions can mutate/read without prop drilling. `currentLessonId`
+// stays the source of truth for which lesson's trace is showing; selecting
+// a lesson in the browser just writes to that global and fires
+// `refreshSkillTrace()`. External callers (Author tab's jump-to-pipeline,
+// inline Ingest+Generate) still work — they set `currentLessonId` then
+// refresh, and on the next browser refresh the corresponding row
+// highlights automatically.
+// ---------------------------------------------------------------------------
+
+const BROWSER_STATE = {
+  paths: [],            // [{ id, title, icon, color, lessonCount, ... }]
+  lessonsByPath: {},    // { [pathId]: [{ id, title, status, createdAt, pathId, ... }] }
+  selectedPathId: null, // which path's lessons are showing in the middle pane
+  loading: false,
+};
+
+/**
+ * Entry point — wired to the "Refresh" button on the Content Browser
+ * header. Fetches the full path + lesson inventory, renders the rail +
+ * list, and kicks off a skill-trace refresh for the currently-selected
+ * lesson (if any) so the bottom pane stays in sync.
+ */
+async function refreshContentBrowser() {
+  const pathRail = document.getElementById('browserPathRail');
+  const lessonList = document.getElementById('browserLessonList');
+  const badge = document.getElementById('browserBadge');
+  if (!pathRail || !lessonList) return;
+
+  BROWSER_STATE.loading = true;
+  pathRail.innerHTML = '<div class="empty-state" style="padding:8px 0;color:var(--text-muted);font-size:11px;">Loading paths…</div>';
+
+  try {
+    // Parallel fetch — paths + lessons are independent reads.
+    const [pathsRes, lessonsRes] = await Promise.all([
+      fetch(`${API}/paths`),
+      fetch(`${API}/lessons?limit=200`),
+    ]);
+    if (!pathsRes.ok) throw new Error(`paths ${pathsRes.status}`);
+    if (!lessonsRes.ok) throw new Error(`lessons ${lessonsRes.status}`);
+    const pathsJson = await pathsRes.json();
+    const lessonsJson = await lessonsRes.json();
+
+    const paths = (pathsJson.data || pathsJson.paths || pathsJson || []);
+    const lessons = (lessonsJson.data || lessonsJson.lessons || lessonsJson || []);
+
+    // Bucket lessons by pathId up-front so clicking a path chip is
+    // O(1). Unassigned lessons (no pathId) get their own virtual
+    // bucket under the sentinel key '__orphan__' so they're still
+    // browsable — useful during early authoring before paths are
+    // organized.
+    const lessonsByPath = {};
+    for (const lesson of lessons) {
+      const key = lesson.pathId || '__orphan__';
+      if (!lessonsByPath[key]) lessonsByPath[key] = [];
+      lessonsByPath[key].push(lesson);
+    }
+    // Sort lessons newest-first within each path so the Author tab's
+    // freshly-seeded lesson jumps to the top of the list.
+    for (const key of Object.keys(lessonsByPath)) {
+      lessonsByPath[key].sort((a, b) => {
+        const aTs = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTs = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTs - aTs;
+      });
+    }
+
+    BROWSER_STATE.paths = paths;
+    BROWSER_STATE.lessonsByPath = lessonsByPath;
+
+    // Pick a default selected path — the path containing the current
+    // `currentLessonId` if one is set (keeps the view consistent after
+    // the Author tab hands off), otherwise the first path with any
+    // lessons, otherwise the first path overall.
+    let pickedPath = null;
+    if (typeof currentLessonId === 'string' && currentLessonId) {
+      const owner = lessons.find((l) => l.id === currentLessonId);
+      if (owner) pickedPath = owner.pathId || '__orphan__';
+    }
+    if (!pickedPath) {
+      const firstWithLessons = paths.find((p) => (lessonsByPath[p.id] || []).length > 0);
+      pickedPath = (firstWithLessons && firstWithLessons.id) || (paths[0] && paths[0].id) || null;
+      // If there are no paths but we have orphan lessons, show those.
+      if (!pickedPath && (lessonsByPath['__orphan__'] || []).length > 0) {
+        pickedPath = '__orphan__';
+      }
+    }
+    BROWSER_STATE.selectedPathId = pickedPath;
+
+    // Headline stat line
+    if (badge) {
+      const totalLessons = lessons.length;
+      badge.textContent = `${paths.length} paths · ${totalLessons} lessons`;
+    }
+
+    renderBrowserPathRail();
+    renderBrowserLessonList();
+  } catch (err) {
+    pathRail.innerHTML = `<div class="empty-state" style="padding:8px 0;color:#fca5a5;font-size:11px;">Failed to load paths/lessons: ${escHtml(err.message)}</div>`;
+    lessonList.innerHTML = '';
+    if (badge) badge.textContent = 'load error';
+  } finally {
+    BROWSER_STATE.loading = false;
+  }
+}
+
+/**
+ * Render the horizontal path rail. Each path gets a chip showing its icon +
+ * title + lesson count. The selected path gets the active pill styling.
+ * Orphan lessons (those without a pathId) live in a virtual chip at the end
+ * if any exist — keeps them browsable without polluting the real path list.
+ */
+function renderBrowserPathRail() {
+  const rail = document.getElementById('browserPathRail');
+  if (!rail) return;
+  const paths = BROWSER_STATE.paths;
+  const selectedId = BROWSER_STATE.selectedPathId;
+  const lessonsByPath = BROWSER_STATE.lessonsByPath;
+
+  const chips = [];
+  for (const p of paths) {
+    const count = (lessonsByPath[p.id] || []).length;
+    const active = p.id === selectedId;
+    const icon = p.icon ? `${p.icon} ` : '';
+    const style = active
+      ? 'background:var(--accent, #6b46c1);color:#fff;border:1px solid var(--accent, #6b46c1);'
+      : 'background:var(--surface-2, #1a1a1f);color:var(--text);border:1px solid var(--border);';
+    chips.push(
+      `<button class="browser-path-chip" data-path-id="${escAttr(p.id)}" onclick="selectBrowserPath('${escAttr(p.id)}')" style="padding:6px 12px;border-radius:999px;font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap;flex-shrink:0;${style}">${escHtml(icon)}${escHtml(p.title)} · ${count}</button>`
+    );
+  }
+
+  const orphanCount = (lessonsByPath['__orphan__'] || []).length;
+  if (orphanCount > 0) {
+    const active = selectedId === '__orphan__';
+    const style = active
+      ? 'background:#6b7280;color:#fff;border:1px solid #6b7280;'
+      : 'background:var(--surface-2, #1a1a1f);color:var(--text-muted);border:1px dashed var(--border);';
+    chips.push(
+      `<button class="browser-path-chip" data-path-id="__orphan__" onclick="selectBrowserPath('__orphan__')" style="padding:6px 12px;border-radius:999px;font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap;flex-shrink:0;${style}">(unassigned) · ${orphanCount}</button>`
+    );
+  }
+
+  if (chips.length === 0) {
+    rail.innerHTML = '<div class="empty-state" style="padding:8px 0;color:var(--text-muted);font-size:11px;">No paths yet — create one via the Author Lesson tab.</div>';
+    return;
+  }
+  rail.innerHTML = chips.join('');
+}
+
+/**
+ * Render the filtered lesson list for the currently-selected path. Each row
+ * shows title + card count + status + createdAt. Clicking a row loads that
+ * lesson's skill trace into the bottom panel via `currentLessonId` +
+ * `refreshSkillTrace()`.
+ */
+function renderBrowserLessonList() {
+  const listEl = document.getElementById('browserLessonList');
+  if (!listEl) return;
+  const selectedId = BROWSER_STATE.selectedPathId;
+  const lessons = BROWSER_STATE.lessonsByPath[selectedId] || [];
+
+  if (!selectedId) {
+    listEl.innerHTML = '<div class="empty-state" style="padding:12px;color:var(--text-muted);font-size:11px;">Select a path above to see its lessons.</div>';
+    return;
+  }
+  if (lessons.length === 0) {
+    listEl.innerHTML = '<div class="empty-state" style="padding:12px;color:var(--text-muted);font-size:11px;">No lessons under this path yet — author one via the Author Lesson tab.</div>';
+    return;
+  }
+
+  const rows = lessons.map((lesson) => {
+    const active = lesson.id === currentLessonId;
+    const rowBg = active ? 'background:var(--accent, #6b46c1)22;border-left:3px solid var(--accent, #6b46c1);' : 'background:transparent;border-left:3px solid transparent;';
+    const createdLabel = lesson.createdAt
+      ? new Date(lesson.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '—';
+    const statusColor =
+      lesson.status === 'published' ? '#86efac'
+      : lesson.status === 'draft' ? '#fcd34d'
+      : '#cbd5e1';
+    const cardsLabel = typeof lesson.cardCount === 'number'
+      ? `${lesson.cardCount} card${lesson.cardCount === 1 ? '' : 's'}`
+      : (Array.isArray(lesson.cards) ? `${lesson.cards.length} cards` : '');
+    return `
+      <div class="browser-lesson-row" data-lesson-id="${escAttr(lesson.id)}"
+           onclick="selectBrowserLesson('${escAttr(lesson.id)}')"
+           style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;${rowBg}">
+        <span style="font-family:var(--mono);color:var(--text-dim);font-size:10px;min-width:60px;">${escHtml(lesson.id.slice(0, 8))}</span>
+        <span style="flex:1;font-size:13px;font-weight:${active ? 600 : 500};color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(lesson.title || '(untitled)')}</span>
+        ${cardsLabel ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);flex-shrink:0;">${escHtml(cardsLabel)}</span>` : ''}
+        <span style="font-family:var(--mono);font-size:10px;color:${statusColor};text-transform:uppercase;flex-shrink:0;">${escHtml(lesson.status || 'draft')}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;">${escHtml(createdLabel)}</span>
+      </div>`;
+  }).join('');
+
+  listEl.innerHTML = rows;
+}
+
+/**
+ * Click handler for a path chip. Switches the active path + re-renders the
+ * lesson list, but DOESN'T auto-select a lesson — the trace pane stays
+ * whatever was showing unless the user clicks a lesson row.
+ */
+function selectBrowserPath(pathId) {
+  if (BROWSER_STATE.selectedPathId === pathId) return;
+  BROWSER_STATE.selectedPathId = pathId;
+  renderBrowserPathRail();
+  renderBrowserLessonList();
+}
+
+/**
+ * Click handler for a lesson row. Sets `currentLessonId` + triggers the
+ * existing skill-trace render pipeline. Also re-highlights the list so the
+ * active row pops without needing a full browser refresh.
+ */
+function selectBrowserLesson(lessonId) {
+  currentLessonId = lessonId;
+  renderBrowserLessonList(); // re-render so the selected row highlights
+  if (typeof refreshSkillTrace === 'function') {
+    refreshSkillTrace();
+  }
+}
+
+/**
+ * S12-10 — when something external (Author tab's jump-to-pipeline, a
+ * pipeline re-run, a console `currentLessonId = X; refreshSkillTrace()`)
+ * switches the active lesson, bring the browser in sync: flip the path
+ * rail to the path containing the new lesson and re-render the list so
+ * the active row highlights. Cheap no-op if browser isn't loaded yet.
+ */
+function syncBrowserToCurrentLesson() {
+  if (!currentLessonId || !BROWSER_STATE.paths.length) return;
+  const { lessonsByPath, selectedPathId } = BROWSER_STATE;
+  // Find which path owns currentLessonId. Scan all buckets (orphan included).
+  let ownerPathId = null;
+  for (const pathId of Object.keys(lessonsByPath)) {
+    if ((lessonsByPath[pathId] || []).some((l) => l.id === currentLessonId)) {
+      ownerPathId = pathId;
+      break;
+    }
+  }
+  if (ownerPathId && ownerPathId !== selectedPathId) {
+    BROWSER_STATE.selectedPathId = ownerPathId;
+    renderBrowserPathRail();
+  }
+  // Always re-render the list — the active row highlight depends on
+  // `currentLessonId` which has just changed.
+  renderBrowserLessonList();
+}
+
 async function refreshSkillTrace() {
+  // Keep the browser highlight in sync with whatever lesson we're about
+  // to render the trace for. Fire-and-forget — browser sync is UI-only
+  // and doesn't block the trace fetch.
+  syncBrowserToCurrentLesson();
+
   const panel = document.getElementById('skillEnginePanel');
   const badge = document.getElementById('skillEngineBadge');
   if (!panel) return;
@@ -4870,6 +5154,10 @@ const NovaDevConsole = (() => {
 checkHealth();
 fetchChildId();
 setTimeout(refreshCosts, 1500); // Load cost history on page open
+// S12-10 — kick off the Content Browser on page open so the Pipeline tab's
+// paths/lessons rail is populated before the user clicks in. 300ms delay
+// gives checkHealth/fetchChildId time to warm the auth context first.
+setTimeout(() => { if (typeof refreshContentBrowser === 'function') refreshContentBrowser(); }, 300);
 syncTabFromHash();               // Respect deep-link on page load
 </script>
 </body>

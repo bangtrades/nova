@@ -74,6 +74,10 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
             where,
             select: {
               id: true,
+              // S12-10: surface pathId + a cheap card count so the Dev
+              // Console's Content Browser can bucket + badge lessons
+              // without a second round-trip per row.
+              pathId: true,
               title: true,
               description: true,
               thumbnailUrl: true,
@@ -82,6 +86,7 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
               sortOrder: true,
               createdAt: true,
               publishedAt: true,
+              _count: { select: { cards: true } },
             },
             orderBy: { sortOrder: 'asc' },
             skip,
@@ -92,8 +97,20 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
 
         const totalPages = Math.ceil(total / limit);
 
+        // S12-10 — unwrap Prisma's `_count.cards` aggregate into a flat
+        // `cardCount` field so the frontend doesn't need to know about the
+        // `_count` indirection. The Dev Console Content Browser reads this
+        // field to render per-lesson card-count badges.
+        const shaped = lessons.map((l: any) => {
+          const cardCount = l._count?.cards ?? 0;
+          // Drop the internal `_count` shape from the wire response — it
+          // leaks Prisma-specific naming that clients shouldn't see.
+          const { _count, ...rest } = l;
+          return { ...rest, cardCount };
+        });
+
         return reply.status(200).send({
-          data: lessons,
+          data: shaped,
           total,
           page,
           limit,
