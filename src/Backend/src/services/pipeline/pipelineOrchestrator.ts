@@ -84,11 +84,24 @@ export interface PipelineStepResult {
   error?: string;
 }
 
-// Default timeouts (ms) for each LLM-facing stage. The full pipeline budget
-// is ~120s end-to-end per the sprint plan; individual stage caps below.
+// Default timeouts (ms) for each LLM-facing stage.
+//
+// S12-10 bump — the Stage-4 generate stage loops through every decomposition
+// atom and fires a serial LLM call per atom. A 6-atom decomposition × ~5–10s
+// per LLM round-trip puts the generate stage at 30–60s just for network
+// time, plus validation + potential Zod retry. Previously this was masked
+// because `concept` atoms skipped instantly (no LLM call), so a typical
+// decomposition only made 2–3 real calls and finished inside the 45s
+// budget. After the S12-10 concept→story-writer routing fix, ALL atoms
+// make real LLM calls — the 45s ceiling is too tight. Bumping to 120s
+// per stage + 300s full-pipeline budget gives head-room for 6-atom
+// decompositions with one retry-on-Zod cycle, which is the realistic
+// worst case. If throughput becomes a real concern, parallelize the
+// per-atom loop in `generateCardsWithSkills` (Promise.all over the atoms)
+// in a follow-up — atom generation is independent so fan-out is safe.
 const DEFAULTS = {
-  stageTimeoutMs: 45_000,
-  pipelineTimeoutMs: 120_000,
+  stageTimeoutMs: 120_000,
+  pipelineTimeoutMs: 300_000,
   maxAttempts: 2, // one retry on transient failure
   retryBackoffMs: 750,
 } as const;
