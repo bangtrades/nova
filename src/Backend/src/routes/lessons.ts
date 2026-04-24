@@ -18,6 +18,11 @@ const updateLessonSchema = z.object({
   thumbnailUrl: z.string().url().optional(),
   difficulty: z.number().int().min(1).max(10).optional(),
   sourceUrl: z.string().url().optional(),
+  // S12-10 R4: allow re-parenting a lesson between paths. `null` means
+  // "remove from all paths" (drops into the Content Browser's (unassigned)
+  // bucket). A UUID means "move to this path" — ownership of the target
+  // path is verified in the handler the same way POST /lessons does.
+  pathId: z.string().uuid().nullable().optional(),
 });
 
 const listLessonsQuerySchema = z.object({
@@ -301,7 +306,7 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
         }
 
         const { id } = request.params;
-        const { title, description, thumbnailUrl, difficulty, sourceUrl } = request.body;
+        const { title, description, thumbnailUrl, difficulty, sourceUrl, pathId } = request.body;
         const prisma = getPrismaClient();
 
         // Verify ownership
@@ -326,6 +331,25 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
+        // S12-10 R4: if the caller is re-parenting this lesson to a path
+        // (non-null pathId), verify they own that target path. Mirrors the
+        // same check POST /lessons does — a lesson can only live under a
+        // path owned by the same user. A null pathId means "move to
+        // unassigned" and needs no ownership check.
+        if (pathId) {
+          const targetPath = await prisma.learningPath.findUnique({
+            where: { id: pathId },
+            select: { userId: true },
+          });
+          if (!targetPath || targetPath.userId !== request.userId) {
+            return reply.status(403).send({
+              statusCode: 403,
+              error: 'Forbidden',
+              message: 'You do not have permission to use this learning path',
+            });
+          }
+        }
+
         const updated = await prisma.lesson.update({
           where: { id },
           data: {
@@ -334,6 +358,9 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
             ...(thumbnailUrl && { thumbnailUrl }),
             ...(difficulty && { difficulty }),
             ...(sourceUrl && { sourceUrl }),
+            // pathId is present in the body => set it (including explicit null
+            // for "move to unassigned"). `undefined` => don't touch it.
+            ...(pathId !== undefined && { pathId }),
           },
           select: {
             id: true,
