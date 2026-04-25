@@ -24,6 +24,17 @@ public struct MasonryGrid<Item: Identifiable, Content: View>: View {
         self.content = content
     }
 
+    /// Compute column width from a measured container width. Skips when
+    /// the container hasn't been measured yet (width <= 0), and clamps
+    /// the result so a viewport narrower than the gutter sum doesn't
+    /// produce a negative frame width.
+    private func updateColumnWidth(for containerWidth: CGFloat) {
+        guard containerWidth > 0 else { return }
+        let gutterTotal = spacing * CGFloat(columns - 1)
+        let raw = (containerWidth - gutterTotal) / CGFloat(columns)
+        cachedColumnWidth = max(0, raw)
+    }
+
     public var body: some View {
         GeometryReader { geometry in
             VStack(spacing: spacing) {
@@ -44,11 +55,27 @@ public struct MasonryGrid<Item: Identifiable, Content: View>: View {
                 }
                 Spacer()
             }
-            .onAppear {
-                cachedColumnWidth = (geometry.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-            }
+            // S12-12: clamp + skip-on-zero to silence the SwiftUI runtime
+            // warning "Invalid frame dimension (negative or non-finite)"
+            // that fires every layout pass. Root cause: on the first
+            // layout, `geometry.size.width` can be 0 (view not yet
+            // measured), and the formula `(0 - spacing * (columns - 1)) /
+            // columns` produces a NEGATIVE width — e.g. for spacing=12
+            // columns=2 that's (0 - 12) / 2 = -6. SwiftUI clamps to 0
+            // internally so the UI still renders, but the warning spams
+            // the console on every re-layout (visible in Xcode's debug
+            // pane every time you scroll or rotate). Two-step fix:
+            // (1) skip the assignment entirely when geometry hasn't
+            //     measured yet (size.width == 0) — wait until SwiftUI
+            //     gives us a real number;
+            // (2) `max(0, raw)` clamp as a defensive belt for any other
+            //     edge case (spacing > geometry.width, which would
+            //     happen on a viewport narrower than the gutter sum).
+            // Both .onAppear and .onChange run through the same helper
+            // so the math lives in one place and stays trivially auditable.
+            .onAppear { updateColumnWidth(for: geometry.size.width) }
             .onChange(of: geometry.size.width) { _, newWidth in
-                cachedColumnWidth = (newWidth - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+                updateColumnWidth(for: newWidth)
             }
         }
     }

@@ -29,17 +29,52 @@ async function buildServer(): Promise<ReturnType<typeof Fastify>> {
     },
     // S12-12: case-insensitive route matching. Swift's `UUID.uuidString`
     // returns RFC 4122 form which is UPPERCASE by default, so iOS sends
-    // requests like `GET /api/v1/lessons/3BB36244-7C9B.../cards`. Postgres
-    // stores UUIDs lowercase and Prisma's where-clause is case-insensitive
-    // for UUIDs, but Fastify's router (find-my-way) defaults to
-    // `caseSensitive: true`. With case-sensitive routing the uppercase
-    // path no longer matches the route registered as `/lessons/:id/cards`
-    // — manifests as a 404 even though the route exists and curl works
-    // when the param is lowercase. Disabling case sensitivity for the
-    // whole server is a no-cost win in dev: every literal segment
-    // (`lessons`, `cards`, `paths`, etc.) is lowercase so there's no
-    // pre-existing route that depended on case to disambiguate.
+    // requests like `GET /api/v1/lessons/3BB36244-7C9B.../cards`.
+    // Fastify's router defaults to caseSensitive=true; this disables it
+    // so route matching works regardless of UUID case in the path.
+    // (Doesn't fix Prisma lookup — that's the preValidation hook below.)
     caseSensitive: false,
+  });
+
+  // ---------------------------------------------------------------------
+  // S12-12: Global UUID-param case normalization
+  //
+  // Why this exists: every model in `schema.prisma` declares its `id` as
+  // `String @default(uuid())` rather than the native `@db.Uuid`. Postgres
+  // stores those values exactly as inserted — Prisma's `uuid()` helper
+  // emits lowercase, so every row's id is canonical lowercase. But
+  // `prisma.lesson.findUnique({ where: { id: '3BB36244-...' } })` does
+  // a literal string match (id is typed String, not Uuid), so an
+  // uppercase id from the wire returns null even though the row exists.
+  //
+  // The systemic fix: at the wire boundary, lowercase any path param
+  // whose value matches the canonical UUID shape. One hook, every
+  // existing and future route covered. Body params are NOT touched
+  // (Zod schemas already normalize bodies via .uuid() validator), and
+  // non-UUID path params are left alone (the regex test ensures we
+  // only mutate values we're confident are UUIDs).
+  //
+  // Hook phase: `preValidation` — runs after routing populates
+  // request.params but BEFORE per-route validateParams Zod schemas
+  // execute. This way the lowercased value is what every downstream
+  // step (validation, handler, Prisma query) sees.
+  //
+  // Reverse-side note: the right long-term fix is migrating every
+  // `id String` column to `id String @db.Uuid` (or even native uuid)
+  // so Prisma's where-clause does the case-insensitive comparison
+  // automatically. Tracked as S13+ schema-cleanup follow-up — too
+  // wide a change to land mid-touch-test.
+  // ---------------------------------------------------------------------
+  const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  fastify.addHook('preValidation', async (request) => {
+    const params = request.params as Record<string, unknown> | undefined;
+    if (!params) return;
+    for (const key of Object.keys(params)) {
+      const value = params[key];
+      if (typeof value === 'string' && UUID_RE.test(value)) {
+        params[key] = value.toLowerCase();
+      }
+    }
   });
 
   // Register plugins
