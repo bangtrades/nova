@@ -298,6 +298,91 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
     }
   );
 
+  // GET /lessons/:id/cards - List cards for a lesson
+  //
+  // S12-12: nested-subresource alias matching the iOS-side
+  // `Endpoint.getCards(lessonId:)` URL pattern (`/lessons/<uuid>/cards`).
+  // The flat `GET /api/v1/cards?lessonId=<uuid>` route in `routes/cards.ts`
+  // exists but iOS never hit it — every `apiRouter.fetchCards(lessonId:)`
+  // call was 404'ing and the mock fallback in FlipbookViewModel hid the
+  // failure. This endpoint surfaces the same data at the URL iOS expects.
+  //
+  // Returns the same envelope shape as GET /cards (`{ data, total }`) so
+  // the iOS-side `PaginatedResponse<Card>` decoder works without further
+  // change. Lesson ownership check matches the existing /cards GET.
+  fastify.get<{ Params: LessonParams }>(
+    '/:id/cards',
+    {
+      preHandler: validateParams(lessonParamsSchema),
+    },
+    async (request, reply) => {
+      try {
+        if (!request.userId) {
+          return reply.status(401).send({
+            statusCode: 401,
+            error: 'Unauthorized',
+            message: 'Missing authentication token',
+          });
+        }
+
+        const { id: lessonId } = request.params;
+        const prisma = getPrismaClient();
+
+        // Verify lesson ownership before exposing card list.
+        const lesson = await prisma.lesson.findUnique({
+          where: { id: lessonId },
+          select: { userId: true },
+        });
+
+        if (!lesson) {
+          return reply.status(404).send({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Lesson not found',
+          });
+        }
+
+        if (lesson.userId !== request.userId) {
+          return reply.status(403).send({
+            statusCode: 403,
+            error: 'Forbidden',
+            message: 'You do not have permission to access this lesson',
+          });
+        }
+
+        const cards = await prisma.card.findMany({
+          where: { lessonId },
+          select: {
+            id: true,
+            // S12-12: include lessonId so iOS Card.lessonId (required) decodes.
+            lessonId: true,
+            type: true,
+            sortOrder: true,
+            content: true,
+            voiceScript: true,
+            imageUrl: true,
+            audioUrl: true,
+            interactionConfig: true,
+            createdAt: true,
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
+
+        return reply.status(200).send({
+          data: cards,
+          total: cards.length,
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Failed to fetch cards for lesson',
+        });
+      }
+    }
+  );
+
   // PATCH /lessons/:id - Update lesson
   fastify.patch<{ Params: LessonParams; Body: UpdateLessonRequest }>(
     '/:id',
