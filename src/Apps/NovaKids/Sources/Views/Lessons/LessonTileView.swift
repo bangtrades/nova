@@ -17,7 +17,12 @@ public struct LessonTileView: View {
     let isComplete: Bool
 
     /// Callback when tapped.
-    let onTap: () -> Void
+    /// S12-12: optional so call sites that wrap LessonTileView in a
+    /// NavigationLink (e.g. LessonsView) can omit the closure. When nil,
+    /// the body skips the inner Button wrapper so the NavigationLink's
+    /// tap gesture isn't intercepted. When non-nil, retains the original
+    /// Button-with-action shape for sheet-based or callback-driven flows.
+    let onTap: (() -> Void)?
 
     // iPad pointer interactions use `.onHover`; iPhone never fires the event.
     // Gated by `horizontalSizeClass` so the hover scale is a no-op on compact
@@ -27,15 +32,47 @@ public struct LessonTileView: View {
 
     @State private var isHovering = false
 
-    public init(lesson: Lesson, isComplete: Bool = false, onTap: @escaping () -> Void) {
+    public init(lesson: Lesson, isComplete: Bool = false, onTap: (() -> Void)? = nil) {
         self.lesson = lesson
         self.isComplete = isComplete
         self.onTap = onTap
     }
 
     public var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 0) {
+        // S12-12: when onTap is nil (the LessonsView/NavigationLink case),
+        // skip the Button wrapper entirely so taps bubble up to the
+        // surrounding NavigationLink. When onTap is provided, retain the
+        // PlainButtonStyle wrap so callback-driven call sites still get
+        // visual button feedback. The trailing modifier chain
+        // (.scaleEffect / .onHover / .accessibility*) is shared and
+        // applies regardless.
+        Group {
+            if let onTap {
+                Button(action: onTap) { tileContent }
+                    .buttonStyle(PlainButtonStyle())
+            } else {
+                tileContent
+            }
+        }
+        .scaleEffect(shouldLift ? 1.02 : 1.0)
+        .animation(reduceMotion ? .none : .easeOut(duration: 0.15), value: isHovering)
+        .onHover { hovering in
+            // `.onHover` fires on iPad + Mac; iPhone touch never triggers it,
+            // so the scale math is free on phones.
+            isHovering = hovering
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint("Double tap to open this lesson")
+    }
+
+    /// Pulled out so the conditional Button-vs-plain branch above can
+    /// share the exact same visual content. Was the inline body of the
+    /// pre-S12-12 Button.
+    @ViewBuilder
+    private var tileContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
                 thumbnail
                 content
             }
@@ -87,19 +124,6 @@ public struct LessonTileView: View {
                 }
             }
             .shadow(color: NovaPalette.ink.opacity(0.12), radius: 4, x: 0, y: 2)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .scaleEffect(shouldLift ? 1.02 : 1.0)
-        .animation(reduceMotion ? .none : .easeOut(duration: 0.15), value: isHovering)
-        .onHover { hovering in
-            // `.onHover` fires on iPad + Mac; iPhone touch never triggers it,
-            // so the scale math is free on phones.
-            isHovering = hovering
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(accessibilityValue)
-        .accessibilityHint("Double tap to open this lesson")
     }
 
     /// iPad (regular width class) + pointer-hover, gated so iPhone never

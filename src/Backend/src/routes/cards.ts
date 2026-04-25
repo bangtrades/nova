@@ -92,6 +92,11 @@ export async function cardRoutes(fastify: FastifyInstance): Promise<void> {
           where: { lessonId },
           select: {
             id: true,
+            // S12-12: iOS Card struct requires `lessonId: UUID` (the foreign-
+            // key back-reference). Prior select stripped it — same class of
+            // bug as the userId-stripping on /lessons + /paths. Surface the
+            // field so iOS decode succeeds when FlipbookView fetches cards.
+            lessonId: true,
             type: true,
             sortOrder: true,
             content: true,

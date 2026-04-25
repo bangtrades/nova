@@ -162,13 +162,18 @@ public struct LessonsView: View {
                 NavigationLink(destination: {
                     FlipbookView(lesson: lesson)
                 }) {
+                    // S12-12: omit the trailing onTap closure so
+                    // LessonTileView skips its inner Button wrapper —
+                    // otherwise the Button intercepts the tap and the
+                    // NavigationLink never fires (manifested as "tapping
+                    // a lesson does nothing"). The previous closure set
+                    // `selectedLesson` + `showFlipbook` but no .sheet
+                    // modifier ever read those — leftover from a
+                    // sheet-based nav before NavigationLink replaced it.
                     LessonTileView(
                         lesson: lesson,
                         isComplete: viewModel.isLessonComplete(lesson)
-                    ) {
-                        selectedLesson = lesson
-                        showFlipbook = true
-                    }
+                    )
                 }
             }
             .padding(Spacing.lg)
