@@ -24,7 +24,18 @@ struct NovaKidsApp: App {
     @StateObject private var appState: KidsAppState
 
     /// Speech synthesizer for voice narration.
-    @StateObject private var speechSynthesizer = SpeechSynthesizer()
+    @StateObject private var speechSynthesizer: SpeechSynthesizer
+
+    /// S12-12: VoiceManager wraps SpeechSynthesizer (+ optional remote TTS)
+    /// and is consumed via @EnvironmentObject by FlipbookView /
+    /// StoryCardView / ConceptCardView / VoiceCardView / DashyView. Was
+    /// declared in the views but never injected at the app root, causing
+    /// `Fatal error: No ObservableObject of type VoiceManager found.` the
+    /// first time a kid tapped a voice card. Sharing one
+    /// SpeechSynthesizer instance between the @StateObject above and the
+    /// VoiceManager below avoids two synthesizers fighting for the same
+    /// AVAudioSession.
+    @StateObject private var voiceManager: VoiceManager
 
     /// Asset cache manager for preloading lessons.
     @StateObject private var assetCacheManager = AssetCacheManager()
@@ -79,6 +90,17 @@ struct NovaKidsApp: App {
         _apiRouter = StateObject(wrappedValue: apiRouter)
         _syncManager = StateObject(wrappedValue: syncManager)
         _appState = StateObject(wrappedValue: appState)
+
+        // S12-12: build SpeechSynthesizer + VoiceManager together so they
+        // share one instance. VoiceManager.init takes the synth as a
+        // constructor param, so we can't rely on the property-default
+        // initializer pattern (`= SpeechSynthesizer()`) — both have to
+        // be initialized via the StateObject(wrappedValue:) backing-
+        // ivar pattern in init.
+        let synth = SpeechSynthesizer()
+        let voice = VoiceManager(speechSynthesizer: synth)
+        _speechSynthesizer = StateObject(wrappedValue: synth)
+        _voiceManager = StateObject(wrappedValue: voice)
     }
 
     var body: some Scene {
@@ -98,6 +120,7 @@ struct NovaKidsApp: App {
                         .environmentObject(syncManager)
                         .environmentObject(appState)
                         .environmentObject(speechSynthesizer)
+                        .environmentObject(voiceManager)
                         .environmentObject(assetCacheManager)
                 } else {
                     // Show login flow
