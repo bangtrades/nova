@@ -44,17 +44,17 @@ public struct LearningPath: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
+        case userId
         case title
         case description
         case color
         case icon
-        case sortOrder = "sort_order"
+        case sortOrder
         case stage
-        case isPremium = "is_premium"
+        case isPremium
         case lessons
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+        case createdAt
+        case updatedAt
     }
 
     /// Initializes a new LearningPath.

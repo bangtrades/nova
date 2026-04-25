@@ -28,12 +28,12 @@ public struct Subscription: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
+        case userId
         case plan
-        case storeKitTransactionId = "storekit_transaction_id"
+        case storeKitTransactionId
         case status
-        case expiresAt = "expires_at"
-        case createdAt = "created_at"
+        case expiresAt
+        case createdAt
     }
 
     /// Subscription plan tier.
@@ -108,10 +108,10 @@ public struct LLMProvider: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
+        case userId
         case provider
         case status
-        case connectedAt = "connected_at"
+        case connectedAt
     }
 
     /// Type of LLM provider.

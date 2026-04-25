@@ -36,13 +36,22 @@ public class APIRouter: APIRouting, ObservableObject {
     }
 
     /// Makes a request through the underlying API client.
+    ///
+    /// S12-12: `APIRouter` exposes three `@Published` properties
+    /// (`isAuthenticated` / `currentUser` / `lastError`) but the class
+    /// itself isn't `@MainActor`-isolated — that would force every
+    /// `APIRouting` conformer (including test mocks) onto MainActor,
+    /// which is the wrong contract. Instead, every `@Published` mutation
+    /// inside `request<T>` is wrapped in `await MainActor.run` so the
+    /// SwiftUI publish-from-background warning never fires regardless
+    /// of which executor URLSession's continuation resumed on.
     public func request<T: Decodable>(_ endpoint: Endpoint) async throws -> T {
         do {
             let result: T = try await apiClient.request(endpoint)
-            lastError = nil
+            await MainActor.run { self.lastError = nil }
             return result
         } catch let error as APIError {
-            lastError = error
+            await MainActor.run { self.lastError = error }
             throw error
         }
     }
@@ -60,13 +69,18 @@ public class APIRouter: APIRouting, ObservableObject {
     /// Fetches all learning paths for the user.
     @MainActor
     public func fetchPaths() async throws -> [LearningPath] {
-        return try await request(.getPaths())
+        // S12-12: backend wraps every list endpoint in a `{ data, total, ... }`
+        // envelope. Decode via `PaginatedResponse<LearningPath>` and return
+        // the bare array — callers never see the envelope.
+        let response: PaginatedResponse<LearningPath> = try await request(.getPaths())
+        return response.data
     }
 
     /// Fetches all child profiles for the user.
     @MainActor
     public func fetchChildren() async throws -> [ChildProfile] {
-        return try await request(.getChildren())
+        let response: PaginatedResponse<ChildProfile> = try await request(.getChildren())
+        return response.data
     }
 
     /// Creates a new child profile.
@@ -90,7 +104,8 @@ public class APIRouter: APIRouting, ObservableObject {
     /// Fetches lessons for a specific path.
     @MainActor
     public func fetchLessons(pathId: UUID? = nil) async throws -> [Lesson] {
-        return try await request(.getLessons(pathId: pathId))
+        let response: PaginatedResponse<Lesson> = try await request(.getLessons(pathId: pathId))
+        return response.data
     }
 
     /// Fetches a specific lesson.
@@ -114,7 +129,8 @@ public class APIRouter: APIRouting, ObservableObject {
     /// Fetches cards for a lesson.
     @MainActor
     public func fetchCards(lessonId: UUID) async throws -> [Card] {
-        return try await request(.getCards(lessonId: lessonId))
+        let response: PaginatedResponse<Card> = try await request(.getCards(lessonId: lessonId))
+        return response.data
     }
 
     /// Syncs progress interactions to the server.
@@ -132,13 +148,15 @@ public class APIRouter: APIRouting, ObservableObject {
     /// Fetches all available badges.
     @MainActor
     public func fetchBadges() async throws -> [Badge] {
-        return try await request(.getBadges())
+        let response: PaginatedResponse<Badge> = try await request(.getBadges())
+        return response.data
     }
 
     /// Fetches badges earned by a child.
     @MainActor
     public func fetchEarnedBadges(childId: UUID) async throws -> [EarnedBadge] {
-        return try await request(.getEarnedBadges(childId: childId))
+        let response: PaginatedResponse<EarnedBadge> = try await request(.getEarnedBadges(childId: childId))
+        return response.data
     }
 
     /// Clears the current user and authentication state.

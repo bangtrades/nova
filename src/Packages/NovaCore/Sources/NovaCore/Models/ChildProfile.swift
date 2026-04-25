@@ -29,12 +29,12 @@ public struct ChildProfile: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
+        case userId
         case name
-        case birthDate = "birth_date"
-        case avatarURL = "avatar_url"
-        case currentStage = "current_stage"
-        case createdAt = "created_at"
+        case birthDate
+        case avatarURL = "avatarUrl"
+        case currentStage
+        case createdAt
     }
 
     /// The learning stage of the child.

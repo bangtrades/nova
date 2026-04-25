@@ -103,9 +103,9 @@ public struct EarnedBadge: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case childId = "child_id"
-        case badgeId = "badge_id"
-        case earnedAt = "earned_at"
+        case childId
+        case badgeId
+        case earnedAt
     }
 
     /// Initializes a new EarnedBadge.

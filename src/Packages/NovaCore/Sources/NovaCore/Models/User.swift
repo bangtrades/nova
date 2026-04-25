@@ -23,10 +23,10 @@ public struct User: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case appleId = "apple_id"
+        case appleId
         case email
-        case displayName = "display_name"
-        case createdAt = "created_at"
+        case displayName
+        case createdAt
     }
 
     /// Initializes a new User.

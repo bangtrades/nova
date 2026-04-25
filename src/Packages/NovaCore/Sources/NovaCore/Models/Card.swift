@@ -38,15 +38,15 @@ public struct Card: Codable, Identifiable, Equatable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case lessonId = "lesson_id"
+        case lessonId
         case type
-        case sortOrder = "sort_order"
+        case sortOrder
         case content
-        case voiceScript = "voice_script"
-        case imageURL = "image_url"
-        case audioURL = "audio_url"
-        case interactionConfig = "interaction_config"
-        case createdAt = "created_at"
+        case voiceScript
+        case imageURL = "imageUrl"
+        case audioURL = "audioUrl"
+        case interactionConfig
+        case createdAt
     }
 
     /// Type of card defining the interaction and content style.
@@ -134,23 +134,23 @@ public struct Card: Codable, Identifiable, Equatable {
         /// Coding keys for snake_case JSON decoding.
         enum CodingKeys: String, CodingKey {
             case title
-            case bodyText = "body_text"
-            case imagePrompt = "image_prompt"
-            case narrativeText = "narrative_text"
+            case bodyText
+            case imagePrompt
+            case narrativeText
             case explanation
             case instructions
-            case dragItems = "drag_items"
-            case dropTargets = "drop_targets"
+            case dragItems
+            case dropTargets
             case question
             case options
-            case correctOptionIndex = "correct_option_index"
-            case promptText = "prompt_text"
-            case expectedResponses = "expected_responses"
+            case correctOptionIndex
+            case promptText
+            case expectedResponses
             case celebration
-            case retryHint = "retry_hint"
+            case retryHint
             case phonetics
-            case videoURL = "video_url"
-            case pausePoints = "pause_points"
+            case videoURL = "videoUrl"
+            case pausePoints
         }
 
         /// Initializes a new CardContent.
@@ -210,7 +210,7 @@ public struct Card: Codable, Identifiable, Equatable {
         enum CodingKeys: String, CodingKey {
             case id
             case label
-            case imageURL = "image_url"
+            case imageURL = "imageUrl"
         }
 
         /// Initializes a new DragItem.
@@ -236,7 +236,7 @@ public struct Card: Codable, Identifiable, Equatable {
         enum CodingKeys: String, CodingKey {
             case id
             case label
-            case acceptsItemIds = "accepts_item_ids"
+            case acceptsItemIds
         }
 
         /// Initializes a new DropTarget.
@@ -262,7 +262,7 @@ public struct Card: Codable, Identifiable, Equatable {
         enum CodingKeys: String, CodingKey {
             case id
             case text
-            case imageURL = "image_url"
+            case imageURL = "imageUrl"
         }
 
         /// Initializes a new QuizOption.
@@ -292,11 +292,11 @@ public struct Card: Codable, Identifiable, Equatable {
 
         /// Coding keys for snake_case JSON decoding.
         enum CodingKeys: String, CodingKey {
-            case maxAttempts = "max_attempts"
-            case showHintAfter = "show_hint_after"
-            case successMessage = "success_message"
-            case failureMessage = "failure_message"
-            case hintMessage = "hint_message"
+            case maxAttempts
+            case showHintAfter
+            case successMessage
+            case failureMessage
+            case hintMessage
         }
 
         /// Initializes a new InteractionConfig.

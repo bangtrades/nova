@@ -50,18 +50,18 @@ public struct Lesson: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case pathId = "path_id"
-        case userId = "user_id"
+        case pathId
+        case userId
         case title
         case description
-        case thumbnailURL = "thumbnail_url"
+        case thumbnailURL = "thumbnailUrl"
         case difficulty
-        case sourceURL = "source_url"
-        case aiAnalysis = "ai_analysis"
+        case sourceURL = "sourceUrl"
+        case aiAnalysis
         case status
-        case sortOrder = "sort_order"
-        case createdAt = "created_at"
-        case publishedAt = "published_at"
+        case sortOrder
+        case createdAt
+        case publishedAt
         case cards
     }
 
@@ -93,10 +93,10 @@ public struct Lesson: Codable, Identifiable {
         /// Coding keys for snake_case JSON decoding.
         enum CodingKeys: String, CodingKey {
             case topic
-            case suggestedStage = "suggested_stage"
-            case keyConceptsArray = "key_concepts_array"
-            case ageAppropriatenessScore = "age_appropriateness_score"
-            case flaggedContent = "flagged_content"
+            case suggestedStage
+            case keyConceptsArray
+            case ageAppropriatenessScore
+            case flaggedContent
         }
 
         /// Initializes a new AIAnalysis.

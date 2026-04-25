@@ -23,10 +23,10 @@ public struct LearningSession: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case childId = "child_id"
-        case startedAt = "started_at"
-        case endedAt = "ended_at"
-        case deviceId = "device_id"
+        case childId
+        case startedAt
+        case endedAt
+        case deviceId
     }
 
     /// Computed property: session duration in seconds.
@@ -88,11 +88,11 @@ public struct CardInteraction: Codable, Identifiable {
     /// Coding keys for snake_case JSON decoding.
     enum CodingKeys: String, CodingKey {
         case id
-        case sessionId = "session_id"
-        case cardId = "card_id"
+        case sessionId
+        case cardId
         case action
-        case durationMs = "duration_ms"
-        case voiceTranscript = "voice_transcript"
+        case durationMs
+        case voiceTranscript
         case result
         case timestamp
     }
@@ -120,7 +120,7 @@ public struct CardInteraction: Codable, Identifiable {
         /// Coding keys for snake_case JSON decoding.
         enum CodingKeys: String, CodingKey {
             case correct
-            case choicesMade = "choices_made"
+            case choicesMade
             case score
         }
 
