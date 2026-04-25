@@ -143,7 +143,12 @@ public struct Card: Codable, Identifiable, Equatable {
             case dropTargets
             case question
             case options
-            case correctOptionIndex
+            // S12-12: backend (S10-07 quiz-maker) ships this field as
+            // `correctIndex`, iOS property is `correctOptionIndex` to
+            // disambiguate from MCQ "correct option" terminology. Map
+            // the wire name explicitly so QuizCardView's correctness
+            // check fires instead of silently nil-ing out.
+            case correctOptionIndex = "correctIndex"
             case promptText
             case expectedResponses
             case celebration
@@ -248,6 +253,17 @@ public struct Card: Codable, Identifiable, Equatable {
     }
 
     /// An answer option for quiz cards.
+    ///
+    /// S12-12: lenient decoder accepts EITHER shape on the wire:
+    ///   1. Object form — `{"id":"a","text":"Gravity","imageUrl":null}` —
+    ///      what newer quiz-emitters with explicit ids produce.
+    ///   2. Plain string form — `"Gravity"` — what the S10-07 `quiz-maker`
+    ///      skill currently emits via its `options: string[]` JSON
+    ///      contract. Synthesizes a stable id from the text itself
+    ///      (text is unique within a quiz by construction, so it's a
+    ///      valid Identifiable id for SwiftUI ForEach diffing).
+    /// Encode path always emits the object shape so round-tripping a
+    /// QuizOption back to the backend stays canonical.
     public struct QuizOption: Codable, Identifiable, Equatable {
         /// Unique identifier for the option.
         public let id: String
@@ -270,6 +286,24 @@ public struct Card: Codable, Identifiable, Equatable {
             self.id = id
             self.text = text
             self.imageURL = imageURL
+        }
+
+        /// S12-12 — accept both `"text"` and `{id,text,imageUrl?}`.
+        public init(from decoder: Decoder) throws {
+            // Try the plain-string form first — fast path for current
+            // wire data shipped by the S10-07 quiz-maker skill.
+            if let single = try? decoder.singleValueContainer(),
+               let stringValue = try? single.decode(String.self) {
+                self.id = stringValue       // text is unique-by-quiz, stable for ForEach
+                self.text = stringValue
+                self.imageURL = nil
+                return
+            }
+            // Object form — full keyed decode.
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.id = try container.decode(String.self, forKey: .id)
+            self.text = try container.decode(String.self, forKey: .text)
+            self.imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
         }
     }
 
