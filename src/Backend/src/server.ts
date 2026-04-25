@@ -27,6 +27,19 @@ async function buildServer(): Promise<ReturnType<typeof Fastify>> {
         },
       },
     },
+    // S12-12: case-insensitive route matching. Swift's `UUID.uuidString`
+    // returns RFC 4122 form which is UPPERCASE by default, so iOS sends
+    // requests like `GET /api/v1/lessons/3BB36244-7C9B.../cards`. Postgres
+    // stores UUIDs lowercase and Prisma's where-clause is case-insensitive
+    // for UUIDs, but Fastify's router (find-my-way) defaults to
+    // `caseSensitive: true`. With case-sensitive routing the uppercase
+    // path no longer matches the route registered as `/lessons/:id/cards`
+    // — manifests as a 404 even though the route exists and curl works
+    // when the param is lowercase. Disabling case sensitivity for the
+    // whole server is a no-cost win in dev: every literal segment
+    // (`lessons`, `cards`, `paths`, etc.) is lowercase so there's no
+    // pre-existing route that depended on case to disambiguate.
+    caseSensitive: false,
   });
 
   // Register plugins
