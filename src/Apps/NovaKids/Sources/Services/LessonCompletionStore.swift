@@ -52,10 +52,38 @@ public final class LessonCompletionStore: ObservableObject {
 
     private let defaults: UserDefaults
     private let storageKey = "lessonCompletion.records.v1"
+    private let fallbackChildIdKey = "lessonCompletion.fallbackChildId"
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.records = loadFromDefaults()
+    }
+
+    // MARK: - Resolved child id
+    //
+    // Every read AND every write goes through `resolvedChildId(_:)` so
+    // a trophy recorded under the fallback UUID (because the kid
+    // hadn't selected a child profile yet) is also FOUND under that
+    // same fallback UUID on subsequent reads. The bug shape this fixes:
+    // FlipbookView used to record under "fallback if nil"; LessonsView
+    // and TrophyRoomView called `hasCompleted(childId: nil)` which
+    // short-circuited to false. Result: trophy persisted but never
+    // displayed. Single resolution helper keeps writes and reads
+    // agreeing on which key the trophy lives under.
+
+    /// Returns a non-nil child id. If `childId` is provided, returns
+    /// it as-is. If nil, returns a stable per-device UUID kept in
+    /// UserDefaults — created on first call, reused on every subsequent
+    /// call.
+    public func resolvedChildId(_ childId: UUID?) -> UUID {
+        if let childId { return childId }
+        if let stored = defaults.string(forKey: fallbackChildIdKey),
+           let uuid = UUID(uuidString: stored) {
+            return uuid
+        }
+        let new = UUID()
+        defaults.set(new.uuidString, forKey: fallbackChildIdKey)
+        return new
     }
 
     // MARK: - Public API
@@ -68,17 +96,18 @@ public final class LessonCompletionStore: ObservableObject {
     /// between full-confetti first-time and a softer welcome-back beat.
     @discardableResult
     public func recordCompletion(
-        childId: UUID,
+        childId: UUID?,
         lessonId: UUID,
         lessonTitle: String,
         lessonHeroImageURL: URL?
     ) -> Bool {
-        let composite = "\(childId.uuidString):\(lessonId.uuidString)"
+        let resolved = resolvedChildId(childId)
+        let composite = "\(resolved.uuidString):\(lessonId.uuidString)"
         let isFirstTime = !records.contains(where: { $0.id == composite })
 
         let trophy = TrophyRecord(
             id: composite,
-            childId: childId.uuidString,
+            childId: resolved.uuidString,
             lessonId: lessonId.uuidString,
             lessonTitle: lessonTitle,
             lessonHeroImageURL: lessonHeroImageURL?.absoluteString,
@@ -94,16 +123,19 @@ public final class LessonCompletionStore: ObservableObject {
     }
 
     /// Has the given child completed the given lesson?
+    /// Nil childId resolves to the per-device fallback UUID — same
+    /// resolution recordCompletion uses, so writes and reads always
+    /// query the same key.
     public func hasCompleted(childId: UUID?, lessonId: UUID) -> Bool {
-        guard let childId else { return false }
-        let composite = "\(childId.uuidString):\(lessonId.uuidString)"
+        let resolved = resolvedChildId(childId)
+        let composite = "\(resolved.uuidString):\(lessonId.uuidString)"
         return records.contains(where: { $0.id == composite })
     }
 
     /// Trophies for a specific child, newest-first.
     public func trophies(for childId: UUID?) -> [TrophyRecord] {
-        guard let childId else { return [] }
-        let target = childId.uuidString
+        let resolved = resolvedChildId(childId)
+        let target = resolved.uuidString
         return records.filter { $0.childId == target }
     }
 

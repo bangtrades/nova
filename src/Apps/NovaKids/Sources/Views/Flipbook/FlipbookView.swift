@@ -268,33 +268,20 @@ public struct FlipbookView: View {
     /// Lessons-tab happens when the kid taps Continue inside the
     /// celebration view.
     private func finishLesson() {
-        // currentChild is optional — if no child is selected (shouldn't
-        // happen at this point in the flow but defensive anyway), use
-        // a stable per-device fallback so the trophy still records.
-        let resolvedChildId = appState.currentChild?.id ?? deviceFallbackChildId
+        // S13: pass childId optional through to the store. The store
+        // resolves nil to a per-device fallback UUID so writes and
+        // reads always agree on the key, even when no profile is
+        // selected. (Previous shape duplicated the fallback locally,
+        // which silently diverged from LessonsView/TrophyRoomView's
+        // read paths and made the trophy invisible after Continue.)
         let isFirstTime = completionStore.recordCompletion(
-            childId: resolvedChildId,
+            childId: appState.currentChild?.id,
             lessonId: lesson.id,
             lessonTitle: lesson.title,
             lessonHeroImageURL: viewModel.cards.first?.imageURL
         )
         celebrationIsFirstTime = isFirstTime
         showCelebration = true
-    }
-
-    /// Stable per-device UUID kept in UserDefaults — used as the
-    /// child-id fallback for trophy recording when KidsAppState
-    /// somehow lacks a currentChild. Saves the trophy regardless of
-    /// auth/profile state so the celebration never silently drops.
-    private var deviceFallbackChildId: UUID {
-        let key = "lessonCompletion.fallbackChildId"
-        if let stored = UserDefaults.standard.string(forKey: key),
-           let uuid = UUID(uuidString: stored) {
-            return uuid
-        }
-        let new = UUID()
-        UserDefaults.standard.set(new.uuidString, forKey: key)
-        return new
     }
 
     /// Derives a kid-friendly trophy name from the lesson title.
