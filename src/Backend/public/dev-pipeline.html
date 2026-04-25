@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nova · Dev Console</title>
+<title>Nova · Oracle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -1348,9 +1348,16 @@
 <div class="app">
 
   <!-- Header -->
+  <!--
+    S13: rebranded "Dev Console" → "Oracle". The dev tool is the
+    pipeline that prophesies lesson content from URLs (scrape → analyze →
+    decompose → generate → assets). "Oracle" both fits that prophesy-
+    delivers-content metaphor and is two syllables instead of seven, so
+    bang doesn't have to type "Pipeline Dev Tool" thirty times a day.
+  -->
   <div class="header">
     <div class="logo">N</div>
-    <h1>Nova <span>Dev Console</span></h1>
+    <h1>Nova <span>Oracle</span></h1>
     <div class="status-dot" id="statusDot"></div>
     <span class="status-label" id="statusLabel">checking...</span>
   </div>
@@ -2727,6 +2734,19 @@ function renderBrowserLessonList() {
     const deleteBtn = `<button class="lesson-action-btn" title="Delete this lesson permanently"
                onclick="event.stopPropagation(); deleteLesson('${escAttr(lesson.id)}', '${titleEscJs}')"
                style="background:transparent;border:1px solid var(--border);color:#fca5a5;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">✕</button>`;
+    // S13: Generate Assets — POSTs to /pipeline/assets/:lessonId to
+    // kick off DALL-E image gen + OpenAI TTS audio gen for every card
+    // in the lesson that doesn't already have those assets attached.
+    // Pipeline auto-triggers this on first lesson seed (per Stage 5 in
+    // pipelineOrchestrator), but lessons seeded before OPENAI_API_KEY
+    // was set, or lessons whose initial asset run failed, can be
+    // re-triggered via this button. Status surfaces in the
+    // `assetStatusOverlay` panel below — fire-and-forget on the
+    // backend side, but Oracle polls /pipeline/assets/:id/status until
+    // every job is in terminal state.
+    const assetsBtn = `<button class="lesson-action-btn" title="Generate images + audio for this lesson's cards"
+               onclick="event.stopPropagation(); generateLessonAssets('${escAttr(lesson.id)}', '${titleEscJs}')"
+               style="background:transparent;border:1px solid var(--border);color:#fcd34d;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">🎨</button>`;
     return `
       <div class="browser-lesson-row" data-lesson-id="${escAttr(lesson.id)}"
            onclick="selectBrowserLesson('${escAttr(lesson.id)}')"
@@ -2738,6 +2758,7 @@ function renderBrowserLessonList() {
         <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;">${escHtml(createdLabel)}</span>
         ${reseedBtn}
         ${moveBtn}
+        ${assetsBtn}
         ${deleteBtn}
       </div>`;
   }).join('');
@@ -3087,6 +3108,142 @@ async function deletePath(pathId, title) {
     window.alert(`Failed to delete path: ${err.message}`);
     console.error('[deletePath]', err);
   }
+}
+
+/**
+ * S13 — Generate (or re-generate) DALL-E images + OpenAI TTS audio for
+ * every card in the lesson. Lesson cards seeded before OPENAI_API_KEY
+ * was set, or lessons whose first asset run hit a transient failure,
+ * use this to retry without re-seeding the whole lesson.
+ *
+ * Backend processing is fire-and-forget (returns 202 immediately).
+ * We poll /pipeline/assets/:lessonId/status every 3s to surface
+ * progress in a small overlay panel; stop polling when every job is
+ * in terminal state (`completed` or `failed`). On success, refresh
+ * the content browser so the row updates if any wire-shape changed
+ * (it currently doesn't — Card.imageUrl/audioUrl land on the cards
+ * directly, separately fetched by the iPad).
+ */
+async function generateLessonAssets(lessonId, title) {
+  if (!lessonId) return;
+  const label = title || '(untitled)';
+
+  // Confirm before kicking off — DALL-E 3 + TTS calls cost money.
+  // Rough estimate per card: ~$0.04 image + ~$0.008 audio = ~$0.05
+  // per card with assets. 6-card lesson = ~$0.30. Cheap but worth a
+  // confirm so bang doesn't accidentally re-fire on every lesson.
+  const ok = window.confirm(
+    `Generate images + audio for "${label}"?\n\n` +
+    `Calls DALL-E 3 + OpenAI TTS for every card. ` +
+    `Approx cost: ~$0.05 per card. ` +
+    `Cards that already have assets are skipped.\n\n` +
+    `Continue?`
+  );
+  if (!ok) return;
+
+  // Show inline status overlay above the lesson list.
+  const overlay = ensureAssetStatusOverlay();
+  overlay.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:14px;">🎨</span>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--text);">
+        Generating assets for <strong>${escHtml(label)}</strong>…
+      </span>
+      <span id="assetStatusCounts" style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text-dim);">queued</span>
+    </div>
+  `;
+  overlay.style.display = 'block';
+
+  try {
+    // Kick off — backend returns 202 with initial status.
+    const res = await fetch(`${API}/pipeline/assets/${encodeURIComponent(lessonId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok && res.status !== 202) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    // Poll status until every job lands in a terminal state.
+    const countsEl = document.getElementById('assetStatusCounts');
+    let pollCount = 0;
+    const maxPolls = 120; // 6 minutes at 3s/poll — generous ceiling.
+    while (pollCount < maxPolls) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      pollCount++;
+
+      const statusRes = await fetch(`${API}/pipeline/assets/${encodeURIComponent(lessonId)}/status`);
+      if (!statusRes.ok) continue;
+      const status = await statusRes.json();
+
+      if (countsEl) {
+        countsEl.textContent =
+          `${status.completed}/${status.total} done` +
+          (status.failed ? ` · ${status.failed} failed` : '') +
+          (status.pending ? ` · ${status.pending} pending` : '');
+      }
+
+      if (status.pending === 0) {
+        // Terminal — show final state, refresh content browser, fade overlay.
+        const finalText = status.failed
+          ? `🎨 Done: ${status.completed} ok, ${status.failed} failed (check backend logs)`
+          : `🎨 Done — ${status.completed}/${status.total} assets generated`;
+        overlay.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:var(--mono);font-size:12px;color:${status.failed ? '#fca5a5' : '#86efac'};">
+              ${escHtml(finalText)}
+            </span>
+            <button onclick="document.getElementById('assetStatusOverlay').style.display='none';"
+                    style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;">Dismiss</button>
+          </div>
+        `;
+        await refreshContentBrowser();
+        // Auto-dismiss after 8s if bang hasn't clicked Dismiss.
+        setTimeout(() => {
+          if (overlay) overlay.style.display = 'none';
+        }, 8000);
+        return;
+      }
+    }
+
+    // Timeout fallback — overlay stays up so bang knows to check.
+    overlay.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-family:var(--mono);font-size:12px;color:#fcd34d;">
+          🎨 Status poll timed out — backend may still be processing. Refresh in a minute.
+        </span>
+      </div>
+    `;
+  } catch (err) {
+    overlay.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-family:var(--mono);font-size:12px;color:#fca5a5;">
+          🎨 Failed: ${escHtml(err.message)}
+        </span>
+      </div>
+    `;
+    console.error('[generateLessonAssets]', err);
+  }
+}
+
+/**
+ * S13 helper — lazily insert a status overlay div above the
+ * lesson-list element. Returns the existing overlay if one is already
+ * mounted, so consecutive asset-generation runs reuse the same panel.
+ */
+function ensureAssetStatusOverlay() {
+  let overlay = document.getElementById('assetStatusOverlay');
+  if (overlay) return overlay;
+  overlay = document.createElement('div');
+  overlay.id = 'assetStatusOverlay';
+  overlay.style.cssText = 'padding:10px 14px;background:var(--bg-dark);border:1px solid var(--border);border-radius:6px;margin:8px 0;display:none;';
+  const listEl = document.getElementById('browserLessonList');
+  if (listEl && listEl.parentNode) {
+    listEl.parentNode.insertBefore(overlay, listEl);
+  }
+  return overlay;
 }
 
 async function refreshSkillTrace() {
