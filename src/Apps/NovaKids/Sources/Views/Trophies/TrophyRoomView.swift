@@ -118,7 +118,7 @@ public struct TrophyRoomView: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 HStack(spacing: 8) {
                     Text("Your Trophies")
-                        .font(NovaPalette.headingFont(size: 22))
+                        .font(NovaPalette.headingFont())
                         .foregroundStyle(NovaPalette.ink)
                     Text("(\(trophies.count))")
                         .font(NovaPalette.bodyFont())

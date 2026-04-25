@@ -164,7 +164,7 @@ public struct LessonCompleteCelebration: View {
                 Button(action: onContinue) {
                     HStack(spacing: 10) {
                         Text("Continue")
-                            .font(NovaPalette.headingFont(size: 22))
+                            .font(NovaPalette.headingFont())
                         Image(systemName: "arrow.right.circle.fill")
                             .font(.title2)
                             .accessibilityHidden(true)
