@@ -40,6 +40,14 @@ struct NovaKidsApp: App {
     /// Asset cache manager for preloading lessons.
     @StateObject private var assetCacheManager = AssetCacheManager()
 
+    /// S13 — local-first lesson completion tracker. Records "child X
+    /// completed lesson Y" tuples to UserDefaults so LessonsView's
+    /// checkmark, TrophyRoomView's trophy grid, and the Flipbook's
+    /// celebration overlay all read the same source of truth without a
+    /// backend round-trip. S14+: shadow-write to backend progress
+    /// endpoint for cross-device sync.
+    @StateObject private var completionStore = LessonCompletionStore()
+
     /// Background task manager for offline sync and asset preload.
     @StateObject private var backgroundTaskManager = BackgroundTaskManager()
 
@@ -122,6 +130,7 @@ struct NovaKidsApp: App {
                         .environmentObject(speechSynthesizer)
                         .environmentObject(voiceManager)
                         .environmentObject(assetCacheManager)
+                        .environmentObject(completionStore)
                 } else {
                     // Show login flow
                     #if DEBUG

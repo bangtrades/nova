@@ -30,6 +30,7 @@ public struct TrophyRoomView: View {
     @StateObject private var viewModel = TrophyRoomViewModel()
     @EnvironmentObject private var apiRouter: APIRouter
     @EnvironmentObject private var appState: KidsAppState
+    @EnvironmentObject private var completionStore: LessonCompletionStore
     @State private var selectedBadge: TrophyRoomViewModel.BadgeDisplayItem?
 
     // S12-01: iPad-vs-iPhone density. `.regular` gets 5 columns so the
@@ -73,6 +74,16 @@ public struct TrophyRoomView: View {
                             LoadingSkeletonView(itemCount: 6, isGrid: true)
                         } else {
                             headerCard
+                            // S13: Your Trophies — completed-lesson
+                            // memorabilia keyed on the active child.
+                            // Each tile uses the lesson's hero image as
+                            // the trophy art so the trophy is visually
+                            // bound to the lesson the kid completed.
+                            // Renders only when there's at least one
+                            // trophy so first-time users don't see an
+                            // empty section above their unearned-badge
+                            // grid.
+                            yourTrophiesSection
                             statRow
                             achievementsSection
                         }
@@ -94,6 +105,93 @@ public struct TrophyRoomView: View {
                 viewModel.attach(apiRouter: apiRouter, childId: appState.currentChild?.id)
                 await viewModel.loadBadges()
             }
+        }
+    }
+
+    /// S13: Trophies earned from completing lessons. Each tile shows
+    /// the lesson's hero image inside a gold ring. Empty state hidden —
+    /// section only renders when at least one trophy exists.
+    @ViewBuilder
+    private var yourTrophiesSection: some View {
+        let trophies = completionStore.trophies(for: appState.currentChild?.id)
+        if !trophies.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                HStack(spacing: 8) {
+                    Text("Your Trophies")
+                        .font(NovaPalette.headingFont(size: 22))
+                        .foregroundStyle(NovaPalette.ink)
+                    Text("(\(trophies.count))")
+                        .font(NovaPalette.bodyFont())
+                        .foregroundStyle(NovaPalette.ink.opacity(0.5))
+                    Spacer()
+                }
+                LazyVGrid(columns: columns, spacing: Spacing.md) {
+                    ForEach(trophies) { trophy in
+                        lessonTrophyTile(trophy)
+                    }
+                }
+            }
+        }
+    }
+
+    /// One trophy tile. Hero image + trophy name caption. Square
+    /// aspect ratio matches the achievements grid below for visual
+    /// rhythm.
+    @ViewBuilder
+    private func lessonTrophyTile(_ trophy: LessonCompletionStore.TrophyRecord) -> some View {
+        VStack(spacing: Spacing.sm) {
+            ZStack {
+                Circle()
+                    .stroke(NovaPalette.sun, lineWidth: 4)
+                    .shadow(color: NovaPalette.sun.opacity(0.4), radius: 8)
+
+                Group {
+                    if let urlString = trophy.lessonHeroImageURL,
+                       let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable().scaledToFill()
+                            case .empty, .failure:
+                                trophyPlaceholder
+                            @unknown default:
+                                trophyPlaceholder
+                            }
+                        }
+                    } else {
+                        trophyPlaceholder
+                    }
+                }
+                .clipShape(Circle())
+                .padding(6) // Inset so image stays inside the gold ring
+            }
+            .aspectRatio(1, contentMode: .fit)
+
+            Text(trophy.trophyName)
+                .font(NovaPalette.captionFont())
+                .foregroundStyle(NovaPalette.ink)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(trophy.trophyName)
+        .accessibilityValue("Earned \(trophy.completedAt.formatted(date: .abbreviated, time: .omitted))")
+    }
+
+    private var trophyPlaceholder: some View {
+        ZStack {
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    NovaPalette.coral.opacity(0.6),
+                    NovaPalette.sun.opacity(0.6)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            Image(systemName: "trophy.fill")
+                .font(.title)
+                .foregroundStyle(.white)
         }
     }
 

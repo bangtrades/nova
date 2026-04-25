@@ -15,6 +15,14 @@ public struct FlipbookView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject var voiceManager: VoiceManager
     @EnvironmentObject private var apiRouter: APIRouter
+    @EnvironmentObject private var completionStore: LessonCompletionStore
+    @EnvironmentObject private var appState: KidsAppState
+
+    // S13: celebration state. Gates the fullScreenCover that takes over
+    // the screen when the kid hits Finish. `isFirstTime` is captured at
+    // record time so re-completes get the softer welcome-back beat.
+    @State private var showCelebration = false
+    @State private var celebrationIsFirstTime = true
 
     public init(lesson: Lesson) {
         self.lesson = lesson
@@ -177,12 +185,23 @@ public struct FlipbookView: View {
                         .accessibilityLabel("Previous card")
 
                         // Next / Finish
+                        // S13: when isAtEnd, fire the lesson-complete flow
+                        // (record + celebrate) instead of advancing the index.
+                        // The previous shape disabled the button at the
+                        // last card, which made the kid hit a dead end —
+                        // they finished the quiz, tapped Finish, and
+                        // nothing happened. Now Finish is always live and
+                        // semantically correct.
                         Button {
-                            // S11-16: matches Previous — reduce-motion turns the
-                            // card swap into an instant state flip rather than a
-                            // horizontal slide.
-                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
-                                viewModel.nextCard()
+                            if isAtEnd {
+                                finishLesson()
+                            } else {
+                                // S11-16: matches Previous — reduce-motion
+                                // turns the card swap into an instant
+                                // state flip rather than a horizontal slide.
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                                    viewModel.nextCard()
+                                }
                             }
                         } label: {
                             HStack(spacing: 8) {
@@ -197,8 +216,6 @@ public struct FlipbookView: View {
                             }
                         }
                         .novaSecondary()
-                        .disabled(isAtEnd)
-                        .opacity(isAtEnd ? 0.5 : 1.0)
                         .accessibilityLabel(isAtEnd ? "Finish lesson" : "Next card")
                     }
                     .frame(maxWidth: 600)
@@ -223,6 +240,73 @@ public struct FlipbookView: View {
             viewModel.attach(apiRouter: apiRouter)
             await viewModel.loadCardsIfNeeded()
         }
+        // S13: lesson-complete celebration. `fullScreenCover` takes the
+        // whole screen so the moment is the focal interaction — kid
+        // can't dismiss accidentally by tapping outside, has to commit
+        // by hitting Continue. Hero image pulled from the lesson's
+        // first card so the trophy art is contextual to what the kid
+        // just learned about.
+        .fullScreenCover(isPresented: $showCelebration) {
+            LessonCompleteCelebration(
+                trophyName: trophyName(for: lesson.title),
+                heroImageURL: viewModel.cards.first?.imageURL,
+                isFirstTime: celebrationIsFirstTime,
+                onContinue: {
+                    showCelebration = false
+                    // After celebration dismissal, return to Lessons tab
+                    // so the kid sees their freshly-checkmarked tile.
+                    dismiss()
+                }
+            )
+        }
+    }
+
+    /// S13: handle Finish-button tap on the last card.
+    /// Records completion in the local store (which immediately updates
+    /// LessonsView's checkmark + TrophyRoom's tile list reactively),
+    /// triggers the celebration overlay, and returns. The dismiss-to-
+    /// Lessons-tab happens when the kid taps Continue inside the
+    /// celebration view.
+    private func finishLesson() {
+        // currentChild is optional — if no child is selected (shouldn't
+        // happen at this point in the flow but defensive anyway), use
+        // a stable per-device fallback so the trophy still records.
+        let resolvedChildId = appState.currentChild?.id ?? deviceFallbackChildId
+        let isFirstTime = completionStore.recordCompletion(
+            childId: resolvedChildId,
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            lessonHeroImageURL: viewModel.cards.first?.imageURL
+        )
+        celebrationIsFirstTime = isFirstTime
+        showCelebration = true
+    }
+
+    /// Stable per-device UUID kept in UserDefaults — used as the
+    /// child-id fallback for trophy recording when KidsAppState
+    /// somehow lacks a currentChild. Saves the trophy regardless of
+    /// auth/profile state so the celebration never silently drops.
+    private var deviceFallbackChildId: UUID {
+        let key = "lessonCompletion.fallbackChildId"
+        if let stored = UserDefaults.standard.string(forKey: key),
+           let uuid = UUID(uuidString: stored) {
+            return uuid
+        }
+        let new = UUID()
+        UserDefaults.standard.set(new.uuidString, forKey: key)
+        return new
+    }
+
+    /// Derives a kid-friendly trophy name from the lesson title.
+    /// Strips the Wikipedia-source suffix that comes from the URL
+    /// scrape so "Sky - Simple English Wikipedia, the free
+    /// encyclopedia" reads as "Sky Champion" on the trophy reveal.
+    private func trophyName(for lessonTitle: String) -> String {
+        let cleanTitle = lessonTitle
+            .replacingOccurrences(of: " - Simple English Wikipedia, the free encyclopedia", with: "")
+            .replacingOccurrences(of: " - Wikipedia", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return "\(cleanTitle) Champion"
     }
 
     @ViewBuilder

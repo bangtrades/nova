@@ -17,6 +17,8 @@ import NovaCore
 public struct LessonsView: View {
     @StateObject private var viewModel = LessonsViewModel()
     @EnvironmentObject private var apiRouter: APIRouter
+    @EnvironmentObject private var completionStore: LessonCompletionStore
+    @EnvironmentObject private var appState: KidsAppState
     @State private var selectedLesson: Lesson?
     @State private var showFlipbook = false
 
@@ -172,7 +174,15 @@ public struct LessonsView: View {
                     // sheet-based nav before NavigationLink replaced it.
                     LessonTileView(
                         lesson: lesson,
-                        isComplete: viewModel.isLessonComplete(lesson)
+                        // S13: completion now reads from
+                        // LessonCompletionStore keyed on the active
+                        // child. Replaces the previous mock
+                        // (lesson.id.hashValue % 3 == 0) which gave
+                        // a fake checkmark to ~1/3 of lessons.
+                        isComplete: completionStore.hasCompleted(
+                            childId: appState.currentChild?.id,
+                            lessonId: lesson.id
+                        )
                     )
                 }
             }
