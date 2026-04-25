@@ -79,6 +79,15 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
             where,
             select: {
               id: true,
+              // S12-12: iOS Lesson struct requires `userId: UUID` (immutable
+              // owner), but the prior select stripped it so every list
+              // response triggered `valueNotFound("userId")` on iOS decode
+              // and the whole Lessons page fell back to mock content.
+              // Single-user dev DB makes the "leak parent userId on wire"
+              // concern moot — every lesson is already filtered by
+              // `where: userId === request.userId`, so the field surfaced
+              // here is always the requester's own.
+              userId: true,
               // S12-10: surface pathId + a cheap card count so the Dev
               // Console's Content Browser can bucket + badge lessons
               // without a second round-trip per row.

@@ -56,6 +56,12 @@ export async function pathRoutes(fastify: FastifyInstance): Promise<void> {
         where: { userId: request.userId },
         select: {
           id: true,
+          // S12-12: iOS LearningPath struct requires `userId: UUID`. Prior
+          // select stripped it, causing `valueNotFound("userId")` on iOS
+          // decode and a mock-fallback render for the entire Lessons tab.
+          // Always the requester's own userId (filtered by where: userId)
+          // so no leak concern.
+          userId: true,
           title: true,
           description: true,
           color: true,
