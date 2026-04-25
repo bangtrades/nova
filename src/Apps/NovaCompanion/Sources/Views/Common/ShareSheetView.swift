@@ -44,8 +44,8 @@ public struct LessonShareBuilder {
         summary += "• Cards: \(lesson.cards?.count ?? 0)\n"
         summary += "• Status: \(lesson.status.rawValue)\n"
 
-        if !lesson.description.isEmpty {
-            summary += "\n📝 Description:\n\(lesson.description)\n"
+        if let description = lesson.description, !description.isEmpty {
+            summary += "\n📝 Description:\n\(description)\n"
         }
 
         summary += "\n✨ Created with Nova Companion\n"

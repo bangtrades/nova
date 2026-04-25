@@ -72,7 +72,7 @@ public struct LearningPathCard: View {
 
                     Spacer()
 
-                    Image(systemName: path.icon)
+                    Image(systemName: path.icon ?? "book.fill")
                         .font(NovaPalette.titleFont())
                         .foregroundStyle(fg)
                         .accessibilityHidden(true)

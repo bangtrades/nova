@@ -18,7 +18,13 @@ public struct Lesson: Codable, Identifiable {
     public var title: String
 
     /// Description of what the lesson teaches.
-    public var description: String
+    ///
+    /// S12-12: optional to match Prisma's `description String?` — pipeline-
+    /// seeded lessons populate this from `analysis.summary`, but manual
+    /// inserts and seed-curriculum entries can ship null on the wire.
+    /// Treating this as required (the pre-S12-12 shape) makes the JSON
+    /// decoder throw `valueNotFound("description")` on any null record.
+    public var description: String?
 
     /// URL to a thumbnail image for the lesson.
     public var thumbnailURL: URL?
@@ -136,7 +142,7 @@ public struct Lesson: Codable, Identifiable {
         pathId: UUID? = nil,
         userId: UUID,
         title: String,
-        description: String,
+        description: String? = nil,
         thumbnailURL: URL? = nil,
         difficulty: Int,
         sourceURL: URL? = nil,

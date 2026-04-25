@@ -120,7 +120,7 @@ public class LessonManagerViewModel: ObservableObject {
         if !searchText.isEmpty {
             result = result.filter { lesson in
                 lesson.title.localizedCaseInsensitiveContains(searchText) ||
-                lesson.description.localizedCaseInsensitiveContains(searchText)
+                (lesson.description ?? "").localizedCaseInsensitiveContains(searchText)
             }
         }
 

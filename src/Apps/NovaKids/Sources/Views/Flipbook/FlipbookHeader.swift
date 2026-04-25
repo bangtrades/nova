@@ -102,8 +102,8 @@ public struct FlipbookHeader: View {
                 }
             }
 
-            if !lesson.description.isEmpty {
-                Text(lesson.description)
+            if let description = lesson.description, !description.isEmpty {
+                Text(description)
                     .font(NovaPalette.captionFont())
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -123,8 +123,8 @@ public struct FlipbookHeader: View {
             parts.append("\(cardTypeLabel(cardType).capitalized) card")
         }
         parts.append("Difficulty \(lesson.difficulty) of 3")
-        if !lesson.description.isEmpty {
-            parts.append(lesson.description)
+        if let description = lesson.description, !description.isEmpty {
+            parts.append(description)
         }
         return parts.joined(separator: ". ")
     }

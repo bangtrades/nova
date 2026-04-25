@@ -77,7 +77,7 @@ public struct LessonManagerView: View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     if let path = group.path {
                                         HStack {
-                                            Image(systemName: path.icon)
+                                            Image(systemName: path.icon ?? "book.fill")
                                                 .font(.headline)
                                                 .foregroundStyle(CompanionPalette.pathColor(for: path.id.uuidString))
 

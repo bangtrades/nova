@@ -15,13 +15,21 @@ public struct LearningPath: Codable, Identifiable {
     public var title: String
 
     /// Detailed description of what the path teaches.
-    public var description: String
+    ///
+    /// S12-12: optional to match Prisma's `description String?`. Manually-
+    /// created paths via the Dev Console "+ New Path" form can ship null.
+    public var description: String?
 
     /// Color identifier for UI display (hex string or color name).
-    public var color: String
+    ///
+    /// S12-12: optional to match Prisma's `color String?`. Auto-created
+    /// paths and seed-curriculum entries can ship null.
+    public var color: String?
 
     /// Icon identifier for UI display (SF Symbol or custom name).
-    public var icon: String
+    ///
+    /// S12-12: optional to match Prisma's `icon String?`.
+    public var icon: String?
 
     /// Display order among paths.
     public var sortOrder: Int
@@ -75,9 +83,9 @@ public struct LearningPath: Codable, Identifiable {
         id: UUID = UUID(),
         userId: UUID,
         title: String,
-        description: String,
-        color: String,
-        icon: String,
+        description: String? = nil,
+        color: String? = nil,
+        icon: String? = nil,
         sortOrder: Int,
         stage: ChildProfile.Stage,
         isPremium: Bool = false,

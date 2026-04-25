@@ -48,7 +48,7 @@ public struct FeaturedLessonCard: View {
                 }
 
                 // Description
-                Text(lesson.description)
+                Text(lesson.description ?? "")
                     .font(NovaPalette.bodyFont())
                     .foregroundStyle(NovaPalette.ink.opacity(0.75))
                     .lineLimit(2)
@@ -81,7 +81,7 @@ public struct FeaturedLessonCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Featured: \(lesson.title)")
-        .accessibilityValue(lesson.description)
+        .accessibilityValue(lesson.description ?? "")
         .accessibilityHint("Double tap to start this lesson")
     }
 

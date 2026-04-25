@@ -24,7 +24,16 @@ public struct LessonEditorView: View {
 
                             VStack(spacing: 12) {
                                 textField(label: "Title", text: $lesson.title)
-                                textField(label: "Description", text: $lesson.description, isMultiline: true)
+                                // S12-12: lesson.description is now Optional<String>
+                                // (Prisma column is nullable). Bridge through an
+                                // adapter Binding so the existing String-typed
+                                // textField helper keeps working — empty strings
+                                // round-trip back to nil so the column reads as
+                                // null on save instead of an empty-string row.
+                                textField(label: "Description", text: Binding(
+                                    get: { lesson.description ?? "" },
+                                    set: { lesson.description = $0.isEmpty ? nil : $0 }
+                                ), isMultiline: true)
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Difficulty")

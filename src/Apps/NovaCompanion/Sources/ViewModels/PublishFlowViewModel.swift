@@ -108,7 +108,7 @@ public class PublishFlowViewModel: ObservableObject {
         ))
 
         // Check 5: Lesson metadata
-        let metadataValid = !lesson.title.isEmpty && !lesson.description.isEmpty
+        let metadataValid = !lesson.title.isEmpty && !(lesson.description ?? "").isEmpty
         items.append(ChecklistItem(
             title: "Lesson Details",
             description: metadataValid ? "Title and description set" : "Missing title or description",

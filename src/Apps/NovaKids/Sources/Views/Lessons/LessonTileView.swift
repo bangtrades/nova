@@ -193,7 +193,7 @@ public struct LessonTileView: View {
             }
             .accessibilityHidden(true)
 
-            Text(lesson.description)
+            Text(lesson.description ?? "")
                 .font(NovaPalette.captionFont())
                 .foregroundStyle(NovaPalette.ink.opacity(0.7))
                 .lineLimit(2)
