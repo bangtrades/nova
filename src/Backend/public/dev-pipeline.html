@@ -2037,7 +2037,22 @@
       <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-top:8px;">
         <input type="text" id="newPathTitle" placeholder="Path title (e.g. 'Science Stage 1')" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
         <input type="text" id="newPathIcon" placeholder="Icon (🔬)" maxlength="10" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
-        <input type="text" id="newPathColor" placeholder="#FF8C5A" pattern="^#[0-9A-Fa-f]{6}$" style="padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;" />
+        <!--
+          S12-12: native color picker. Replaces the previous text-input
+          + hex regex pattern that forced bang to look up hex codes by
+          hand every time he created a path. Browser renders the OS
+          color picker (wheel + spectrum on macOS); the input's `value`
+          property always carries a `#rrggbb` lowercase hex string,
+          which the backend's `^#[0-9A-F]{6}$/i` regex accepts directly.
+          Live readout span next to the swatch shows the current hex
+          so the value is visible without opening the picker.
+        -->
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;cursor:pointer;">
+          <input type="color" id="newPathColor" value="#5AC8FA"
+                 oninput="document.getElementById('newPathColorLabel').textContent = this.value.toUpperCase();"
+                 style="width:28px;height:28px;border:none;background:transparent;cursor:pointer;padding:0;flex-shrink:0;" />
+          <span id="newPathColorLabel" style="font-family:var(--mono);font-size:11px;color:var(--text-muted);">#5AC8FA</span>
+        </label>
       </div>
       <textarea id="newPathDescription" rows="2" placeholder="Description (optional)" style="width:100%;margin-top:10px;padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;resize:vertical;"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;">
@@ -5224,7 +5239,12 @@ const NovaDevConsole = (() => {
       document.getElementById('newPathTitle').value = '';
       document.getElementById('newPathDescription').value = '';
       document.getElementById('newPathIcon').value = '';
-      document.getElementById('newPathColor').value = '';
+      // S12-12: color picker can't accept '' as a value (browsers fall
+      // back to #000000 silently); reset to the same default the
+      // initial render uses, and re-sync the readout label so the UI
+      // stays in lockstep with the input value.
+      document.getElementById('newPathColor').value = '#5AC8FA';
+      document.getElementById('newPathColorLabel').textContent = '#5AC8FA';
 
       await loadAuthorPaths();
       const pathSelect = document.getElementById('authorPathSelect');
