@@ -118,6 +118,43 @@ public class APIClient {
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                // S12-12: log the full DecodingError before we swallow it
+                // into APIError's String description. `error.localizedDescription`
+                // returns the user-friendly "The data couldn't be read..."
+                // string for every DecodingError variant — useless for
+                // diagnostics. The actual `keyNotFound("...")` /
+                // `typeMismatch(... at $.content.dragItems[0])` /
+                // `valueNotFound("...")` detail lives in the error
+                // description, including the full codingPath that names
+                // the exact field. Print it so the next decode failure
+                // tells us where to look instead of forcing us to guess.
+                #if DEBUG
+                if let decodingError = error as? DecodingError {
+                    print("[APIClient] DECODE FAILED for \(T.self):")
+                    switch decodingError {
+                    case .keyNotFound(let key, let context):
+                        print("[APIClient]    keyNotFound: \(key.stringValue)")
+                        print("[APIClient]    path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                        print("[APIClient]    debug: \(context.debugDescription)")
+                    case .typeMismatch(let type, let context):
+                        print("[APIClient]    typeMismatch: expected \(type)")
+                        print("[APIClient]    path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                        print("[APIClient]    debug: \(context.debugDescription)")
+                    case .valueNotFound(let type, let context):
+                        print("[APIClient]    valueNotFound: \(type)")
+                        print("[APIClient]    path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                        print("[APIClient]    debug: \(context.debugDescription)")
+                    case .dataCorrupted(let context):
+                        print("[APIClient]    dataCorrupted")
+                        print("[APIClient]    path: \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                        print("[APIClient]    debug: \(context.debugDescription)")
+                    @unknown default:
+                        print("[APIClient]    unknown DecodingError: \(decodingError)")
+                    }
+                } else {
+                    print("[APIClient] DECODE FAILED for \(T.self): \(error)")
+                }
+                #endif
                 throw APIError.decodingError(error.localizedDescription)
             }
 
