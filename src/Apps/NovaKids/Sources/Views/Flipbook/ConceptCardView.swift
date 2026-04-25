@@ -24,32 +24,38 @@ public struct ConceptCardView: View {
 
     public var body: some View {
         ZStack(alignment: .bottom) {
-            // Full-screen background
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    NovaPalette.novaGreen.opacity(0.4),
-                    NovaPalette.novaBlue.opacity(0.3),
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // S13: full-bleed hero image when card.imageURL is set,
+            // gradient + lightbulb-icon placeholder when not. Replaces
+            // the previous gradient-only background so concept cards
+            // get their comic-book panel illustration.
+            CardHeroImage(url: card.imageURL) {
+                ZStack {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            NovaPalette.novaGreen.opacity(0.4),
+                            NovaPalette.novaBlue.opacity(0.3),
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
 
-            // Large illustration area
-            VStack(spacing: 20) {
-                Image(systemName: "lightbulb.circle.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(.white)
-                    .accessibilityHidden(true)
+                    VStack(spacing: 20) {
+                        Image(systemName: "lightbulb.circle.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(.white)
+                            .accessibilityHidden(true)
 
-                Text("Concept Card")
-                    .font(NovaPalette.headingFont())
-                    .foregroundStyle(.white)
+                        Text("Concept Card")
+                            .font(NovaPalette.headingFont())
+                            .foregroundStyle(.white)
 
-                Spacer()
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(24)
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(24)
+            .ignoresSafeArea()
 
             // Concept text in frosted glass box at bottom
             VStack(spacing: 12) {

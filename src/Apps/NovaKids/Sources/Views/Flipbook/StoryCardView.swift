@@ -36,32 +36,38 @@ public struct StoryCardView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Large illustration area (80%)
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    NovaPalette.novaBlue.opacity(0.4),
-                                    NovaPalette.novaPurple.opacity(0.3),
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                // S13: Large illustration area (80%) — DALL-E hero image
+                // when card.imageURL is set, gradient + book-icon
+                // placeholder when not (lesson seeded before asset
+                // pipeline ran, or OPENAI_API_KEY wasn't configured).
+                CardHeroImage(url: card.imageURL) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        NovaPalette.novaBlue.opacity(0.4),
+                                        NovaPalette.novaPurple.opacity(0.3),
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
 
-                    VStack(spacing: 16) {
-                        Image(systemName: "book.circle.fill")
-                            .font(.largeTitle)
-                            .foregroundStyle(.white)
-                            .accessibilityHidden(true)
+                        VStack(spacing: 16) {
+                            Image(systemName: "book.circle.fill")
+                                .font(.largeTitle)
+                                .foregroundStyle(.white)
+                                .accessibilityHidden(true)
 
-                        Text("Story Card")
-                            .font(NovaPalette.headingFont())
-                            .foregroundStyle(.white)
+                            Text("Story Card")
+                                .font(NovaPalette.headingFont())
+                                .foregroundStyle(.white)
+                        }
                     }
                 }
                 .frame(maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(24)
                 .scaleEffect(0.95)
                 .opacity(0.9)
