@@ -1384,6 +1384,7 @@
     <button class="tab-btn" data-tab="author" role="tab" onclick="switchTab('author')">Author Lesson</button>
     <button class="tab-btn" data-tab="inspector" role="tab" onclick="switchTab('inspector')">Progress Inspector</button>
     <button class="tab-btn" data-tab="cost" role="tab" onclick="switchTab('cost')">Cost / LLM</button>
+    <button class="tab-btn" data-tab="voice" role="tab" onclick="switchTab('voice')">Voice</button>
   </nav>
 
   <!-- ===================== PIPELINE TAB ===================== -->
@@ -2145,6 +2146,44 @@
 
   </section>
   <!-- ===================== /COST / LLM TAB ===================== -->
+
+  <!-- ===================== VOICE TAB (S13-10) ===================== -->
+  <section class="tab-pane" id="tab-voice" role="tabpanel">
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">
+        Voice TTS proxy — playback &amp; latency
+        <span class="spacer"></span>
+        <button class="dc-toggle" onclick="NovaDevConsole.refreshVoiceStats()">↻ Refresh stats</button>
+        <button class="dc-toggle" onclick="NovaDevConsole.clearVoiceCache()" style="margin-left:6px;">Clear cache</button>
+      </div>
+
+      <div style="padding:14px 16px 6px;">
+        <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Test text</label>
+        <textarea id="voiceTestText" rows="3" style="width:100%;padding:8px;font-family:var(--mono);font-size:13px;background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:6px;" placeholder="Type any line a kid would hear and tap a voice below to play it…">The sky is blue because of how light bounces off air.</textarea>
+      </div>
+
+      <div id="voiceRows" style="padding:8px 16px 14px;display:flex;flex-direction:column;gap:8px;">
+        <!-- Populated by NovaDevConsole.renderVoiceRows() -->
+      </div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">Per-voice latency (rolling last 50)</div>
+      <div id="voiceLatency" style="padding:14px 16px;font-family:var(--mono);font-size:12.5px;color:var(--text-muted);">Loading…</div>
+    </div>
+
+    <div class="dc-panel">
+      <div class="dc-panel-title">
+        Cache state
+        <span class="spacer"></span>
+        <span id="voiceCacheBadge" style="font-size:11px;color:var(--green);font-family:var(--mono);"></span>
+      </div>
+      <div id="voiceCacheTable" style="padding:14px 16px;font-family:var(--mono);font-size:12px;">Loading…</div>
+    </div>
+
+  </section>
+  <!-- ===================== /VOICE TAB ===================== -->
 
 </div>
 
@@ -3683,7 +3722,7 @@ const KG_STATE = {
   domain: 'all',      // active filter
 };
 
-const VALID_TABS = new Set(['pipeline', 'knowledge', 'engagement', 'mastery', 'guidance', 'context', 'strategy', 'skills', 'author', 'inspector', 'cost']);
+const VALID_TABS = new Set(['pipeline', 'knowledge', 'engagement', 'mastery', 'guidance', 'context', 'strategy', 'skills', 'author', 'inspector', 'cost', 'voice']);
 
 function switchTab(name) {
   if (!VALID_TABS.has(name)) return;
@@ -3720,6 +3759,10 @@ function switchTab(name) {
     NovaDevConsole.loadInspector();
   } else if (name === 'cost') {
     NovaDevConsole.loadCost();
+  } else if (name === 'voice') {
+    // S13-10: render rows + load stats. Idempotent.
+    NovaDevConsole.renderVoiceRows();
+    NovaDevConsole.refreshVoiceStats();
   }
 }
 
@@ -5650,6 +5693,200 @@ const NovaDevConsole = (() => {
     switchTab('pipeline');
   }
 
+  // ===================================================================
+  // S13-10 — Voice tab. Drives the four voice rows (sample playback +
+  // latency display), polls /voice/stats for cache + p50/p95, and lets
+  // bang clear the cache between iterations.
+  // ===================================================================
+
+  // Voice persona definitions — mirrors the backend /voice/voices payload.
+  // Carrying it locally avoids a coordination hop on every tab open.
+  const VOICE_PERSONAS = [
+    { id: 'nova',    name: 'Nova',          tagline: 'Bright + bouncy',     color: '#FF8A3D' },
+    { id: 'fable',   name: 'Pip',           tagline: 'Storyteller',         color: '#7C5CFF' },
+    { id: 'onyx',    name: 'Captain Boom',  tagline: 'Brave + bold',        color: '#1B6EF3' },
+    { id: 'shimmer', name: 'Sunny',         tagline: 'Warm + gentle',       color: '#FFD23F' },
+  ];
+
+  // Cache the audio element + last-known-stats so re-renders don't blow them away.
+  const VOICE_STATE = {
+    audioEl: null,
+    lastStats: null,
+    rowsRendered: false,
+  };
+
+  function ensureVoiceAudioEl() {
+    if (VOICE_STATE.audioEl) return VOICE_STATE.audioEl;
+    const a = document.createElement('audio');
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    VOICE_STATE.audioEl = a;
+    return a;
+  }
+
+  // Render the four voice rows. Idempotent — bails if already rendered.
+  function renderVoiceRows() {
+    const host = document.getElementById('voiceRows');
+    if (!host || VOICE_STATE.rowsRendered) return;
+    host.innerHTML = '';
+    for (const p of VOICE_PERSONAS) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;';
+      row.innerHTML = `
+        <div style="width:34px;height:34px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-family:var(--mono);">${p.name[0]}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;color:var(--text);">${p.name} <span style="color:var(--text-muted);font-weight:400;font-size:12px;">— ${p.tagline}</span></div>
+          <div style="font-size:11.5px;color:var(--text-muted);font-family:var(--mono);" id="voiceRowMeta-${p.id}">No requests yet</div>
+        </div>
+        <button class="dc-toggle" onclick="NovaDevConsole.playVoiceSample('${p.id}')" id="voiceRowBtn-${p.id}">▶ Play</button>
+      `;
+      host.appendChild(row);
+    }
+    VOICE_STATE.rowsRendered = true;
+  }
+
+  // Play the test text via /voice/tts. On success, refresh the row meta with
+  // cache-hit + latency from the response headers and refresh aggregate stats.
+  async function playVoiceSample(voiceId) {
+    const text = (document.getElementById('voiceTestText')?.value || '').trim();
+    if (!text) {
+      alert('Type something into the test-text box first.');
+      return;
+    }
+    const btn = document.getElementById(`voiceRowBtn-${voiceId}`);
+    const meta = document.getElementById(`voiceRowMeta-${voiceId}`);
+    if (btn) { btn.textContent = '… generating'; btn.disabled = true; }
+    const startedAt = Date.now();
+
+    try {
+      const headers = { 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' };
+      const token = window.NOVA_DEV_TOKEN || (typeof getDevAccessToken === 'function' ? getDevAccessToken() : null);
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('/api/v1/voice/tts', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ text, voice: voiceId, model: 'tts-1' }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => res.statusText);
+        if (meta) meta.textContent = `error ${res.status} — ${errText.slice(0, 80)}`;
+        return;
+      }
+      const cacheHit = (res.headers.get('X-Voice-Cache') || '?').toUpperCase() === 'HIT';
+      const latencyMs = parseInt(res.headers.get('X-Voice-Latency-Ms') || '0', 10);
+      const totalMs = Date.now() - startedAt;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = ensureVoiceAudioEl();
+      audio.src = url;
+      audio.onended = () => URL.revokeObjectURL(url);
+      audio.play().catch(err => console.warn('[voice] play failed', err));
+
+      if (meta) {
+        const tag = cacheHit ? `<span style="color:var(--green);">CACHE HIT</span>` : `<span style="color:var(--orange);">MISS</span>`;
+        meta.innerHTML = `${tag} · backend ${latencyMs}ms · total ${totalMs}ms · ${(blob.size/1024).toFixed(1)}KB`;
+      }
+    } catch (err) {
+      if (meta) meta.textContent = `error: ${err.message}`;
+    } finally {
+      if (btn) { btn.textContent = '▶ Play'; btn.disabled = false; }
+      // Refresh stats after every play so the cache + latency panels update.
+      refreshVoiceStats();
+    }
+  }
+
+  async function refreshVoiceStats() {
+    const headers = {};
+    const token = window.NOVA_DEV_TOKEN || (typeof getDevAccessToken === 'function' ? getDevAccessToken() : null);
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    let stats;
+    try {
+      const res = await fetch('/api/v1/voice/stats', { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      stats = await res.json();
+    } catch (err) {
+      const lat = document.getElementById('voiceLatency');
+      if (lat) lat.textContent = `Could not load stats: ${err.message}`;
+      return;
+    }
+    VOICE_STATE.lastStats = stats;
+
+    // Latency panel — per voice p50/p95 with mini bar.
+    const latHost = document.getElementById('voiceLatency');
+    if (latHost) {
+      const rows = VOICE_PERSONAS.map(p => {
+        const s = stats.latency?.[p.id];
+        if (!s || s.count === 0) {
+          return `<div>${p.name.padEnd(15)} <span style="color:var(--text-muted);">no samples</span></div>`;
+        }
+        const bar = '█'.repeat(Math.min(40, Math.round((s.p95 || 0) / 100)));
+        return `<div>${p.name.padEnd(15)} n=${String(s.count).padStart(2)}  p50=${String(s.p50 || '-').padStart(5)}ms  p95=${String(s.p95 || '-').padStart(5)}ms  <span style="color:${p.color};">${bar}</span></div>`;
+      }).join('\n');
+      latHost.innerHTML = `<pre style="margin:0;color:var(--text);font:inherit;">${rows}</pre>`;
+    }
+
+    // Cache panel — totals + recent rows.
+    const badge = document.getElementById('voiceCacheBadge');
+    if (badge) {
+      const c = stats.cache || {};
+      const mb = ((c.totalBytes || 0) / 1024 / 1024).toFixed(2);
+      const hit = ((c.hitRate || 0) * 100).toFixed(1);
+      badge.textContent = `${c.entries || 0} entries · ${mb} MB · ${c.totalHits || 0} hits · ${hit}% hit rate`;
+    }
+    const tbl = document.getElementById('voiceCacheTable');
+    if (tbl) {
+      const recent = stats.recent || [];
+      if (recent.length === 0) {
+        tbl.innerHTML = `<div style="color:var(--text-muted);">Cache is empty.</div>`;
+      } else {
+        tbl.innerHTML = `
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="text-align:left;color:var(--text-muted);border-bottom:1px solid var(--border);">
+              <th style="padding:6px 8px;">Voice</th>
+              <th style="padding:6px 8px;">Model</th>
+              <th style="padding:6px 8px;">Text</th>
+              <th style="padding:6px 8px;text-align:right;">Hits</th>
+              <th style="padding:6px 8px;text-align:right;">Age</th>
+            </tr></thead>
+            <tbody>${recent.map(r => `
+              <tr style="border-bottom:1px dotted var(--border);">
+                <td style="padding:6px 8px;color:var(--text);">${r.voice}</td>
+                <td style="padding:6px 8px;color:var(--text-muted);">${r.model}</td>
+                <td style="padding:6px 8px;color:var(--text);">${(r.textPreview || '').replace(/</g, '&lt;')}</td>
+                <td style="padding:6px 8px;text-align:right;color:${r.hits > 0 ? 'var(--green)' : 'var(--text-muted)'};">${r.hits}</td>
+                <td style="padding:6px 8px;text-align:right;color:var(--text-muted);">${r.ageSeconds}s</td>
+              </tr>
+            `).join('')}</tbody>
+          </table>`;
+      }
+    }
+  }
+
+  async function clearVoiceCache() {
+    if (!confirm('Clear the entire backend TTS cache?')) return;
+    const headers = { 'Content-Type': 'application/json' };
+    const token = window.NOVA_DEV_TOKEN || (typeof getDevAccessToken === 'function' ? getDevAccessToken() : null);
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch('/api/v1/voice/cache/clear', { method: 'POST', headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const j = await res.json();
+      alert(`Cleared ${j.cleared} cache entries.`);
+      refreshVoiceStats();
+    } catch (err) {
+      alert(`Clear failed: ${err.message}`);
+    }
+  }
+
+  // Auto-load on tab activation. Hook into existing switchTab via the
+  // pattern other tabs use (load on .active detection).
+  function maybeLoadVoiceTab() {
+    if (document.getElementById('tab-voice')?.classList.contains('active')) {
+      renderVoiceRows();
+      refreshVoiceStats();
+    }
+  }
+
   return {
     getChildId, getChildren, setChildren, setChildId,
     loadEngagement, toggleEngagementRaw,
@@ -5661,6 +5898,8 @@ const NovaDevConsole = (() => {
     loadAuthor, toggleNewPathForm, createPath, startAuthor, cancelAuthor, jumpToPipelineWithLesson,
     loadInspector, toggleInspectorTail, toggleInspectorChildFilter, resetRings,
     loadCost, setCostWindow,
+    // S13-10 voice tab
+    renderVoiceRows, playVoiceSample, refreshVoiceStats, clearVoiceCache, maybeLoadVoiceTab,
   };
 })();
 

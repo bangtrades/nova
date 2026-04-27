@@ -77,7 +77,8 @@ public struct ConceptCardView: View {
                         if let script = card.voiceScript ?? card.content.explanation {
                             Task {
                                 isSpeaking = true
-                                try? await voiceManager.speak(text: script, preferRemote: false)
+                                // S13-09: defaults to OpenAI TTS via backend proxy.
+                                try? await voiceManager.speak(text: script)
                                 isSpeaking = false
                             }
                         }

@@ -14,6 +14,10 @@ public struct EnhancedHomeView: View {
     @EnvironmentObject private var apiRouter: APIRouter
     @EnvironmentObject private var appState: KidsAppState
 
+    /// S13-08: surface the voice picker from a small settings affordance.
+    /// Sheet because it's a focused decision; dismiss returns to home.
+    @State private var showVoicePicker = false
+
     // S12-01: iPad-vs-iPhone tile sizing. Hero-row lesson cards need more
     // presence on iPad — kids see them from 18" away on a shared family
     // device, not 8" on a phone. `.regular` bumps the card to 196×224 so
@@ -62,11 +66,46 @@ public struct EnhancedHomeView: View {
             // Empty title keeps the nav bar clean — modifier renders no
             // principal item when `title` is empty.
             .novaNavigationStyle()
+            // S13-08: small settings gear in the top trailing slot opens
+            // the voice picker as a sheet. Stays out of the way for kids
+            // who never need it (they get the default Nova voice on first
+            // play); reachable for any kid who wants to try the others.
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showVoicePicker = true
+                    } label: {
+                        Image(systemName: "speaker.wave.2.bubble.fill")
+                            .font(.title3)
+                            .foregroundStyle(NovaPalette.novaOrange)
+                    }
+                    .accessibilityLabel("Pick a voice")
+                    .accessibilityHint("Opens the voice picker so you can choose who tells your stories")
+                }
+            }
+            .sheet(isPresented: $showVoicePicker) {
+                NavigationStack {
+                    VoicePickerView(
+                        childId: appState.currentChild?.id,
+                        onDone: { showVoicePicker = false }
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") { showVoicePicker = false }
+                        }
+                    }
+                }
+            }
             // S11-19 wire-up point.
             .task {
                 viewModel.attach(apiRouter: apiRouter, childId: appState.currentChild?.id)
                 await viewModel.refresh()
             }
+            // S14-VF-02: auto-narrate the home line on appear so a
+            // pre-literate kid hears "Hi! I'm Dashy. Pick a topic to
+            // start learning!" instead of staring at silent text labels.
+            // 60s cooldown means re-navigating back doesn't re-narrate.
+            .narrate("home")
         }
     }
 

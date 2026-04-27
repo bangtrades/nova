@@ -1,68 +1,109 @@
 import Foundation
 
-/// Client for OpenAI's Text-to-Speech API.
+/// S13-06 — Client for the Nova backend TTS proxy.
 ///
-/// Generates high-quality speech audio from text using remote OpenAI models.
-/// Supports different voices and models.
-public class RemoteTTSClient {
-    /// Base URL for the API (defaults to OpenAI's API).
+/// **Why a backend proxy and not direct OpenAI:** the iOS NovaKids binary
+/// must NOT carry an `OPENAI_API_KEY`. Embedding the key in a kid-facing
+/// app is a leak vector — `strings` against the IPA, App Store IPA caches,
+/// jailbreak inspection, etc. The backend's `POST /api/v1/voice/tts`
+/// endpoint takes the same Bearer token a kid already uses for `/lessons`,
+/// proxies to OpenAI, caches the resulting MP3, and returns it. iOS never
+/// sees the OpenAI key.
+///
+/// **Why this still lives in NovaVoice:** the NovaVoice package's contract
+/// is "give me text, give me audio" — the *transport* (direct API vs.
+/// backend proxy) is an implementation detail. NovaVoice consumers
+/// (`VoiceManager`) shouldn't care which side has the OpenAI key.
+///
+/// **Backwards compatibility note:** the pre-S13 type was the same name
+/// pointing at api.openai.com. The constructor signature changed
+/// (`baseURL` is now the backend root, `authToken` is the Nova bearer
+/// token, not an OpenAI key). All call sites are inside this package and
+/// `NovaKidsApp.init()`, so the migration is mechanical.
+public final class RemoteTTSClient: @unchecked Sendable {
+    /// Backend base URL — same root that `APIRouter` uses.
+    /// Concretely something like `http://192.168.1.42:3000/api/v1` on
+    /// LAN or `http://localhost:3000/api/v1` in simulator.
     public let baseURL: URL
 
-    /// API authentication token.
-    private let authToken: String
+    /// Bearer token resolver. Lazy-async so `AuthManager`'s token-refresh
+    /// machinery propagates without requiring `RemoteTTSClient` to know
+    /// about NovaAuth or NovaCore.TokenProvider — keeps the package graph
+    /// clean (NovaVoice has no upstream Swift package deps).
+    public typealias TokenResolver = @Sendable () async -> String?
+
+    private let tokenResolver: TokenResolver
 
     /// URLSession for network requests.
     private let session: URLSession
 
-    /// Initialize a new RemoteTTSClient.
+    /// Initialize a backend-proxy TTS client.
+    ///
     /// - Parameters:
-    ///   - authToken: OpenAI API key.
-    ///   - baseURL: Base URL for the API (defaults to OpenAI).
-    ///   - session: URLSession to use (defaults to .shared).
+    ///   - baseURL: Backend API root (must include `/api/v1` suffix).
+    ///   - tokenResolver: Closure returning the current Nova bearer token.
+    ///     Called on every request so `AuthManager.accessToken` refresh
+    ///     propagates without client reconstruction. Pass
+    ///     `{ await authManager.accessToken }`.
+    ///   - session: URLSession (defaults to `.shared`).
     public init(
-        authToken: String,
-        baseURL: URL = URL(string: "https://api.openai.com/v1")!,
+        baseURL: URL,
+        tokenResolver: @escaping TokenResolver,
         session: URLSession = .shared
     ) {
-        self.authToken = authToken
         self.baseURL = baseURL
+        self.tokenResolver = tokenResolver
         self.session = session
     }
 
-    /// Generates speech audio from text.
+    /// Generates speech audio for the given text.
+    ///
+    /// Returns the raw MP3 bytes from the backend cache or a fresh
+    /// OpenAI generation. Reports backend cache hit/miss + per-request
+    /// latency via the response object so callers (Oracle Voice tab,
+    /// telemetry) can observe.
     ///
     /// - Parameters:
-    ///   - text: The text to convert to speech.
-    ///   - voice: The voice to use (alloy, echo, fable, onyx, nova, shimmer).
-    ///   - model: The TTS model (tts-1 for low latency, tts-1-hd for high quality).
-    /// - Returns: Audio data in MP3 format.
-    /// - Throws: TTSError on failure.
+    ///   - text: The text to convert to speech (max 4096 chars).
+    ///   - voice: One of `nova` / `fable` / `onyx` / `shimmer`
+    ///     (the four kid-facing voices). Defaults to `nova`.
+    ///   - model: `tts-1` (default, low-latency) or `tts-1-hd` (higher
+    ///     quality, ~2× the cost).
+    /// - Returns: A `TTSResult` with audio bytes + observability metadata.
+    /// - Throws: `TTSError` mirroring backend status codes.
     public func generateSpeech(
         text: String,
         voice: String = "nova",
         model: String = "tts-1"
-    ) async throws -> Data {
-        let endpoint = baseURL.appendingPathComponent("/audio/speech")
+    ) async throws -> TTSResult {
+        // Backend proxy lives at /voice/tts under the same /api/v1 root.
+        let endpoint = baseURL.appendingPathComponent("voice/tts")
 
-        // Build request body
+        // Build request body — exact shape the backend Zod schema expects.
         struct RequestBody: Encodable {
-            let model: String
-            let input: String
+            let text: String
             let voice: String
+            let model: String
         }
+        let body = RequestBody(text: text, voice: voice, model: model)
+        let bodyData = try JSONEncoder().encode(body)
 
-        let body = RequestBody(model: model, input: text, voice: voice)
-        let encoder = JSONEncoder()
-        let bodyData = try encoder.encode(body)
+        // Resolve auth token at request time (token refresh transparent).
+        let token = await tokenResolver()
 
-        // Create request
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let token = token, !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = bodyData
+        // Modest timeout — kid waiting room for a single card narration is
+        // unforgiving. tts-1 typically returns in 1–3s; 15s gives upstream
+        // room and still bails before the kid taps the next card.
+        request.timeoutInterval = 15
 
-        // Make request
         do {
             let (data, response) = try await session.data(for: request)
 
@@ -72,7 +113,17 @@ public class RemoteTTSClient {
 
             switch httpResponse.statusCode {
             case 200:
-                return data
+                // Pull observability headers — set by the backend proxy.
+                let cacheHeader = httpResponse.value(forHTTPHeaderField: "X-Voice-Cache") ?? "?"
+                let latencyHeader = httpResponse.value(forHTTPHeaderField: "X-Voice-Latency-Ms")
+                let voiceUsed = httpResponse.value(forHTTPHeaderField: "X-Voice-Used") ?? voice
+                let latencyMs = latencyHeader.flatMap { Int($0) } ?? 0
+                return TTSResult(
+                    audio: data,
+                    voice: voiceUsed,
+                    cacheHit: cacheHeader.uppercased() == "HIT",
+                    latencyMs: latencyMs
+                )
 
             case 401:
                 throw TTSError.unauthorized
@@ -83,6 +134,10 @@ public class RemoteTTSClient {
 
             case 429:
                 throw TTSError.rateLimited
+
+            case 503:
+                // Backend reports it has no OPENAI_API_KEY configured.
+                throw TTSError.serverError(503)
 
             case 500...:
                 throw TTSError.serverError(httpResponse.statusCode)
@@ -97,52 +152,70 @@ public class RemoteTTSClient {
         }
     }
 
-    /// Available voices for TTS.
-    public static let availableVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+    /// Available voice slugs — the four kid-facing personas Nova ships.
+    /// Use `RemoteTTSClient.kidVoiceProfiles()` for richer display data.
+    public static let availableVoices = ["nova", "fable", "onyx", "shimmer"]
 
     /// Available TTS models.
     public static let availableModels = ["tts-1", "tts-1-hd"]
 }
 
+/// Result of a successful TTS generation. Carries the raw MP3 plus
+/// observability data (backend cache hit, generation latency) so the
+/// Oracle Voice tab and runtime telemetry can show the picture.
+public struct TTSResult: Sendable {
+    public let audio: Data
+    public let voice: String
+    public let cacheHit: Bool
+    public let latencyMs: Int
+
+    public init(audio: Data, voice: String, cacheHit: Bool, latencyMs: Int) {
+        self.audio = audio
+        self.voice = voice
+        self.cacheHit = cacheHit
+        self.latencyMs = latencyMs
+    }
+}
+
 /// Errors that can occur during TTS operations.
-public enum TTSError: LocalizedError {
-    /// Unauthorized - invalid API key.
+public enum TTSError: LocalizedError, Sendable {
+    /// Unauthorized — invalid Nova bearer token (401 from backend).
     case unauthorized
 
-    /// Invalid request parameters.
+    /// Invalid request parameters (400 from backend).
     case invalidRequest(String)
 
-    /// Rate limited - too many requests.
+    /// Rate limited (429 from backend or upstream OpenAI).
     case rateLimited
 
-    /// Server error.
+    /// Backend-side server error.
     case serverError(Int)
 
     /// Unexpected HTTP status code.
     case unexpectedStatusCode(Int)
 
-    /// Network error.
+    /// Network error (timeout, no connectivity, etc.).
     case networkError(Error)
 
-    /// Invalid response format.
+    /// Invalid response format (no HTTPURLResponse).
     case invalidResponse
 
     public var errorDescription: String? {
         switch self {
         case .unauthorized:
-            return "Invalid OpenAI API key"
+            return "Voice service authentication failed"
         case .invalidRequest(let message):
-            return "Invalid TTS request: \(message)"
+            return "Invalid voice request: \(message)"
         case .rateLimited:
-            return "OpenAI API rate limit exceeded"
+            return "Voice service is busy — please try again in a moment"
         case .serverError(let statusCode):
-            return "OpenAI server error (\(statusCode))"
+            return "Voice service error (\(statusCode))"
         case .unexpectedStatusCode(let code):
-            return "Unexpected response status: \(code)"
+            return "Unexpected voice response status: \(code)"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
         case .invalidResponse:
-            return "Invalid response format"
+            return "Invalid voice response format"
         }
     }
 }

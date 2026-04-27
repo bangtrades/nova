@@ -227,7 +227,12 @@ public class FlipbookViewModel: ObservableObject {
 
         guard !textToSpeak.isEmpty else { return }
 
-        try await voiceManager.speak(text: textToSpeak, preferRemote: false)
+        // S13-09: VoiceManager now defaults to OpenAI TTS through the
+        // backend proxy. The kid's selected persona lives on
+        // voiceManager.currentVoice and was set at picker / app-launch
+        // time from VoicePreferenceStore. AVSpeech survives only as the
+        // offline fallback.
+        try await voiceManager.speak(text: textToSpeak)
     }
 
     /// Stops the current speech.

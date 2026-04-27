@@ -274,9 +274,12 @@ public class DashyViewModel: NSObject, ObservableObject {
             let incoming = response.suggestions ?? []
             suggestions = Array(incoming.prefix(maxSuggestions))
 
-            // Play Dashy's response via voice manager. `preferRemote: false`
-            // uses on-device TTS for latency.
-            try await voiceManager.speak(text: response.message, preferRemote: false)
+            // S13-09: Dashy is a fixed character — she always speaks with
+            // the `shimmer` voice (warm + gentle) regardless of the kid's
+            // current narration persona. Single-voice consistency is part
+            // of who Dashy is. VoiceManager routes through the backend
+            // TTS proxy with shimmer; AVSpeech remains the offline fallback.
+            try await voiceManager.speak(text: response.message, voice: "shimmer")
 
             processingProgress = 1.0
             state = .ready

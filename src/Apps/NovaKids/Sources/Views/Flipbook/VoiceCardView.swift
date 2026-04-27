@@ -245,7 +245,8 @@ public struct VoiceCardView: View {
     private func introOnAppear() {
         guard let prompt = card.content.promptText, !prompt.isEmpty else { return }
         speakTask = Task {
-            try? await voiceManager.speak(text: prompt, preferRemote: false)
+            // S13-09: defaults to OpenAI TTS via backend proxy.
+            try? await voiceManager.speak(text: prompt)
         }
     }
 
@@ -294,7 +295,8 @@ public struct VoiceCardView: View {
             matchedCelebration = line
             phase = .celebrating
             speakTask = Task {
-                try? await voiceManager.speak(text: line, preferRemote: false)
+                // S13-09: defaults to OpenAI TTS via backend proxy.
+                try? await voiceManager.speak(text: line)
             }
         } else {
             NovaHaptics.wrong()
@@ -303,7 +305,8 @@ public struct VoiceCardView: View {
             missedRetry = line
             phase = .reprompting
             speakTask = Task {
-                try? await voiceManager.speak(text: line, preferRemote: false)
+                // S13-09: defaults to OpenAI TTS via backend proxy.
+                try? await voiceManager.speak(text: line)
                 // After the retry hint plays, return to idle so the kid can
                 // try again with the same prompt still visible.
                 await MainActor.run { phase = .idle }

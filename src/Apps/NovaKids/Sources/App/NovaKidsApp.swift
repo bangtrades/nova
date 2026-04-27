@@ -48,6 +48,23 @@ struct NovaKidsApp: App {
     /// endpoint for cross-device sync.
     @StateObject private var completionStore = LessonCompletionStore()
 
+    /// S13-07 — Per-child voice persona persistence. UserDefaults JSON
+    /// of (childId → voice slug). The kid picks his voice once in
+    /// VoicePickerView; every speak() call across StoryCard / ConceptCard
+    /// / VoiceCard / DashyView reads from this store via VoiceManager.
+    /// resolvedChildId(_:) fallback makes pre-profile sessions work too.
+    @StateObject private var voicePreferenceStore = VoicePreferenceStore()
+
+    /// S14-VF-01 — Auto-narrates kid-friendly entry lines on every Tier 1
+    /// screen. User Review #01 found the kid couldn't navigate without
+    /// adult help because labels (Lessons / Trophies / path titles) are
+    /// silent and unreadable to a pre-literate kid. This makes the
+    /// navigation chrome speak in his chosen voice via the S13 OpenAI
+    /// TTS proxy. Per-screen 60s cooldown + parental mute toggle +
+    /// tap-to-skip. Constructed lazily in init() so it can capture the
+    /// VoiceManager instance.
+    @StateObject private var navigationNarrator: NavigationNarrator
+
     /// Background task manager for offline sync and asset preload.
     @StateObject private var backgroundTaskManager = BackgroundTaskManager()
 
@@ -99,16 +116,41 @@ struct NovaKidsApp: App {
         _syncManager = StateObject(wrappedValue: syncManager)
         _appState = StateObject(wrappedValue: appState)
 
-        // S12-12: build SpeechSynthesizer + VoiceManager together so they
-        // share one instance. VoiceManager.init takes the synth as a
-        // constructor param, so we can't rely on the property-default
-        // initializer pattern (`= SpeechSynthesizer()`) — both have to
-        // be initialized via the StateObject(wrappedValue:) backing-
-        // ivar pattern in init.
+        // S13-06: VoiceManager now goes through the backend TTS proxy
+        // (`POST /api/v1/voice/tts`) by default — kid hears OpenAI's
+        // human-sounding voices instead of robotic AVSpeech. The proxy
+        // takes the same Bearer token /lessons takes, so iOS never
+        // carries an OPENAI_API_KEY. AVSpeech survives only as the
+        // offline fallback.
+        //
+        // Construction order: synth → tokenResolver (closure capturing
+        // authManager) → RemoteTTSClient (with backend baseURL +
+        // resolver) → VoiceManager (synth + remote). All three live as
+        // long as the App scene.
         let synth = SpeechSynthesizer()
-        let voice = VoiceManager(speechSynthesizer: synth)
+        // Capture authManager weakly through a closure — so token
+        // refresh (AuthManager owns its own access-token state) is
+        // transparent to RemoteTTSClient on every request.
+        let tokenResolver: @Sendable () async -> String? = { [weak authManager] in
+            await authManager?.accessToken
+        }
+        let ttsClient = RemoteTTSClient(
+            baseURL: backendBaseURL,
+            tokenResolver: tokenResolver
+        )
+        let voice = VoiceManager(
+            speechSynthesizer: synth,
+            remoteTTSClient: ttsClient
+        )
         _speechSynthesizer = StateObject(wrappedValue: synth)
         _voiceManager = StateObject(wrappedValue: voice)
+
+        // S14-VF-01: NavigationNarrator captures VoiceManager so it can
+        // route screen-narration lines through the same OpenAI TTS path
+        // every other speak() call uses. Single shared instance — the
+        // 60s per-screen cooldown is global state, not per-view.
+        let narrator = NavigationNarrator(voiceManager: voice)
+        _navigationNarrator = StateObject(wrappedValue: narrator)
     }
 
     var body: some Scene {
@@ -131,6 +173,29 @@ struct NovaKidsApp: App {
                         .environmentObject(voiceManager)
                         .environmentObject(assetCacheManager)
                         .environmentObject(completionStore)
+                        .environmentObject(voicePreferenceStore)
+                        .environmentObject(navigationNarrator)
+                        // S13-07: hydrate VoiceManager.currentVoice from
+                        // the per-child preference. Fires on appear AND on
+                        // every change to selected child or stored prefs.
+                        // Without this bridge, the kid picks his voice in
+                        // settings, the store updates, but VoiceManager
+                        // keeps using the launch default.
+                        .onAppear {
+                            voiceManager.setVoice(
+                                voicePreferenceStore.voice(for: appState.currentChild?.id)
+                            )
+                        }
+                        .onChange(of: appState.currentChild?.id) { _, _ in
+                            voiceManager.setVoice(
+                                voicePreferenceStore.voice(for: appState.currentChild?.id)
+                            )
+                        }
+                        .onChange(of: voicePreferenceStore.records) { _, _ in
+                            voiceManager.setVoice(
+                                voicePreferenceStore.voice(for: appState.currentChild?.id)
+                            )
+                        }
                 } else {
                     // Show login flow
                     #if DEBUG

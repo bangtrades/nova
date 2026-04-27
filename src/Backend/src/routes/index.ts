@@ -26,6 +26,7 @@ import { devConsoleRoutes } from './devConsole';
 import { devSkillsRoutes } from './devSkills';
 import devAuthorRoutes from './devAuthor';
 import { parentGuidanceRoutes } from './parentGuidance';
+import { voiceRoutes } from './voice';
 
 export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
   // Webhook routes (no auth required - called by Apple directly)
@@ -112,6 +113,9 @@ export async function registerRoutes(fastify: FastifyInstance): Promise<void> {
 
       // Dev console — Author Lesson SSE route (require auth) - Sprint 12 (S12-09)
       await fastify.register(devAuthorRoutes, { prefix: '/dev' });
+
+      // Voice TTS proxy routes (require auth) - Sprint 13 (S13-05)
+      await fastify.register(voiceRoutes, { prefix: '/voice' });
     },
     { prefix: '/api/v1' }
   );
