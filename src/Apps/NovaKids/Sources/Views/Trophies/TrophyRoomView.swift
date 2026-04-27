@@ -105,6 +105,12 @@ public struct TrophyRoomView: View {
                 viewModel.attach(apiRouter: apiRouter, childId: appState.currentChild?.id)
                 await viewModel.loadBadges()
             }
+            // S14-VF-02: kid hears "Look at all your trophies! Tap one
+            // to remember what you learned." Empty-state variant is
+            // resolved at the surface level (see condition below or in
+            // future polish — for now the trophy-room line covers both
+            // populated and empty rooms with a single message).
+            .narrate("trophyRoom")
         }
     }
 

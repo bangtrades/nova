@@ -73,6 +73,10 @@ public struct LessonsView: View {
                 viewModel.attach(apiRouter: apiRouter)
                 await viewModel.refresh()
             }
+            // S14-VF-02: kid hears "These are the lessons. Tap one to
+            // start!" on entry. 60s cooldown — bouncing back from a
+            // flipbook view doesn't re-narrate.
+            .narrate("lessons")
         }
     }
 

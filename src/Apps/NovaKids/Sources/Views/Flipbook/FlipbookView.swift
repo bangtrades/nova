@@ -240,6 +240,14 @@ public struct FlipbookView: View {
             viewModel.attach(apiRouter: apiRouter)
             await viewModel.loadCardsIfNeeded()
         }
+        // S14-VF-02: kid hears "Let's begin! Tap the arrow to see the
+        // first card." on flipbook entry. Card content has its own
+        // narration (the speaker icon on each card) — this is just the
+        // entry beat that signals "lesson is starting." 60s cooldown
+        // means re-entering the same lesson within a minute (e.g. the
+        // kid swiped Done, then opened the same lesson) doesn't
+        // re-narrate — but a fresh lesson always does.
+        .narrate("lessonDetail")
         // S13: lesson-complete celebration. `fullScreenCover` takes the
         // whole screen so the moment is the focal interaction — kid
         // can't dismiss accidentally by tapping outside, has to commit
