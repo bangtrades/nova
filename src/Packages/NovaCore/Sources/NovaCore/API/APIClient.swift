@@ -37,8 +37,45 @@ public class APIClient {
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.dateEncodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
+        // S13-12 — Custom date decoder. Backend returns ISO 8601 strings with
+        // fractional seconds ("2026-04-24T02:26:24.746Z") because Prisma
+        // serializes DateTime that way. Swift's `.iso8601` strategy is strict
+        // and rejects fractional seconds — every Lesson + LearningPath
+        // decode failed at `createdAt`/`publishedAt`/`updatedAt`, the iPad
+        // fell back to mock content. Custom decoder accepts both shapes:
+        // first try with fractional seconds, then without, then throw.
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            if let date = APIClient.iso8601WithFractionalSeconds.date(from: raw) {
+                return date
+            }
+            if let date = APIClient.iso8601Plain.date(from: raw) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Expected ISO 8601 date (with or without fractional seconds), got: \(raw)"
+            )
+        }
     }
+
+    /// ISO 8601 formatter that accepts fractional seconds. Lazily-built and
+    /// reused — `ISO8601DateFormatter` is thread-safe so a static instance
+    /// is fine.
+    private static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    /// ISO 8601 formatter without fractional seconds — fallback for any
+    /// payload Prisma didn't serialize with milliseconds.
+    private static let iso8601Plain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
 
     /// Makes a request to the API.
     /// - Parameters:

@@ -38,8 +38,31 @@ public struct CardHeroImage<Placeholder: View>: View {
     }
 
     public var body: some View {
-        if let url {
-            AsyncImage(url: url) { phase in
+        // S13-12 — rewrite `http://localhost:3000/...` asset URLs inline
+        // to the configured backend host. The backend's dev-mode asset
+        // uploader hardcodes `localhost` into the DB at generation time
+        // (assetUploader.ts:98), so on the iPad these URLs resolve to the
+        // iPad itself (where nothing's listening). Rewriting on read makes
+        // every existing card render without DB migration or asset
+        // regeneration. Inlined here (rather than a separate URL extension
+        // file) to avoid pbxproj registration churn — the function is
+        // single-use and lives where it's called.
+        let resolvedURL: URL? = {
+            guard let url else { return nil }
+            guard let host = url.host?.lowercased(),
+                  host == "localhost" || host == "127.0.0.1" || host == "::1"
+            else { return url }
+            let base = APIHost.baseURL()
+            guard let backendHost = base.host else { return url }
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            components?.scheme = base.scheme
+            components?.host = backendHost
+            components?.port = base.port
+            return components?.url ?? url
+        }()
+
+        if let resolvedURL {
+            AsyncImage(url: resolvedURL) { phase in
                 switch phase {
                 case .empty:
                     // Show placeholder beneath a small progress indicator
