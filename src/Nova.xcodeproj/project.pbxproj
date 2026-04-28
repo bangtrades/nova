@@ -17,6 +17,7 @@
 		CA3D1EA02226951D31C0EA05 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3D1EA02226951D31C0EA06 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift */; };
 		CA3D1EA02226951D31C0EA07 /* Sources/Services/VoicePreferenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3D1EA02226951D31C0EA08 /* Sources/Services/VoicePreferenceStore.swift */; };
 		CA3D1EA02226951D31C0EA09 /* Sources/Views/Settings/VoicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3D1EA02226951D31C0EA0A /* Sources/Views/Settings/VoicePickerView.swift */; };
+		CA3D1EA02226951D31C0EA0B /* Sources/Services/NavigationNarrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3D1EA02226951D31C0EA0C /* Sources/Services/NavigationNarrator.swift */; };
 		0C3F55926715B0A9429E2825 /* Sources/Views/Flipbook/ConceptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0668781BA6C2D19441BD0B /* Sources/Views/Flipbook/ConceptCardView.swift */; };
 		0EB4DF73C0BF763CBD2D9830 /* Sources/ViewModels/FlipbookViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2273BE8DD1873CE253447685 /* Sources/ViewModels/FlipbookViewModel.swift */; };
 		0F0ADA33A06E3F62599A248D /* Sources/ViewModels/ProgressDashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A7846D9BE9BC39FCEFAB8F /* Sources/ViewModels/ProgressDashboardViewModel.swift */; };
@@ -164,6 +165,7 @@
 		CA3D1EA02226951D31C0EA06 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonCompleteCelebration.swift; sourceTree = "<group>"; };
 		CA3D1EA02226951D31C0EA08 /* Sources/Services/VoicePreferenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Services/VoicePreferenceStore.swift; sourceTree = "<group>"; };
 		CA3D1EA02226951D31C0EA0A /* Sources/Views/Settings/VoicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/VoicePickerView.swift; sourceTree = "<group>"; };
+		CA3D1EA02226951D31C0EA0C /* Sources/Services/NavigationNarrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Services/NavigationNarrator.swift; sourceTree = "<group>"; };
 		2D9A503EC4DB98282E7B7DCB /* Sources/Views/Common/AccessibilityModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/AccessibilityModifiers.swift; sourceTree = "<group>"; };
 		2E571183EC3976EC4629C88C /* Sources/Views/Dashboard/ActivityFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashboard/ActivityFeedView.swift; sourceTree = "<group>"; };
 		2E7C72ED1EC35E501A2EE357 /* Sources/Views/Settings/OAuthFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Settings/OAuthFlowView.swift; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 				CA3D1EA02226951D31C0EA06 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift */,
 				CA3D1EA02226951D31C0EA08 /* Sources/Services/VoicePreferenceStore.swift */,
 				CA3D1EA02226951D31C0EA0A /* Sources/Views/Settings/VoicePickerView.swift */,
+				CA3D1EA02226951D31C0EA0C /* Sources/Services/NavigationNarrator.swift */,
 				2B0668781BA6C2D19441BD0B /* Sources/Views/Flipbook/ConceptCardView.swift */,
 				B93CC86935AFB6965EA4E2CC /* Sources/Views/Flipbook/ConfettiView.swift */,
 				EFD4143D42BDDE7780EA4A46 /* Sources/Views/Home/ContinueLearningSection.swift */,
@@ -546,6 +549,7 @@
 				CA3D1EA02226951D31C0EA05 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift in Sources */,
 				CA3D1EA02226951D31C0EA07 /* Sources/Services/VoicePreferenceStore.swift in Sources */,
 				CA3D1EA02226951D31C0EA09 /* Sources/Views/Settings/VoicePickerView.swift in Sources */,
+				CA3D1EA02226951D31C0EA0B /* Sources/Services/NavigationNarrator.swift in Sources */,
 				0C3F55926715B0A9429E2825 /* Sources/Views/Flipbook/ConceptCardView.swift in Sources */,
 				8F4DA6594F3E3E12531DFD97 /* Sources/Views/Flipbook/ConfettiView.swift in Sources */,
 				37363F1507D9465B33AC90EB /* Sources/Views/Home/ContinueLearningSection.swift in Sources */,
