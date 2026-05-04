@@ -176,6 +176,8 @@ public enum NavigationScript {
             return "Hi! I'm Dashy. Pick a topic to start learning. Tap any card you see!"
         case "lessons":
             return "These are the lessons. Tap one to start!"
+        case "classroomBookshelf":
+            return "Pick a lesson book from the shelf."
         case "lessonDetail":
             return "Let's begin! Tap the arrow to see the first card."
         case "trophyRoom":

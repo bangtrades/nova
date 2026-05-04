@@ -131,6 +131,14 @@
 		DE51617100000011000000B7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */; };
 		DE51617100000011000000B8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */; };
 		DE51617100000011000000B9 /* Sources/Views/Dashy/DashySpeechBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */; };
+		DE51617100000011000000BA /* Sources/Views/Classroom/ClassroomSceneModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */; };
+		DE51617100000011000000BB /* Sources/Views/Classroom/ClassroomSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */; };
+		DE51617100000011000000BC /* Sources/Views/Classroom/ClassroomObjectButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */; };
+		DE51617100000011000000BD /* Sources/Views/Classroom/ClassroomBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CD /* Sources/Views/Classroom/ClassroomBackgroundView.swift */; };
+		DE51617100000011000000BE /* Sources/Views/Classroom/ClassroomDashyGuideLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CE /* Sources/Views/Classroom/ClassroomDashyGuideLayer.swift */; };
+		DE51617100000011000000BF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift */; };
+		DE51617100000011000000D0 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000D1 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift */; };
+		DE51617100000012000000B1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000012000000C1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -143,6 +151,14 @@
 		DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/BadgeUnlockBurst.swift; sourceTree = "<group>"; };
 		DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift; sourceTree = "<group>"; };
 		DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashy/DashySpeechBubble.swift; sourceTree = "<group>"; };
+		DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomSceneModel.swift; sourceTree = "<group>"; };
+		DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomSceneView.swift; sourceTree = "<group>"; };
+		DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomObjectButton.swift; sourceTree = "<group>"; };
+		DE51617100000011000000CD /* Sources/Views/Classroom/ClassroomBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomBackgroundView.swift; sourceTree = "<group>"; };
+		DE51617100000011000000CE /* Sources/Views/Classroom/ClassroomDashyGuideLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomDashyGuideLayer.swift; sourceTree = "<group>"; };
+		DE51617100000011000000CF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomLessonLibraryView.swift; sourceTree = "<group>"; };
+		DE51617100000011000000D1 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomLessonBookButton.swift; sourceTree = "<group>"; };
+		DE51617100000012000000C1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift; sourceTree = "<group>"; };
 		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
 		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
 		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
@@ -301,6 +317,7 @@
 				3481AF2E024363FB811EDF95 /* Sources/Views/Trophies/BadgeView.swift */,
 				E70FA0BE404EAC27908DD1A0 /* Sources/Views/Flipbook/CardProgressDots.swift */,
 				CA3D1EA02226951D31C0EA02 /* Sources/Views/Flipbook/CardHeroImage.swift */,
+				DE51617100000012000000C1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift */,
 				CA3D1EA02226951D31C0EA04 /* Sources/Services/LessonCompletionStore.swift */,
 				CA3D1EA02226951D31C0EA06 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift */,
 				CA3D1EA02226951D31C0EA08 /* Sources/Services/VoicePreferenceStore.swift */,
@@ -309,6 +326,13 @@
 				2B0668781BA6C2D19441BD0B /* Sources/Views/Flipbook/ConceptCardView.swift */,
 				B93CC86935AFB6965EA4E2CC /* Sources/Views/Flipbook/ConfettiView.swift */,
 				EFD4143D42BDDE7780EA4A46 /* Sources/Views/Home/ContinueLearningSection.swift */,
+				DE51617100000011000000CD /* Sources/Views/Classroom/ClassroomBackgroundView.swift */,
+				DE51617100000011000000CE /* Sources/Views/Classroom/ClassroomDashyGuideLayer.swift */,
+				DE51617100000011000000D1 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift */,
+				DE51617100000011000000CF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift */,
+				DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */,
+				DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */,
+				DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */,
 				C74E8C5A4EDD853DD14B581D /* Sources/Views/Common/EmptyStateView.swift */,
 				D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */,
 				35472C81670F14E61683F8F6 /* Sources/Views/Common/ErrorBoundaryView.swift */,
@@ -602,6 +626,14 @@
 				DE51617100000011000000B7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift in Sources */,
 				DE51617100000011000000B8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift in Sources */,
 				DE51617100000011000000B9 /* Sources/Views/Dashy/DashySpeechBubble.swift in Sources */,
+				DE51617100000011000000BD /* Sources/Views/Classroom/ClassroomBackgroundView.swift in Sources */,
+				DE51617100000011000000BE /* Sources/Views/Classroom/ClassroomDashyGuideLayer.swift in Sources */,
+				DE51617100000011000000D0 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift in Sources */,
+				DE51617100000011000000BF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift in Sources */,
+				DE51617100000011000000BC /* Sources/Views/Classroom/ClassroomObjectButton.swift in Sources */,
+				DE51617100000011000000BA /* Sources/Views/Classroom/ClassroomSceneModel.swift in Sources */,
+				DE51617100000011000000BB /* Sources/Views/Classroom/ClassroomSceneView.swift in Sources */,
+				DE51617100000012000000B1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

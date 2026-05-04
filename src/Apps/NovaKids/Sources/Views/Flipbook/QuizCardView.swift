@@ -95,9 +95,8 @@ public struct QuizCardView: View {
 
     public var body: some View {
         ScrollView {
-            NovaCard(accent: NovaPalette.Category.orange) {
+            ChalkboardLessonCardSurface(cardKind: .quiz, title: cardTitle) {
                 VStack(alignment: .leading, spacing: Spacing.lg) {
-                    header
                     question
                     answerList
                     feedbackBlock
@@ -117,7 +116,7 @@ public struct QuizCardView: View {
         .onChange(of: showPow) { _, newValue in
             // When the burst fades (showPow flips back to false), let the
             // parent know a correct answer finished playing out. Nil-safe.
-            if !newValue && evaluation == .correct {
+            if newValue == false && evaluation == .correct {
                 onCorrect?()
             }
         }
@@ -130,29 +129,34 @@ public struct QuizCardView: View {
 
     // MARK: - Subviews
 
-    /// Title block — if the card has one, render it in the display font for
-    /// the comic-book page-heading feel. If not, the whole header is elided
-    /// and the question becomes the visual anchor.
-    @ViewBuilder
-    private var header: some View {
-        if let title = card.content.title {
-            Text(title)
-                .font(NovaPalette.displayFont(size: 32))
-                .foregroundStyle(NovaPalette.ink)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+    private var cardTitle: String {
+        if let title = card.content.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+           title.isEmpty == false {
+            return title
         }
+
+        return "Quiz"
     }
 
-    /// Question text — stays on the semantic heading font so it scales with
-    /// Dynamic Type. The display font is reserved for the title so we get a
-    /// two-tier typographic hierarchy.
+    /// Question text rendered as a pinned/sticky prompt against the
+    /// classroom-board surface. Yellow sticky-note treatment so the question
+    /// reads as the kid's primary thing-to-do above the magnetic answer tiles.
     @ViewBuilder
     private var question: some View {
         if let questionText = card.content.question {
             Text(questionText)
                 .font(NovaPalette.headingFont())
-                .foregroundStyle(NovaPalette.ink)
+                .foregroundStyle(NovaPalette.classroomInk)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Spacing.md)
+                .background(
+                    NovaPalette.classroomSun.opacity(0.32),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(NovaPalette.classroomSun.opacity(0.55), lineWidth: 2)
+                )
         }
     }
 
@@ -323,7 +327,7 @@ public struct QuizCardView: View {
         // two beats land out of sync.
         celebrateTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 50_000_000)
-            guard !Task.isCancelled else { return }
+            guard Task.isCancelled == false else { return }
             showPow = true
         }
     }
@@ -340,7 +344,7 @@ public struct QuizCardView: View {
         if attempts >= maxAttempts - 1 {
             hintTask = Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 500_000_000)
-                guard !Task.isCancelled else { return }
+                guard Task.isCancelled == false else { return }
                 withAnimation(reduceMotion ? .none : .easeIn(duration: 0.25)) {
                     showHint = true
                 }
@@ -352,7 +356,7 @@ public struct QuizCardView: View {
         if attempts < maxAttempts {
             retryTask = Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
-                guard !Task.isCancelled else { return }
+                guard Task.isCancelled == false else { return }
                 resetForRetry()
             }
         }

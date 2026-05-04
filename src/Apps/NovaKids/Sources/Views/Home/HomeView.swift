@@ -1,6 +1,8 @@
 import SwiftUI
 import NovaCore
 
+private let classroomV2Enabled = true
+
 /// Home screen for authenticated users.
 ///
 /// Displays welcome greeting, featured lesson, continue-learning block,
@@ -13,57 +15,26 @@ public struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject private var apiRouter: APIRouter
     @EnvironmentObject private var appState: KidsAppState
+    @EnvironmentObject private var completionStore: LessonCompletionStore
+    @State private var classroomPath: [ClassroomDestination] = []
+    @State private var classroomPlaceholderMessage: String?
 
     public init() {}
 
     public var body: some View {
-        NavigationStack {
-            ZStack {
-                NovaPalette.novaBackground
-                    .ignoresSafeArea()
-
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: Spacing.lg) {
-                        WelcomeHeader(childName: viewModel.childName)
-
-                        // S11-19: fetch-error banner. Matches the language
-                        // of LessonsView / DashyView — page fill + ink
-                        // stroke + coral icon + Try Again on .novaSecondary.
-                        if let error = viewModel.loadError {
-                            errorBanner(message: error.errorDescription ?? "Something went wrong")
-                        }
-
-                        // Featured lesson — NavigationLink owns the tap so
-                        // the card itself stays "content, not control".
-                        if let featured = viewModel.featuredLesson {
-                            NavigationLink {
-                                FlipbookView(lesson: featured)
-                            } label: {
-                                FeaturedLessonCard(lesson: featured)
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                        ContinueLearningSection(
-                            currentLesson: viewModel.currentLesson,
-                            progress: viewModel.progressPercentage
-                        )
-
-                        if !viewModel.learningPaths.isEmpty {
-                            LearningPathRow(paths: viewModel.learningPaths)
-                        }
-
-                        QuickStatsView()
-
-                        Spacer(minLength: Spacing.lg)
-                    }
-                    .padding(Spacing.lg)
-                }
-                .refreshable {
-                    await viewModel.refresh()
-                }
-            }
+        NavigationStack(path: $classroomPath) {
+            rootContent
             .novaNavigationStyle(title: "Nova Kids")
+            .navigationDestination(for: ClassroomDestination.self) { destination in
+                classroomDestination(destination)
+            }
+            .alert("Classroom preview", isPresented: placeholderAlertBinding) {
+                Button("OK", role: .cancel) {
+                    classroomPlaceholderMessage = nil
+                }
+            } message: {
+                Text(classroomPlaceholderMessage ?? "")
+            }
             // S11-19 wire-up: attach the router + currently-selected child
             // and kick off the first fetch. `attach` is idempotent so a tab
             // re-select (triggers `.task` again) is a no-op after the first.
@@ -72,6 +43,179 @@ public struct HomeView: View {
                 await viewModel.refresh()
             }
         }
+    }
+
+    @ViewBuilder
+    private var rootContent: some View {
+        if classroomV2Enabled {
+            classroomHome
+        } else {
+            classicHome
+        }
+    }
+
+    private var classroomHome: some View {
+        ZStack(alignment: .top) {
+            ClassroomSceneView(
+                model: .home(
+                    currentLesson: viewModel.currentLesson,
+                    learningPaths: viewModel.learningPaths,
+                    lessons: viewModel.allLessons,
+                    completedLessonIds: completedLessonIds
+                ),
+                onSelect: handleClassroomDestination(_:)
+            )
+
+            if let error = viewModel.loadError {
+                errorBanner(message: error.errorDescription ?? "Something went wrong")
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, Spacing.md)
+            }
+        }
+        .refreshable {
+            await viewModel.refresh()
+        }
+    }
+
+    private var classicHome: some View {
+        ZStack {
+            NovaPalette.novaBackground
+                .ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: Spacing.lg) {
+                    WelcomeHeader(childName: viewModel.childName)
+
+                    // S11-19: fetch-error banner. Matches the language
+                    // of LessonsView / DashyView — page fill + ink
+                    // stroke + coral icon + Try Again on .novaSecondary.
+                    if let error = viewModel.loadError {
+                        errorBanner(message: error.errorDescription ?? "Something went wrong")
+                    }
+
+                    // Featured lesson — NavigationLink owns the tap so
+                    // the card itself stays "content, not control".
+                    if let featured = viewModel.featuredLesson {
+                        NavigationLink {
+                            FlipbookView(lesson: featured)
+                        } label: {
+                            FeaturedLessonCard(lesson: featured)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    ContinueLearningSection(
+                        currentLesson: viewModel.currentLesson,
+                        progress: viewModel.progressPercentage
+                    )
+
+                    if !viewModel.learningPaths.isEmpty {
+                        LearningPathRow(paths: viewModel.learningPaths)
+                    }
+
+                    QuickStatsView()
+
+                    Spacer(minLength: Spacing.lg)
+                }
+                .padding(Spacing.lg)
+            }
+            .refreshable {
+                await viewModel.refresh()
+            }
+        }
+    }
+
+    private var placeholderAlertBinding: Binding<Bool> {
+        Binding(
+            get: { classroomPlaceholderMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    classroomPlaceholderMessage = nil
+                }
+            }
+        )
+    }
+
+    private func handleClassroomDestination(_ destination: ClassroomDestination) {
+        switch destination {
+        case .placeholder(let message):
+            classroomPlaceholderMessage = message
+        default:
+            classroomPath.append(destination)
+        }
+    }
+
+    @ViewBuilder
+    private func classroomDestination(_ destination: ClassroomDestination) -> some View {
+        switch destination {
+        case .continueLesson(let lessonId):
+            if let lesson = viewModel.currentLesson, lesson.id == lessonId {
+                FlipbookView(lesson: lesson)
+            } else {
+                EmptyStateView(
+                    title: "No lesson ready",
+                    subtitle: "Ask a grown-up to add a lesson.",
+                    icon: "sparkles"
+                )
+            }
+        case .lesson(let lessonId):
+            if let lesson = lesson(matching: lessonId) {
+                FlipbookView(lesson: lesson)
+            } else {
+                EmptyStateView(
+                    title: "Lesson not found",
+                    subtitle: "Ask a grown-up to refresh your classroom.",
+                    icon: "sparkles"
+                )
+            }
+        case .lessonLibrary:
+            ClassroomLessonLibraryView(
+                paths: viewModel.learningPaths,
+                lessons: viewModel.allLessons,
+                completedLessonIds: completedLessonIds
+            ) { lesson in
+                classroomPath.append(.lesson(lesson.id))
+            }
+            .navigationTitle("Bookshelf")
+            .navigationBarTitleDisplayMode(.inline)
+            .narrate("classroomBookshelf")
+        case .dashy:
+            DashyView()
+        case .trophies:
+            TrophyRoomView()
+        case .voicePicker:
+            VoicePickerView(
+                childId: appState.currentChild?.id,
+                onDone: {}
+            )
+        case .placeholder(let message):
+            EmptyStateView(
+                title: "Coming soon",
+                subtitle: message,
+                icon: "sparkles"
+            )
+        }
+    }
+
+    private func lesson(matching lessonId: UUID) -> Lesson? {
+        if let currentLesson = viewModel.currentLesson, currentLesson.id == lessonId {
+            return currentLesson
+        }
+
+        return viewModel.allLessons.first { $0.id == lessonId }
+    }
+
+    private var completedLessonIds: Set<UUID> {
+        Set(
+            viewModel.allLessons
+                .filter { lesson in
+                    completionStore.hasCompleted(
+                        childId: appState.currentChild?.id,
+                        lessonId: lesson.id
+                    )
+                }
+                .map(\.id)
+        )
     }
 
     @ViewBuilder

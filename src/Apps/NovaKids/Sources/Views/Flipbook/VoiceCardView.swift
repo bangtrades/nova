@@ -61,46 +61,64 @@ public struct VoiceCardView: View {
     }
 
     public var body: some View {
-        ZStack {
-            // Page-fill background from the S11-02 3+1 palette. `novaCardBackground`
-            // is the adaptive card-fill alias that flips for dark mode.
-            NovaPalette.novaCardBackground
-                .ignoresSafeArea()
-
-            VStack(spacing: Spacing.lg) {
-                header
-                Spacer(minLength: Spacing.lg)
-                centerStage
-                Spacer(minLength: Spacing.lg)
-                footer
+        ScrollView {
+            ChalkboardLessonCardSurface(cardKind: .voice, title: surfaceTitle) {
+                VStack(spacing: Spacing.lg) {
+                    promptBubble
+                    centerStage
+                    footer
+                }
+                .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, Spacing.lg)
             .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
         }
         .onAppear { introOnAppear() }
         .onDisappear { cleanup() }
     }
 
+    private var surfaceTitle: String {
+        if let title = card.content.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !title.isEmpty {
+            return title
+        }
+        return "Voice"
+    }
+
     // MARK: - Subviews
 
-    @ViewBuilder private var header: some View {
-        VStack(spacing: Spacing.sm) {
-            if let title = card.content.title, !title.isEmpty {
-                Text(title)
-                    .font(NovaPalette.displayFont(size: 28, relativeTo: .title2))
-                    .foregroundStyle(NovaPalette.ink)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(2)
-            }
+    @ViewBuilder private var promptBubble: some View {
+        if let prompt = card.content.promptText, !prompt.isEmpty {
+            HStack(alignment: .top, spacing: Spacing.sm) {
+                Image(systemName: "person.wave.2.fill")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(NovaPalette.classroomSky)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle().fill(NovaPalette.classroomSky.opacity(0.20))
+                    )
+                    .overlay(
+                        Circle().strokeBorder(NovaPalette.classroomInk.opacity(0.45), lineWidth: 2)
+                    )
+                    .accessibilityHidden(true)
 
-            if let prompt = card.content.promptText, !prompt.isEmpty {
                 Text(prompt)
                     .font(NovaPalette.largeBodyFont())
-                    .foregroundStyle(NovaPalette.ink)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.8)
-                    .lineLimit(4)
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .multilineTextAlignment(.leading)
+                    .minimumScaleFactor(0.85)
+                    .lineLimit(5)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(NovaPalette.classroomPaper)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(NovaPalette.classroomInk.opacity(0.45), lineWidth: 2)
+                    )
                     .accessibilityAddTraits(.isHeader)
             }
         }
@@ -134,11 +152,11 @@ public struct VoiceCardView: View {
                     .frame(width: 120, height: 120)
                     .background(
                         Circle()
-                            .fill(phase == .listening ? NovaPalette.coral : NovaPalette.ink)
+                            .fill(phase == .listening ? NovaPalette.classroomSchoolRed : NovaPalette.classroomInk)
                     )
                     .overlay(
                         Circle()
-                            .strokeBorder(NovaPalette.ink, lineWidth: 3)
+                            .strokeBorder(NovaPalette.classroomInk, lineWidth: 3)
                     )
             }
             .buttonStyle(.plain)
@@ -150,7 +168,7 @@ public struct VoiceCardView: View {
 
             Text(micStatusText)
                 .font(NovaPalette.bodyFont())
-                .foregroundStyle(NovaPalette.ink.opacity(0.7))
+                .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
         }
@@ -166,7 +184,7 @@ public struct VoiceCardView: View {
             let t = context.date.timeIntervalSinceReferenceDate
             let phase = sin(t * .pi * 1.2) * 0.5 + 0.5 // 0…1
             Circle()
-                .strokeBorder(NovaPalette.coral, lineWidth: 3)
+                .strokeBorder(NovaPalette.classroomSchoolRed, lineWidth: 3)
                 .frame(width: 140 + CGFloat(phase * 16),
                        height: 140 + CGFloat(phase * 16))
                 .opacity(0.3 + phase * 0.3)
@@ -181,7 +199,7 @@ public struct VoiceCardView: View {
         VStack(spacing: Spacing.sm) {
             Text(text)
                 .font(NovaPalette.largeBodyFont())
-                .foregroundStyle(NovaPalette.ink)
+                .foregroundStyle(NovaPalette.classroomInk)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.8)
                 .padding(Spacing.md)
@@ -192,7 +210,7 @@ public struct VoiceCardView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(NovaPalette.ink, lineWidth: 2)
+                        .strokeBorder(NovaPalette.classroomInk, lineWidth: 2)
                 )
                 .accessibilityAddTraits(.isStaticText)
         }
@@ -200,9 +218,9 @@ public struct VoiceCardView: View {
 
     private func backgroundFill(for tone: BubbleTone) -> Color {
         switch tone {
-        case .neutral:     return NovaPalette.page
-        case .celebration: return NovaPalette.sun.opacity(0.35)
-        case .retry:       return NovaPalette.coral.opacity(0.18)
+        case .neutral:     return NovaPalette.classroomPaper
+        case .celebration: return NovaPalette.classroomSun.opacity(0.40)
+        case .retry:       return NovaPalette.classroomSchoolRed.opacity(0.18)
         }
     }
 

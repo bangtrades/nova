@@ -35,7 +35,7 @@ public struct FlipbookView: View {
 
     public var body: some View {
         ZStack {
-            NovaPalette.novaBackground
+            classroomLessonBackground
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -72,58 +72,61 @@ public struct FlipbookView: View {
 
                 // Card display with TabView for swiping
                 if !viewModel.cards.isEmpty {
-                    ZStack(alignment: .topTrailing) {
-                        TabView(selection: $viewModel.currentCardIndex) {
-                            ForEach(0..<viewModel.cards.count, id: \.self) { index in
-                                let card = viewModel.cards[index]
+                    classroomCardStage {
+                        ZStack(alignment: .topTrailing) {
+                            TabView(selection: $viewModel.currentCardIndex) {
+                                ForEach(0..<viewModel.cards.count, id: \.self) { index in
+                                    let card = viewModel.cards[index]
 
-                                ZStack {
-                                    if card.type == .story {
-                                        StoryCardView(card: card)
-                                    } else if card.type == .concept {
-                                        ConceptCardView(card: card)
-                                    } else if card.type == .experiment {
-                                        ExperimentCardView(card: card)
-                                    } else if card.type == .quiz {
-                                        QuizCardView(card: card)
-                                    } else if card.type == .voice {
-                                        VoiceCardView(card: card)
-                                    } else {
-                                        // Fallback for other card types
-                                        ZStack {
-                                            NovaPalette.novaBlue.opacity(0.2)
-                                            VStack {
-                                                Image(systemName: "questionmark.circle")
-                                                    .font(.largeTitle)
-                                                    .foregroundStyle(NovaPalette.novaBlue)
-                                                    .accessibilityHidden(true)
-                                                Text("Card Type: \(card.type.rawValue)")
-                                                    .font(NovaPalette.bodyFont())
-                                                    .foregroundStyle(.primary)
+                                    ZStack {
+                                        if card.type == .story {
+                                            StoryCardView(card: card)
+                                        } else if card.type == .concept {
+                                            ConceptCardView(card: card)
+                                        } else if card.type == .experiment {
+                                            ExperimentCardView(card: card)
+                                        } else if card.type == .quiz {
+                                            QuizCardView(card: card)
+                                        } else if card.type == .voice {
+                                            VoiceCardView(card: card)
+                                        } else {
+                                            // Fallback for other card types
+                                            ZStack {
+                                                NovaPalette.novaBlue.opacity(0.2)
+                                                VStack {
+                                                    Image(systemName: "questionmark.circle")
+                                                        .font(.largeTitle)
+                                                        .foregroundStyle(NovaPalette.novaBlue)
+                                                        .accessibilityHidden(true)
+                                                    Text("Card Type: \(card.type.rawValue)")
+                                                        .font(NovaPalette.bodyFont())
+                                                        .foregroundStyle(.primary)
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                .transition(
-                                    .asymmetric(
-                                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                                        removal: .move(edge: .leading).combined(with: .opacity)
+                                    .transition(
+                                        .asymmetric(
+                                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)
+                                        )
                                     )
-                                )
-                                .tag(index)
-                                .onAppear {
-                                    viewModel.markCurrentCardComplete()
+                                    .tag(index)
+                                    .onAppear {
+                                        viewModel.markCurrentCardComplete()
+                                    }
                                 }
                             }
-                        }
-                        .tabViewStyle(.page(indexDisplayMode: .never))
-                        .indexViewStyle(.page(backgroundDisplayMode: .never))
-                        .padding(20)
-
-                        // Dashy Hint Button - top right
-                        DashyHintButton(showHintSheet: $viewModel.showDashyHint)
+                            .tabViewStyle(.page(indexDisplayMode: .never))
+                            .indexViewStyle(.page(backgroundDisplayMode: .never))
                             .padding(20)
+
+                            // Dashy Hint Button - top right
+                            DashyHintButton(showHintSheet: $viewModel.showDashyHint)
+                                .padding(20)
+                        }
                     }
+                    .padding(.horizontal, Spacing.lg)
                 } else {
                     EmptyStateView(
                         title: "No cards",
@@ -302,6 +305,148 @@ public struct FlipbookView: View {
             .replacingOccurrences(of: " - Wikipedia", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return "\(cleanTitle) Champion"
+    }
+
+    private var classroomLessonBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    NovaPalette.classroomSky.opacity(0.26),
+                    NovaPalette.classroomPaper,
+                    NovaPalette.classroomPaper,
+                    NovaPalette.classroomWood.opacity(0.28)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            VStack(spacing: 0) {
+                HStack(alignment: .top) {
+                    classroomWindow
+                        .frame(width: 154, height: 104)
+                        .padding(.top, 36)
+                        .padding(.leading, 44)
+
+                    Spacer()
+
+                    Circle()
+                        .fill(NovaPalette.classroomSun.opacity(0.40))
+                        .frame(width: 72, height: 72)
+                        .overlay {
+                            Circle()
+                                .stroke(NovaPalette.classroomInk.opacity(0.14), lineWidth: 2)
+                        }
+                        .padding(.top, 44)
+                        .padding(.trailing, 58)
+                        .accessibilityHidden(true)
+                }
+
+                Spacer()
+
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(NovaPalette.classroomWood.opacity(0.38))
+                        .frame(height: 16)
+
+                    LinearGradient(
+                        colors: [
+                            NovaPalette.classroomWood.opacity(0.48),
+                            NovaPalette.classroomWood.opacity(0.24)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 136)
+                }
+                .accessibilityHidden(true)
+            }
+
+            Rectangle()
+                .fill(NovaPalette.classroomSchoolRed.opacity(0.12))
+                .frame(height: 6)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var classroomWindow: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .fill(NovaPalette.classroomSky.opacity(0.36))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.22), lineWidth: 3)
+            }
+            .overlay {
+                HStack(spacing: 0) {
+                    Rectangle()
+                        .fill(NovaPalette.classroomInk.opacity(0.18))
+                        .frame(width: 3)
+                }
+            }
+            .overlay {
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(NovaPalette.classroomInk.opacity(0.18))
+                        .frame(height: 3)
+                }
+            }
+            .accessibilityHidden(true)
+    }
+
+    private func classroomCardStage<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(NovaPalette.classroomPaper.opacity(0.88))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.28), lineWidth: 3)
+                }
+                .shadow(color: NovaPalette.classroomInk.opacity(0.12), radius: 10, x: 0, y: 6)
+
+            VStack(spacing: 0) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(NovaPalette.classroomChalkboard.opacity(0.86))
+                    .frame(height: 14)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, Spacing.sm)
+
+                Spacer()
+
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(NovaPalette.classroomWood.opacity(0.82))
+                    .frame(height: 18)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.bottom, Spacing.sm)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
+            content()
+        }
+        .overlay(alignment: .topLeading) {
+            Circle()
+                .fill(NovaPalette.classroomSchoolRed.opacity(0.82))
+                .frame(width: 18, height: 18)
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomInk.opacity(0.36), lineWidth: 1.5)
+                }
+                .padding(Spacing.md)
+                .accessibilityHidden(true)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Circle()
+                .fill(NovaPalette.classroomSun.opacity(0.72))
+                .frame(width: 22, height: 22)
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomInk.opacity(0.30), lineWidth: 1.5)
+                }
+                .padding(Spacing.md)
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder

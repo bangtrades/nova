@@ -156,6 +156,74 @@ public struct NovaPalette {
         dark:  .init(red: 0.17, green: 0.17, blue: 0.19)
     )
 
+    // MARK: - Classroom Palette (v2)
+    //
+    // Semantic material tokens for the Nova v2 classroom surface. These sit
+    // alongside the existing 3+1 comic palette so current screens keep their
+    // behavior while the classroom shell can speak in object/material terms.
+    // Light mode is the design target for v2; dark values stay legible without
+    // trying to redesign the classroom for dark mode in this first slice.
+
+    /// Chalkboard green for board interiors and active lesson surfaces.
+    public static let classroomChalkboard = Color(
+        light: .init(red: 0.137, green: 0.361, blue: 0.286), // #235C49
+        dark:  .init(red: 0.180, green: 0.435, blue: 0.345)  // #2E6F58
+    )
+
+    /// Warm chalk off-white for board text, strokes, diagrams, and dust marks.
+    public static let classroomChalkDust = Color(
+        light: .init(red: 0.957, green: 0.941, blue: 0.875), // #F4F0DF
+        dark:  .init(red: 0.973, green: 0.949, blue: 0.875)  // #F8F2DF
+    )
+
+    /// Warm wood for shelves, tabletop edges, board frames, and cubbies.
+    public static let classroomWood = Color(
+        light: .init(red: 0.722, green: 0.451, blue: 0.200), // #B87333
+        dark:  .init(red: 0.816, green: 0.541, blue: 0.271)  // #D08A45
+    )
+
+    /// Clear classroom sky blue for windows and non-card atmosphere accents.
+    public static let classroomSky = Color(
+        light: .init(red: 0.306, green: 0.655, blue: 0.910), // #4EA7E8
+        dark:  .init(red: 0.404, green: 0.722, blue: 0.941)  // #67B8F0
+    )
+
+    /// Schoolhouse red for new lesson glow, urgent accents, and magnets.
+    public static let classroomSchoolRed = Color(
+        light: .init(red: 0.910, green: 0.302, blue: 0.239), // #E84D3D
+        dark:  .init(red: 1.000, green: 0.416, blue: 0.365)  // #FF6A5D
+    )
+
+    /// Bright sun yellow for rewards, highlights, and Dashy warmth.
+    public static let classroomSun = Color(
+        light: .init(red: 1.000, green: 0.824, blue: 0.290), // #FFD24A
+        dark:  .init(red: 1.000, green: 0.843, blue: 0.396)  // #FFD765
+    )
+
+    /// Warm paper for worksheets, pinned notes, and cards inside the board.
+    public static let classroomPaper = Color(
+        light: .init(red: 1.000, green: 0.969, blue: 0.890), // #FFF7E3
+        dark:  .init(red: 1.000, green: 0.969, blue: 0.890)  // #FFF7E3
+    )
+
+    /// Dark navy ink for classroom outlines and readable text on light materials.
+    public static let classroomInk = Color(
+        light: .init(red: 0.090, green: 0.129, blue: 0.227), // #17213A
+        dark:  .init(red: 0.090, green: 0.129, blue: 0.227)  // #17213A
+    )
+
+    /// Leaf green for success states, correct answers, and growth accents.
+    public static let classroomLeaf = Color(
+        light: .init(red: 0.392, green: 0.725, blue: 0.416), // #64B96A
+        dark:  .init(red: 0.482, green: 0.800, blue: 0.506)  // #7BCC81
+    )
+
+    /// Dashy AI purple for magical/generated content and guide accents.
+    public static let classroomPurple = Color(
+        light: .init(red: 0.482, green: 0.357, blue: 0.910), // #7B5BE8
+        dark:  .init(red: 0.584, green: 0.482, blue: 1.000)  // #957BFF
+    )
+
     // MARK: - Typography (Dynamic Type + Rounded Design)
     //
     // All fonts scale with system Dynamic Type settings.
@@ -308,6 +376,48 @@ public struct NovaPalette {
         // to clear WCAG AA. Everything else needs dark navy.
         return index == 2 ? .white : darkNavy
     }
+
+    /// Returns the default material color for a classroom object role name.
+    ///
+    /// Accepts the role strings used in the v2 architecture docs, such as
+    /// "chalkboard", "bookshelf", "projectTable", and "dashyDesk".
+    /// Unknown generated objects default to `classroomPurple` so AI-created
+    /// lesson objects keep a distinct accent until a richer registry exists.
+    public static func classroomObjectColor(for roleName: String) -> Color {
+        switch roleName.normalizedClassroomTokenKey {
+        case "chalkboard":
+            return classroomChalkboard
+        case "bookshelf", "trophyshelf", "backpack", "cubby":
+            return classroomWood
+        case "projecttable", "readingrug", "bulletinboard":
+            return classroomPaper
+        case "dashydesk", "generatedlesson":
+            return classroomPurple
+        case "newlesson", "urgent", "magnet":
+            return classroomSchoolRed
+        case "reward", "sticker", "highlight":
+            return classroomSun
+        case "success", "correct":
+            return classroomLeaf
+        case "window", "sky":
+            return classroomSky
+        default:
+            return classroomPurple
+        }
+    }
+
+    /// Returns a legible classroom text color for a named material.
+    ///
+    /// This intentionally stays string-based and small so the first classroom
+    /// shell can use it without introducing a new material enum or model layer.
+    public static func classroomTextColor(on material: String) -> Color {
+        switch material.normalizedClassroomTokenKey {
+        case "chalkboard", "wood", "schoolred", "purple", "ink":
+            return classroomChalkDust
+        default:
+            return classroomInk
+        }
+    }
 }
 
 // MARK: - Color+Adaptive Extension
@@ -320,5 +430,11 @@ extension Color {
                 ? UIColor(dark)
                 : UIColor(light)
         })
+    }
+}
+
+private extension String {
+    var normalizedClassroomTokenKey: String {
+        lowercased().filter { $0.isLetter || $0.isNumber }
     }
 }
