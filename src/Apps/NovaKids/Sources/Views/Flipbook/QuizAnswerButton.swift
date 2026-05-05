@@ -82,7 +82,7 @@ struct QuizAnswerButton: View {
                 statusGlyph
             }
         }
-        .buttonStyle(AnswerTileStyle(state: state))
+        .buttonStyle(AnswerTileStyle(state: state, reduceMotion: reduceMotion))
         .disabled(evaluation != nil)
         .accessibilityLabel(option.text)
         .accessibilityValue(accessibilityValue)
@@ -99,17 +99,17 @@ struct QuizAnswerButton: View {
         case .correct:
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3)
-                .foregroundStyle(.white)
+                .foregroundStyle(NovaPalette.classroomPaper)
                 .accessibilityHidden(true)
         case .incorrect:
             Image(systemName: "xmark.circle.fill")
                 .font(.title3)
-                .foregroundStyle(.white)
+                .foregroundStyle(NovaPalette.classroomPaper)
                 .accessibilityHidden(true)
         case .revealedAsCorrect:
             Image(systemName: "checkmark.circle")
                 .font(.title3)
-                .foregroundStyle(NovaPalette.Category.green)
+                .foregroundStyle(NovaPalette.classroomLeaf)
                 .accessibilityHidden(true)
         case .idle, .committed, .dimmed:
             EmptyView()
@@ -178,6 +178,7 @@ private enum AnswerState {
 /// family — not a separate component.
 private struct AnswerTileStyle: ButtonStyle {
     let state: AnswerState
+    let reduceMotion: Bool
 
     private let cornerRadius: CGFloat = 16
     private let pressedScale: CGFloat = 0.96
@@ -194,33 +195,69 @@ private struct AnswerTileStyle: ButtonStyle {
             )
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(NovaPalette.ink, lineWidth: 2)
+                    .stroke(strokeColor, lineWidth: strokeWidth)
             }
+            .shadow(
+                color: NovaPalette.classroomInk.opacity(shadowOpacity),
+                radius: 4,
+                x: 0,
+                y: 2
+            )
             .opacity(state == .dimmed ? 0.5 : 1.0)
-            .scaleEffect(configuration.isPressed ? pressedScale : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.75), value: configuration.isPressed)
+            .scaleEffect(reduceMotion ? 1 : (configuration.isPressed ? pressedScale : 1))
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.75),
+                value: configuration.isPressed
+            )
     }
 
-    /// Background fill per state. Uses the category palette for correct /
-    /// incorrect moments so the signal is unambiguous.
+    /// Background fill per classroom-tile metaphor. Idle answers read as
+    /// pinned paper/sticky-note tiles on the chalkboard; committed reads as
+    /// a magnet picked off the board; correct/incorrect/revealed use the
+    /// classroom success/error/leaf hues so the signal is unambiguous.
     private var fill: Color {
         switch state {
-        case .idle, .dimmed: return NovaPalette.page
-        case .committed: return NovaPalette.coral
-        case .correct: return NovaPalette.Category.green
-        case .incorrect: return NovaPalette.Category.orange
-        case .revealedAsCorrect: return NovaPalette.Category.green.opacity(0.15)
+        case .idle, .dimmed: return NovaPalette.classroomPaper
+        case .committed: return NovaPalette.classroomSky.opacity(0.55)
+        case .correct: return NovaPalette.classroomLeaf
+        case .incorrect: return NovaPalette.classroomSchoolRed
+        case .revealedAsCorrect: return NovaPalette.classroomLeaf.opacity(0.18)
         }
     }
 
-    /// Foreground text color per state. White on committed / correct /
-    /// incorrect (so the 2pt ink stroke isn't competing with text tone),
-    /// ink on idle / dimmed / revealed (so the text reads as "part of the
-    /// page" rather than a committed action).
+    /// Tile outline. Solid ink on idle/committed/correct/incorrect to keep
+    /// the magnetic-tile edge crisp; the soft revealed-correct tile uses a
+    /// leaf-tinted stroke so it whispers "this was the right one" without
+    /// competing with the user's selected wrong tile.
+    private var strokeColor: Color {
+        switch state {
+        case .revealedAsCorrect: return NovaPalette.classroomLeaf.opacity(0.85)
+        default: return NovaPalette.classroomInk
+        }
+    }
+
+    private var strokeWidth: CGFloat {
+        state == .committed ? 3 : 2
+    }
+
+    /// Subtle drop-shadow to make tiles read as raised paper/magnets sitting
+    /// on the chalkboard surface. Committed tiles lift a touch more.
+    private var shadowOpacity: Double {
+        switch state {
+        case .committed: return 0.28
+        case .dimmed, .revealedAsCorrect: return 0.10
+        default: return 0.18
+        }
+    }
+
+    /// Foreground text color per state. Paper on correct/incorrect tiles so
+    /// the signal contrasts against the saturated fill; classroom ink on
+    /// idle/committed/dimmed/revealed so answer text stays readable on the
+    /// lighter tile fills.
     private var foreground: Color {
         switch state {
-        case .idle, .dimmed, .revealedAsCorrect: return NovaPalette.ink
-        case .committed, .correct, .incorrect: return NovaPalette.page
+        case .idle, .dimmed, .revealedAsCorrect, .committed: return NovaPalette.classroomInk
+        case .correct, .incorrect: return NovaPalette.classroomPaper
         }
     }
 }

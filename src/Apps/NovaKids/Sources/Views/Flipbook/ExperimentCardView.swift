@@ -51,142 +51,23 @@ public struct ExperimentCardView: View {
     }
 
     public var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    colorScheme == .dark
-                        ? NovaPalette.novaGreen.opacity(0.05)
-                        : NovaPalette.novaGreen.opacity(0.1),
-                    colorScheme == .dark
-                        ? NovaPalette.novaBlue.opacity(0.05)
-                        : NovaPalette.novaBlue.opacity(0.1),
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+        ChalkboardLessonCardSurface(cardKind: .experiment, title: cardTitle) {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                instructionsBlock
 
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 8) {
-                    if let title = card.content.title {
-                        Text(title)
-                            .font(NovaPalette.headingFont())
-                            .foregroundStyle(.primary)
-                    }
+                dropTargetsBlock
 
-                    if let instructions = card.content.instructions {
-                        Text(instructions)
-                            .font(NovaPalette.bodyFont())
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                }
-                .padding(.horizontal, 20)
-
-                Spacer()
-
-                // Drop targets at top
-                VStack(spacing: 12) {
-                    Text("Drop here:")
-                        .font(NovaPalette.smallHeadingFont())
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    HStack(spacing: 12) {
-                        ForEach(dropTargets) { target in
-                            DropTargetView(
-                                target: target,
-                                dragItems: dragItems,
-                                onDrop: handleDrop(item:onto:)
-                            )
-                        }
-                    }
-                    .frame(height: 100)
-                }
-                .padding(.horizontal, 20)
-
-                Spacer()
-
-                // Draggable items at bottom
-                VStack(spacing: 12) {
-                    Text("Drag items:")
-                        .font(NovaPalette.smallHeadingFont())
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    HStack(spacing: 12) {
-                        ForEach(dragItems) { item in
-                            if !item.isPlaced {
-                                DraggableItemView(item: item)
-                                    .offset(
-                                        x: bouncingItemId == item.id && showBounceBack ? 0 : 0,
-                                        y: 0
-                                    )
-                                    .scaleEffect(bouncingItemId == item.id && showBounceBack ? 0.9 : 1.0)
-                            }
-                        }
-
-                        Spacer()
-                    }
-                    .frame(height: 80)
-                }
-                .padding(.horizontal, 20)
-
-                Spacer(minLength: 20)
+                dragItemsBlock
             }
-            .padding(.vertical, 20)
-
-            // Completion message with confetti
-            if showConfetti {
-                VStack {
-                    Spacer()
-
-                    VStack(spacing: 16) {
-                        Image(systemName: "star.fill")
-                            .font(.largeTitle)
-                            .foregroundStyle(NovaPalette.novaYellow)
-                            .accessibilityHidden(true)
-
-                        Text(completionMessage)
-                            .font(NovaPalette.headingFont())
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.center)
-
-                        Text("Amazing work!")
-                            .font(NovaPalette.bodyFont())
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(24)
-                    .background(NovaPalette.novaCardBackground)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                    .padding(20)
-                    .scaleEffect(completionOpacity)
-                    .opacity(completionOpacity)
-
-                    Spacer()
-
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text("Next →")
-                            .font(NovaPalette.largeBodyFont())
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(NovaPalette.novaGreen)
-                            .foregroundStyle(.white)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                }
-            }
-
-            // Confetti particles
+        }
+        .padding(.horizontal, Spacing.md)
+        .overlay {
+            completionOverlay
+        }
+        .overlay {
             if showConfetti {
                 ConfettiView(isActive: $showConfetti)
+                    .allowsHitTesting(false)
             }
         }
         .onAppear {
@@ -198,6 +79,153 @@ public struct ExperimentCardView: View {
             dismissTask?.cancel()
         }
         .modifier(ShakeModifier(shakeAnimation: shakeAnimation))
+    }
+
+    // MARK: - Subviews
+
+    private var cardTitle: String {
+        if let title = card.content.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+           title.isEmpty == false {
+            return title
+        }
+
+        return "Experiment"
+    }
+
+    /// Instructions rendered as a yellow task-card sticky note above the
+    /// tabletop activity. Falls back to nothing when the card has no
+    /// instructions copy — the surface header pill still labels the activity.
+    @ViewBuilder
+    private var instructionsBlock: some View {
+        if let instructions = card.content.instructions {
+            HStack(alignment: .top, spacing: Spacing.sm) {
+                Image(systemName: "list.bullet.clipboard")
+                    .font(.title3)
+                    .foregroundStyle(NovaPalette.classroomLeaf)
+                    .accessibilityHidden(true)
+
+                Text(instructions)
+                    .font(NovaPalette.bodyFont())
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(Spacing.md)
+            .background(
+                NovaPalette.classroomSun.opacity(0.32),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(NovaPalette.classroomSun.opacity(0.55), lineWidth: 2)
+            )
+        }
+    }
+
+    /// Drop targets sit on a paper "tabletop tray" so the kid sees a clear
+    /// surface to drop manipulatives onto.
+    private var dropTargetsBlock: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Drop here:")
+                .font(NovaPalette.smallHeadingFont())
+                .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+
+            HStack(spacing: Spacing.sm) {
+                ForEach(dropTargets) { target in
+                    DropTargetView(
+                        target: target,
+                        dragItems: dragItems,
+                        onDrop: handleDrop(item:onto:)
+                    )
+                }
+            }
+            .frame(height: 100)
+        }
+        .padding(Spacing.md)
+        .background(
+            NovaPalette.classroomPaper.opacity(0.5),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(NovaPalette.classroomInk.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    /// Draggable manipulatives row at the bottom of the tabletop. Items hide
+    /// once placed, and bounce back on a wrong drop.
+    private var dragItemsBlock: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Drag items:")
+                .font(NovaPalette.smallHeadingFont())
+                .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+
+            HStack(spacing: Spacing.sm) {
+                ForEach(dragItems) { item in
+                    if item.isPlaced == false {
+                        DraggableItemView(item: item)
+                            .scaleEffect(
+                                bouncingItemId == item.id && showBounceBack ? 0.9 : 1.0
+                            )
+                    }
+                }
+
+                Spacer()
+            }
+            .frame(height: 80)
+        }
+    }
+
+    /// Floating "All set!" celebration card + Next button shown on completion.
+    /// Lives in an overlay so it floats above the tabletop without re-laying
+    /// out the placed manipulatives.
+    @ViewBuilder
+    private var completionOverlay: some View {
+        if showConfetti {
+            VStack(spacing: Spacing.lg) {
+                Spacer()
+
+                VStack(spacing: Spacing.md) {
+                    Image(systemName: "star.fill")
+                        .font(.largeTitle)
+                        .foregroundStyle(NovaPalette.classroomSun)
+                        .accessibilityHidden(true)
+
+                    Text(completionMessage)
+                        .font(NovaPalette.headingFont())
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .multilineTextAlignment(.center)
+
+                    Text("Amazing work!")
+                        .font(NovaPalette.bodyFont())
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+                }
+                .padding(Spacing.lg)
+                .background(
+                    NovaPalette.classroomPaper,
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 8, x: 0, y: 4)
+                .scaleEffect(completionOpacity)
+                .opacity(completionOpacity)
+
+                Spacer()
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Next →")
+                        .font(NovaPalette.largeBodyFont())
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.md)
+                        .background(NovaPalette.classroomLeaf)
+                        .foregroundStyle(.white)
+                        .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.lg)
+        }
     }
 
     private func setupCardData() {
@@ -258,7 +286,7 @@ public struct ExperimentCardView: View {
             // S11-16: shake-animation driver is skipped entirely under reduce-motion —
             // the ShakeModifier's Timer publisher would otherwise jitter the tile
             // with random ±10pt offsets even without an explicit withAnimation call.
-            shakeAnimation = !reduceMotion
+            shakeAnimation = reduceMotion == false
 
             // S11-16: wrong-drop bounce-back is ambient motion — the wrong() haptic
             // is the primary try-again cue. Skipping the scale animation under
@@ -270,7 +298,7 @@ public struct ExperimentCardView: View {
 
             bounceBackTask = Task {
                 try? await Task.sleep(nanoseconds: 300_000_000)
-                guard !Task.isCancelled else { return }
+                guard Task.isCancelled == false else { return }
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                     showBounceBack = false
                 }
@@ -287,7 +315,7 @@ public struct ExperimentCardView: View {
             // Shake animation
             shakeTask = Task {
                 try? await Task.sleep(nanoseconds: 500_000_000)
-                guard !Task.isCancelled else { return }
+                guard Task.isCancelled == false else { return }
                 shakeAnimation = false
             }
         }
@@ -313,7 +341,7 @@ public struct ExperimentCardView: View {
         // Auto-dismiss after 2 seconds
         dismissTask = Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
-            guard !Task.isCancelled else { return }
+            guard Task.isCancelled == false else { return }
             // S11-16: auto-dismiss fade is ambient cleanup, not celebration —
             // gated so reduce-motion users get an instant hide.
             withAnimation(reduceMotion ? nil : .default) {
