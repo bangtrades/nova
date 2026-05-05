@@ -61,7 +61,8 @@ public struct HomeView: View {
                     currentLesson: viewModel.currentLesson,
                     learningPaths: viewModel.learningPaths,
                     lessons: viewModel.allLessons,
-                    completedLessonIds: completedLessonIds
+                    completedLessonIds: completedLessonIds,
+                    trophyCount: trophyCount
                 ),
                 onSelect: handleClassroomDestination(_:)
             )
@@ -216,6 +217,10 @@ public struct HomeView: View {
                 }
                 .map(\.id)
         )
+    }
+
+    private var trophyCount: Int {
+        completionStore.trophyCount(for: appState.currentChild?.id)
     }
 
     @ViewBuilder

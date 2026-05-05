@@ -36,7 +36,9 @@ public struct FlipbookHeader: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Top row — back button / lesson title / difficulty stars
+            // Top row — back chalk-paper label on the left, difficulty
+            // sticker-stars on the right. Title sits on its own row below
+            // so the placard reads as a single dominant lesson label.
             HStack(spacing: Spacing.sm) {
                 Button(action: onBack) {
                     HStack(spacing: 6) {
@@ -46,35 +48,32 @@ public struct FlipbookHeader: View {
                         Text("Back")
                             .font(NovaPalette.smallHeadingFont())
                     }
-                    .foregroundStyle(NovaPalette.ink)
+                    .foregroundStyle(NovaPalette.classroomInk)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
+                    .background(
+                        NovaPalette.classroomPaper,
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(NovaPalette.ink, lineWidth: 2)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(NovaPalette.classroomInk.opacity(0.75), lineWidth: 2)
                     )
                 }
                 .accessibilityLabel("Back to lessons")
 
                 Spacer()
 
-                Text(lesson.title)
-                    .font(NovaPalette.smallHeadingFont())
-                    .foregroundStyle(.primary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     ForEach(0..<3, id: \.self) { index in
                         Image(
                             systemName: index < lesson.difficulty ? "star.fill" : "star"
                         )
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(
                             index < lesson.difficulty
-                                ? NovaPalette.sun
-                                : NovaPalette.ink.opacity(0.3)
+                                ? NovaPalette.classroomSun
+                                : NovaPalette.classroomInk.opacity(0.25)
                         )
                         .accessibilityHidden(true)
                     }
@@ -82,31 +81,45 @@ public struct FlipbookHeader: View {
                 .accessibilityHidden(true)
             }
 
-            // Card-type badge — Bangers label + category color bar.
-            //
-            // The bar is the comic-book "strip divider" under the label and
-            // borrows the per-type rainbow from `NovaPalette.Category.*`.
-            // When no card is active yet, this whole block is omitted so
-            // the header doesn't flash a default color.
-            if let cardType {
-                VStack(alignment: .leading, spacing: 4) {
+            // Lesson title — placard headline. One line with minimum scale
+            // so longer titles fit on iPad portrait without overflowing.
+            Text(lesson.title)
+                .font(NovaPalette.headingFont())
+                .foregroundStyle(NovaPalette.classroomInk)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Subject tab + description — the card type renders as a small
+            // classroom-color subject label next to the lesson description,
+            // so the kid sees "what this card teaches" at a glance.
+            HStack(alignment: .top, spacing: Spacing.sm) {
+                if let cardType {
                     Text(cardTypeLabel(cardType))
-                        .font(NovaPalette.displayFont(size: 22))
-                        .foregroundStyle(NovaPalette.ink)
-                        .tracking(1.5)
-
-                    Rectangle()
-                        .fill(categoryColor(cardType))
-                        .frame(width: 64, height: 4)
-                        .cornerRadius(2)
+                        .font(NovaPalette.captionFont().weight(.semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 10)
+                        .background(
+                            categoryColor(cardType).opacity(0.28),
+                            in: Capsule(style: .continuous)
+                        )
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(categoryColor(cardType).opacity(0.55), lineWidth: 1)
+                        )
+                        .fixedSize(horizontal: true, vertical: false)
                 }
-            }
 
-            if let description = lesson.description, !description.isEmpty {
-                Text(description)
-                    .font(NovaPalette.captionFont())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                if let description = lesson.description, description.isEmpty == false {
+                    Text(description)
+                        .font(NovaPalette.captionFont())
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
         .padding(Spacing.md)
@@ -123,7 +136,7 @@ public struct FlipbookHeader: View {
             parts.append("\(cardTypeLabel(cardType).capitalized) card")
         }
         parts.append("Difficulty \(lesson.difficulty) of 3")
-        if let description = lesson.description, !description.isEmpty {
+        if let description = lesson.description, description.isEmpty == false {
             parts.append(description)
         }
         return parts.joined(separator: ". ")

@@ -60,18 +60,19 @@ public struct FlipbookView: View {
                         .padding(.horizontal, Spacing.lg)
                 }
 
-                // S11-19: skeleton while the cards endpoint is in flight.
-                // Grid mode matches the mental shape of "a deck is on the
-                // way" better than a spinner does.
+                // Classroom loading state — reads as "the teacher is
+                // setting up today's lesson on the chalkboard" so the
+                // prep moment stays in-world rather than feeling like a
+                // generic spinner / skeleton grid.
                 if viewModel.isLoading && viewModel.cards.isEmpty {
                     Spacer()
-                    LoadingSkeletonView(itemCount: 3, isGrid: false)
+                    classroomLessonLoading
                         .padding(Spacing.lg)
                     Spacer()
                 }
 
                 // Card display with TabView for swiping
-                if !viewModel.cards.isEmpty {
+                if viewModel.cards.isEmpty == false {
                     classroomCardStage {
                         ZStack(alignment: .topTrailing) {
                             TabView(selection: $viewModel.currentCardIndex) {
@@ -127,12 +128,9 @@ public struct FlipbookView: View {
                         }
                     }
                     .padding(.horizontal, Spacing.lg)
-                } else {
-                    EmptyStateView(
-                        title: "No cards",
-                        subtitle: "This lesson has no content yet",
-                        icon: "exclamationmark.circle"
-                    )
+                } else if viewModel.isLoading == false {
+                    classroomEmptyState
+                        .padding(.horizontal, Spacing.lg)
                 }
 
                 Spacer()
@@ -140,7 +138,7 @@ public struct FlipbookView: View {
                 // Progress dots — S12-01 caps the dot row at 600pt so the
                 // marker spread stays readable on iPad instead of 16 dots
                 // walking from edge to edge of a 1366pt landscape.
-                if !viewModel.cards.isEmpty {
+                if viewModel.cards.isEmpty == false {
                     CardProgressDots(
                         currentIndex: viewModel.currentCardIndex,
                         totalCards: viewModel.cards.count
@@ -160,7 +158,7 @@ public struct FlipbookView: View {
                 // buttons don't land on opposite ends of an iPad landscape
                 // viewport. Keeps them reading as a paired control rather
                 // than two orphaned buttons.
-                if !viewModel.cards.isEmpty {
+                if viewModel.cards.isEmpty == false {
                     HStack(spacing: Spacing.md) {
                         let isAtStart = viewModel.currentCardIndex == 0
                         let isAtEnd = viewModel.isLastCard
@@ -449,14 +447,18 @@ public struct FlipbookView: View {
         }
     }
 
+    /// Classroom-tokened error banner. Same shape and "Try Again"
+    /// affordance as before, but recolored to read as a "note pinned to
+    /// the chalkboard" rather than the generic comic-page error pill.
     @ViewBuilder
     private func errorBanner(message: String) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(NovaPalette.coral)
+                .foregroundStyle(NovaPalette.classroomSchoolRed)
+                .accessibilityHidden(true)
             Text(message)
                 .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.ink)
+                .foregroundStyle(NovaPalette.classroomInk)
                 .lineLimit(2)
             Spacer()
             Button("Try Again") {
@@ -467,14 +469,117 @@ public struct FlipbookView: View {
         .padding(Spacing.md)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaPalette.page)
+                .fill(NovaPalette.classroomPaper)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(NovaPalette.ink, lineWidth: 2)
+                .stroke(NovaPalette.classroomSchoolRed.opacity(0.7), lineWidth: 2)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Error loading cards: \(message)")
+    }
+
+    /// Loading state styled as "today's lesson is being chalked onto the
+    /// board". Three classroom-chalk lines + a yellow sticky note that
+    /// reads "Setting up the lesson…". Static — no ungated motion.
+    private var classroomLessonLoading: some View {
+        VStack(spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Capsule(style: .continuous)
+                    .fill(NovaPalette.classroomChalkDust.opacity(0.7))
+                    .frame(width: 168, height: 12)
+
+                Capsule(style: .continuous)
+                    .fill(NovaPalette.classroomChalkDust.opacity(0.45))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 10)
+
+                Capsule(style: .continuous)
+                    .fill(NovaPalette.classroomChalkDust.opacity(0.35))
+                    .frame(maxWidth: 220)
+                    .frame(height: 10)
+            }
+            .padding(Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                NovaPalette.classroomChalkboard,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.3), lineWidth: 2)
+            )
+            .accessibilityHidden(true)
+
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "pencil.tip")
+                    .font(.headline)
+                    .foregroundStyle(NovaPalette.classroomLeaf)
+                    .accessibilityHidden(true)
+
+                Text("Setting up the lesson…")
+                    .font(NovaPalette.bodyFont())
+                    .foregroundStyle(NovaPalette.classroomInk)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(
+                NovaPalette.classroomSun.opacity(0.32),
+                in: Capsule(style: .continuous)
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(NovaPalette.classroomSun.opacity(0.55), lineWidth: 1)
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Setting up the lesson")
+        }
+    }
+
+    /// Empty state styled as a blank chalkboard with a friendly note —
+    /// "the teacher hasn't put any cards on the board yet". Preserves
+    /// the meaning of the previous "No cards" message while staying
+    /// in-world.
+    private var classroomEmptyState: some View {
+        VStack(spacing: Spacing.md) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(NovaPalette.classroomChalkboard.opacity(0.92))
+
+                VStack(spacing: 6) {
+                    Capsule(style: .continuous)
+                        .fill(NovaPalette.classroomChalkDust.opacity(0.32))
+                        .frame(width: 96, height: 4)
+
+                    Capsule(style: .continuous)
+                        .fill(NovaPalette.classroomChalkDust.opacity(0.22))
+                        .frame(width: 64, height: 4)
+                }
+            }
+            .frame(maxWidth: 240)
+            .frame(height: 120)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.3), lineWidth: 2)
+            )
+            .accessibilityHidden(true)
+
+            Text("This lesson is still being prepared")
+                .font(NovaPalette.headingFont())
+                .foregroundStyle(NovaPalette.classroomInk)
+                .multilineTextAlignment(.center)
+
+            Text("Check back soon — your teacher hasn’t put any cards on the board yet.")
+                .font(NovaPalette.captionFont())
+                .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .padding(.horizontal, Spacing.lg)
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("This lesson has no cards yet. Check back soon.")
     }
 }
 

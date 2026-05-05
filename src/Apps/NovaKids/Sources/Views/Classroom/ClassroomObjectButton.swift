@@ -46,6 +46,9 @@ public struct ClassroomObjectButton: View {
                 if object.state == .highlighted {
                     highlightedBadge
                         .padding(Spacing.xs)
+                } else if object.role == .trophyShelf, let text = object.badgeText {
+                    countBadge(text: text)
+                        .padding(Spacing.xs)
                 }
             }
             .overlay(alignment: .topLeading) {
@@ -59,6 +62,35 @@ public struct ClassroomObjectButton: View {
                     disabledVeil
                 }
             }
+    }
+
+    /// Sun-tinted sticker shown on the trophy shelf when the active child has
+    /// at least one trophy. Mirrors `highlightedBadge` styling so the rail of
+    /// classroom objects shares one badge family — one star icon, paper-strap
+    /// capsule, ink stroke, soft drop-shadow.
+    private func countBadge(text: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "star.fill")
+                .font(.caption2.weight(.bold))
+                .accessibilityHidden(true)
+            Text(text)
+                .font(NovaPalette.captionFont().weight(.black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .foregroundStyle(NovaPalette.classroomInk)
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.xs)
+        .background(
+            Capsule(style: .continuous)
+                .fill(NovaPalette.classroomSun)
+        )
+        .overlay {
+            Capsule(style: .continuous)
+                .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+        }
+        .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 2, x: 0, y: 1)
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

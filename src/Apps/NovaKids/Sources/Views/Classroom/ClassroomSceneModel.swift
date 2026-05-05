@@ -49,6 +49,10 @@ public struct ClassroomObject: Identifiable, Equatable {
     /// Normalized frame in scene coordinates. Values are 0...1 and are scaled
     /// by `ClassroomSceneView` for portrait and landscape iPad layouts.
     public let frame: CGRect
+    /// Optional small text shown as a sticker/count badge on the rendered
+    /// classroom object — used today by the trophy shelf to surface a kid's
+    /// trophy count without needing to navigate to the trophy room.
+    public let badgeText: String?
 
     public init(
         id: String,
@@ -58,7 +62,8 @@ public struct ClassroomObject: Identifiable, Equatable {
         accessibilityHint: String,
         destination: ClassroomDestination,
         state: ClassroomObjectState = .available,
-        frame: CGRect
+        frame: CGRect,
+        badgeText: String? = nil
     ) {
         self.id = id
         self.role = role
@@ -68,6 +73,7 @@ public struct ClassroomObject: Identifiable, Equatable {
         self.destination = destination
         self.state = state
         self.frame = frame
+        self.badgeText = badgeText
     }
 }
 
@@ -91,11 +97,11 @@ public struct ClassroomSceneModel: Identifiable, Equatable {
 }
 
 public extension ClassroomSceneModel {
-    static func home(currentLessonId: UUID?) -> ClassroomSceneModel {
+    static func home(currentLessonId: UUID?, trophyCount: Int = 0) -> ClassroomSceneModel {
         let hasLesson = currentLessonId != nil
 
         return ClassroomSceneModel(
-            objects: baseHomeObjects(currentLessonId: currentLessonId),
+            objects: baseHomeObjects(currentLessonId: currentLessonId, trophyCount: trophyCount),
             activePrompt: hasLesson
                 ? "Tap the chalkboard to keep learning."
                 : "Your classroom is ready. Ask a grown-up to add a lesson."
@@ -106,7 +112,8 @@ public extension ClassroomSceneModel {
         currentLesson: Lesson?,
         learningPaths: [LearningPath],
         lessons: [Lesson],
-        completedLessonIds: Set<UUID> = []
+        completedLessonIds: Set<UUID> = [],
+        trophyCount: Int = 0
     ) -> ClassroomSceneModel {
         let currentLessonId = currentLesson?.id
         let hasLesson = currentLessonId != nil
@@ -116,7 +123,7 @@ public extension ClassroomSceneModel {
             completedLessonIds: completedLessonIds
         )
 
-        var objects = baseHomeObjects(currentLessonId: currentLessonId)
+        var objects = baseHomeObjects(currentLessonId: currentLessonId, trophyCount: trophyCount)
 
         if let bulletinLesson {
             objects.append(
@@ -146,8 +153,22 @@ public extension ClassroomSceneModel {
         )
     }
 
-    private static func baseHomeObjects(currentLessonId: UUID?) -> [ClassroomObject] {
+    private static func baseHomeObjects(
+        currentLessonId: UUID?,
+        trophyCount: Int = 0
+    ) -> [ClassroomObject] {
         let hasLesson = currentLessonId != nil
+        let trophyLabel: String = {
+            switch trophyCount {
+            case 0: return "Trophy shelf"
+            case 1: return "Trophy shelf, 1 trophy"
+            default: return "Trophy shelf, \(trophyCount) trophies"
+            }
+        }()
+        let trophyHint = trophyCount > 0
+            ? "Opens your trophies."
+            : "Opens your trophies. None yet — finish a lesson to earn one."
+        let trophyBadge: String? = trophyCount > 0 ? "\(trophyCount)" : nil
 
         return [
             ClassroomObject(
@@ -193,10 +214,11 @@ public extension ClassroomSceneModel {
                 id: "trophy-shelf",
                 role: .trophyShelf,
                 title: "Trophy Shelf",
-                accessibilityLabel: "Trophy shelf",
-                accessibilityHint: "Opens your trophies.",
+                accessibilityLabel: trophyLabel,
+                accessibilityHint: trophyHint,
                 destination: .trophies,
-                frame: CGRect(x: 0.67, y: 0.12, width: 0.27, height: 0.20)
+                frame: CGRect(x: 0.67, y: 0.12, width: 0.27, height: 0.20),
+                badgeText: trophyBadge
             ),
             ClassroomObject(
                 id: "backpack",

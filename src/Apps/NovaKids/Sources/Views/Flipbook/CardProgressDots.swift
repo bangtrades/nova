@@ -53,29 +53,46 @@ public struct CardProgressDots: View {
     @ViewBuilder
     private func dot(for index: Int) -> some View {
         if index == currentIndex {
-            Circle()
-                .fill(NovaPalette.coral)
-                .frame(width: currentDotSize, height: currentDotSize)
-                .scaleEffect(1.0)
-                .animation(
-                    reduceMotion
-                        ? .none
-                        : .spring(response: 0.3, dampingFraction: 0.7),
-                    value: currentIndex
-                )
-                .frame(minWidth: minTapSize, minHeight: minTapSize)
-                .contentShape(Circle())
+            // Current — highlighted sticker on the rail. School-red fill with
+            // an ink ring so the kid can spot "you are here" at a glance.
+            ZStack {
+                Circle()
+                    .fill(NovaPalette.classroomSchoolRed)
+                Circle()
+                    .strokeBorder(NovaPalette.classroomInk, lineWidth: 2)
+            }
+            .frame(width: currentDotSize, height: currentDotSize)
+            .scaleEffect(1.0)
+            .animation(
+                reduceMotion
+                    ? .none
+                    : .spring(response: 0.3, dampingFraction: 0.7),
+                value: currentIndex
+            )
+            .frame(minWidth: minTapSize, minHeight: minTapSize)
+            .contentShape(Circle())
         } else if index < currentIndex {
-            // Completed — sun fill.
-            Circle()
-                .fill(NovaPalette.sun)
-                .frame(width: smallDotSize, height: smallDotSize)
-                .frame(minWidth: minTapSize, minHeight: minTapSize)
-                .contentShape(Circle())
+            // Completed — sun sticker with a chalk check, like a teacher's
+            // checked-off page on the rail.
+            ZStack {
+                Circle()
+                    .fill(NovaPalette.classroomSun)
+                Image(systemName: "checkmark")
+                    .font(.system(size: smallDotSize * 0.7, weight: .heavy))
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .accessibilityHidden(true)
+            }
+            .frame(width: smallDotSize, height: smallDotSize)
+            .frame(minWidth: minTapSize, minHeight: minTapSize)
+            .contentShape(Circle())
         } else {
-            // Upcoming — ink outline only, no fill.
+            // Upcoming — soft dashed chalk/ink ring so it reads as "still to
+            // come" without pulling focus from the current sticker.
             Circle()
-                .stroke(NovaPalette.ink, lineWidth: 1.5)
+                .strokeBorder(
+                    NovaPalette.classroomInk.opacity(0.40),
+                    style: StrokeStyle(lineWidth: 1.5, dash: [2.5, 2.5])
+                )
                 .frame(width: smallDotSize, height: smallDotSize)
                 .frame(minWidth: minTapSize, minHeight: minTapSize)
                 .contentShape(Circle())
