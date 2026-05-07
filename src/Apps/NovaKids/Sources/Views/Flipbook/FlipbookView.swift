@@ -49,7 +49,13 @@ public struct FlipbookView: View {
                 }
                 .padding(20)
 
-                Spacer()
+                // No top Spacer here — the lesson book / loading /
+                // empty / error states should sit directly under the
+                // header so the workbook art is not pushed into a
+                // small letterbox in the vertical middle of the
+                // screen. The bottom Spacer below the shell still
+                // anchors the progress dots + Prev/Next pair to the
+                // bottom of the viewport.
 
                 // S11-19: error banner surfaces fetch failures without
                 // killing the card deck. Matches the Home / Lessons /
@@ -71,9 +77,15 @@ public struct FlipbookView: View {
                     Spacer()
                 }
 
-                // Card display with TabView for swiping
+                // Card display with TabView for swiping. The
+                // `LessonBookReaderShell` wraps the swipe deck in a
+                // workbook silhouette — wood book cover, paper pages,
+                // center crease, page corner curls, bookmark ribbon,
+                // and a desk slab at the bottom — so the lesson reader
+                // feels like an open book on the kid's desk rather
+                // than a generic card on a screen.
                 if viewModel.cards.isEmpty == false {
-                    classroomCardStage {
+                    LessonBookReaderShell {
                         ZStack(alignment: .topTrailing) {
                             TabView(selection: $viewModel.currentCardIndex) {
                                 ForEach(0..<viewModel.cards.count, id: \.self) { index in

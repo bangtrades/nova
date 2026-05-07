@@ -1,11 +1,16 @@
 import SwiftUI
 import NovaCore
 import NovaVoice
+import UIKit
 
-/// Story card view displaying narrative content with voice narration.
+/// Story card view — a picture-book page rendered inside the
+/// classroom chalkboard surface.
 ///
-/// Shows a large illustration with story text below and speaker button
-/// for TTS voice narration. Includes gentle animations on appear.
+/// The hero illustration sits on a paper "mat" with two corner-tape
+/// stickers, narrative copy is rendered on a `LessonBookPageSurface`
+/// (storybook mood), and the read-aloud button is a sun-tinted
+/// classroom sticker that matches the rest of the classroom Home
+/// shell. All animation is gated on `accessibilityReduceMotion`.
 public struct StoryCardView: View {
     /// The card to display.
     let card: Card
@@ -23,20 +28,49 @@ public struct StoryCardView: View {
     }
 
     public var body: some View {
-        ChalkboardLessonCardSurface(cardKind: .story, title: cardTitle) {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                heroImage
+        ScrollView(.vertical, showsIndicators: false) {
+            ChalkboardLessonCardSurface(cardKind: .story, title: cardTitle) {
+                ViewThatFits(in: .horizontal) {
+                    // Wide layout (iPad landscape): illustration on the
+                    // leading edge, narrative + read button alongside.
+                    // The minWidth gate keeps `ViewThatFits` from picking
+                    // this branch on iPad portrait where the text column
+                    // would squeeze.
+                    HStack(alignment: .top, spacing: Spacing.lg) {
+                        heroPlate
+                            .frame(width: 320)
+                            .frame(maxHeight: 260)
 
-                storyText
+                        VStack(alignment: .leading, spacing: Spacing.md) {
+                            storyPage
 
-                HStack {
-                    Spacer()
+                            HStack(spacing: Spacing.sm) {
+                                Spacer()
+                                speakerSticker
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(minWidth: 940, alignment: .leading)
 
-                    speakerButton
+                    // Stacked layout (iPad portrait, iPhone, narrow
+                    // splits): illustration on top, narrative below,
+                    // read button trailing-aligned at the bottom.
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
+                        heroPlate
+                            .frame(maxHeight: 260)
+
+                        storyPage
+
+                        HStack(spacing: Spacing.sm) {
+                            Spacer()
+                            speakerSticker
+                        }
+                    }
                 }
             }
+            .padding(Spacing.md)
         }
-        .padding(Spacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(cardTitle) story card")
@@ -52,60 +86,91 @@ public struct StoryCardView: View {
         return "Story"
     }
 
-    private var heroImage: some View {
-        CardHeroImage(url: card.imageURL) {
-            ZStack {
-                RoundedRectangle(cornerRadius: Spacing.md, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                NovaPalette.novaBlue.opacity(0.4),
-                                NovaPalette.novaPurple.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+    /// Hero illustration framed as a paper-mat plate pinned to the
+    /// chalkboard. Falls back to a paper placeholder with a book glyph
+    /// when no `imageURL` is available.
+    private var heroPlate: some View {
+        ZStack {
+            CardHeroImage(url: card.imageURL) {
+                ZStack {
+                    LinearGradient(
+                        colors: [
+                            NovaPalette.classroomSky.opacity(0.32),
+                            NovaPalette.classroomPaper,
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
 
-                VStack(spacing: Spacing.md) {
-                    Image(systemName: "book.circle.fill")
-                        .font(.largeTitle)
-                        .foregroundStyle(.white)
-                        .accessibilityHidden(true)
+                    VStack(spacing: Spacing.sm) {
+                        Image(systemName: "book.closed.fill")
+                            .font(.system(size: 44, weight: .semibold))
+                            .foregroundStyle(NovaPalette.classroomInk)
+                            .accessibilityHidden(true)
 
-                    Text("Story Card")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
+                        Text("Storybook")
+                            .font(NovaPalette.captionFont().weight(.bold))
+                            .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
+                    }
                 }
             }
+            .padding(.horizontal, 68)
+            .padding(.vertical, 52)
+
+            if UIImage(named: "lesson_storybook_frame_45_landscape") != nil {
+                Image("lesson_storybook_frame_45_landscape")
+                    .resizable()
+                    .scaledToFit()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            } else {
+                fallbackHeroMat
+            }
         }
-        .frame(minHeight: 220, idealHeight: 300, maxHeight: 360)
-        .clipShape(RoundedRectangle(cornerRadius: Spacing.md, style: .continuous))
-        .scaleEffect(0.98)
-        .opacity(0.96)
-        .onAppear {
-            withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.6)) { }
-        }
+        .aspectRatio(1448.0 / 1086.0, contentMode: .fit)
+        .accessibilityHidden(card.imageURL == nil)
     }
 
+    private var fallbackHeroMat: some View {
+        RoundedRectangle(cornerRadius: Spacing.md + 4, style: .continuous)
+            .fill(NovaPalette.classroomPaper.opacity(0.92))
+            .overlay {
+                RoundedRectangle(cornerRadius: Spacing.md + 4, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.55), lineWidth: 2)
+            }
+            .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 6, x: 0, y: 3)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    /// Narrative text rendered on a storybook paper page so the copy
+    /// reads as book text rather than dashboard text.
     @ViewBuilder
-    private var storyText: some View {
+    private var storyPage: some View {
         if let narrative = card.content.narrativeText {
-            Text(narrative)
-                .font(.body)
-                .foregroundStyle(NovaPalette.classroomInk)
-                .lineLimit(5)
-                .fixedSize(horizontal: false, vertical: true)
+            LessonBookPageSurface(mood: .storybook) {
+                Text(narrative)
+                    .font(NovaPalette.largeBodyFont())
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .lineSpacing(4)
+                    .lineLimit(6)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+            }
         }
     }
 
-    private var speakerButton: some View {
+    /// Read-aloud control rendered as a sun-tinted classroom sticker —
+    /// matches the sticker family used by the classroom-home tap
+    /// stickers and trophy count badge. Pulses on the sun ring while
+    /// speaking, fully gated on Reduce Motion.
+    private var speakerSticker: some View {
         Button(action: speakStory) {
             ZStack {
                 if isSpeaking && reduceMotion == false {
                     Circle()
-                        .fill(NovaPalette.novaOrange.opacity(0.3))
-                        .scaleEffect(pulseAnimation ? 1.3 : 1.0)
+                        .fill(NovaPalette.classroomSun.opacity(0.45))
+                        .scaleEffect(pulseAnimation ? 1.25 : 1.0)
                         .animation(
                             Animation.easeInOut(duration: 0.8)
                                 .repeatForever(autoreverses: true),
@@ -113,20 +178,51 @@ public struct StoryCardView: View {
                         )
                 }
 
-                Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.1.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .accessibilityHidden(true)
+                HStack(spacing: 6) {
+                    Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.1.fill")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .accessibilityHidden(true)
+
+                    Text("Read")
+                        .font(NovaPalette.captionFont().weight(.black))
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+                .background(readAloudBackground)
             }
-            .frame(width: 48, height: 48)
-            .background(NovaPalette.novaOrange)
-            .clipShape(Circle())
+            .frame(minWidth: 88, minHeight: 44)
         }
+        .buttonStyle(.plain)
         .disabled(isSpeaking)
         .accessibilityLabel("Read aloud")
         .accessibilityValue(isSpeaking ? "Currently speaking" : "Not speaking")
         .onAppear {
             pulseAnimation = true
+        }
+    }
+
+    @ViewBuilder
+    private var readAloudBackground: some View {
+        if UIImage(named: "lesson_read_aloud_45") != nil {
+            Image("lesson_read_aloud_45")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 116, height: 50)
+                .clipped()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            Capsule(style: .continuous)
+                .fill(NovaPalette.classroomSun)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                }
+                .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 2, x: 0, y: 1)
         }
     }
 

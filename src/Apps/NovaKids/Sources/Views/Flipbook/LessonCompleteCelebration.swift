@@ -66,16 +66,10 @@ public struct LessonCompleteCelebration: View {
 
     public var body: some View {
         ZStack {
-            // Dimmed gradient backdrop
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    NovaPalette.ink.opacity(0.95),
-                    NovaPalette.novaPurple.opacity(0.85)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // Chalkboard backdrop — anchors the moment in the classroom
+            // metaphor instead of the legacy purple-ink gradient.
+            chalkboardBackdrop
+                .ignoresSafeArea()
 
             // Confetti only fires for first-time completions — replays
             // get the softer welcome-back beat without particle spam.
@@ -85,82 +79,76 @@ public struct LessonCompleteCelebration: View {
                     .allowsHitTesting(false)
             }
 
-            VStack(spacing: 24) {
-                // Headline — slides in from above
+            VStack(spacing: Spacing.lg) {
+                // Headline — slides in from above. Sun-yellow chalk-marker
+                // text on the chalkboard with a soft ink shadow for legibility.
                 Text(isFirstTime ? "You did it!" : "Welcome back!")
                     .font(NovaPalette.displayFont(size: 44, relativeTo: .largeTitle))
-                    .foregroundStyle(NovaPalette.sun)
-                    .shadow(color: NovaPalette.ink.opacity(0.3), radius: 4, y: 2)
+                    .foregroundStyle(NovaPalette.classroomSun)
+                    .shadow(color: NovaPalette.classroomInk.opacity(0.45), radius: 4, y: 2)
                     .opacity(showHeadline ? 1 : 0)
                     .offset(y: showHeadline ? 0 : -30)
                     .accessibilityAddTraits(.isHeader)
 
-                // Trophy frame: pulsing golden ring + lesson hero image
-                ZStack {
-                    // S11-07: BadgeUnlockBurst-style ring pulse
-                    if !reduceMotion {
-                        Circle()
-                            .stroke(NovaPalette.sun.opacity(0.4), lineWidth: 6)
-                            .scaleEffect(showRing ? 1.4 : 0.6)
-                            .opacity(showRing ? 0 : 0.8)
-                            .animation(
-                                .easeOut(duration: 1.4).repeatForever(autoreverses: false),
-                                value: showRing
-                            )
-                            .frame(width: 220, height: 220)
+                // Trophy + name sit together on a paper "achievement
+                // certificate" card so the moment reads as a sticker /
+                // trophy-shelf preview instead of a free-floating modal.
+                VStack(spacing: Spacing.md) {
+                    trophyFrame
+
+                    VStack(spacing: 6) {
+                        Text("You earned")
+                            .font(NovaPalette.bodyFont())
+                            .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+
+                        Text(trophyName)
+                            .font(NovaPalette.displayFont(size: 28, relativeTo: .title))
+                            .foregroundStyle(NovaPalette.classroomInk)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, Spacing.lg)
                     }
-
-                    // Solid gold ring frame
-                    Circle()
-                        .stroke(NovaPalette.sun, lineWidth: 8)
-                        .frame(width: 220, height: 220)
-                        .shadow(color: NovaPalette.sun.opacity(0.6), radius: 16)
-
-                    // Trophy art — lesson's hero image, or gradient fallback
-                    Group {
-                        if let url = heroImageURL {
-                            AsyncImage(url: url) { phase in
-                                switch phase {
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                case .empty, .failure:
-                                    trophyPlaceholder
-                                @unknown default:
-                                    trophyPlaceholder
-                                }
-                            }
-                        } else {
-                            trophyPlaceholder
-                        }
-                    }
-                    .frame(width: 200, height: 200)
-                    .clipShape(Circle())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("You earned the \(trophyName) trophy")
                 }
-                .scaleEffect(showTrophy ? 1.0 : 0.3)
-                .opacity(showTrophy ? 1 : 0)
-
-                // Trophy name
-                VStack(spacing: 6) {
-                    Text("You earned")
-                        .font(NovaPalette.bodyFont())
-                        .foregroundStyle(.white.opacity(0.85))
-
-                    Text(trophyName)
-                        .font(NovaPalette.displayFont(size: 28, relativeTo: .title))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.lg)
+                .frame(maxWidth: 480)
+                .background(
+                    NovaPalette.classroomPaper,
+                    in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.22), lineWidth: 2)
+                )
+                .overlay(alignment: .topTrailing) {
+                    // Schoolhouse-red star "earned" sticker — used
+                    // sparingly per the classroom palette guidance, only
+                    // here as a tiny corner accent.
+                    Image(systemName: "star.fill")
+                        .font(.title2)
+                        .foregroundStyle(NovaPalette.classroomSchoolRed)
+                        .padding(10)
+                        .background(
+                            NovaPalette.classroomPaper,
+                            in: Circle()
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(NovaPalette.classroomInk.opacity(0.28), lineWidth: 1.5)
+                        )
+                        .offset(x: 14, y: -14)
+                        .accessibilityHidden(true)
                 }
+                .shadow(color: NovaPalette.classroomInk.opacity(0.28), radius: 18, y: 10)
                 .opacity(showName ? 1 : 0)
                 .offset(y: showName ? 0 : 20)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("You earned the \(trophyName) trophy")
 
-                Spacer()
+                Spacer(minLength: Spacing.lg)
 
-                // Continue button
+                // Continue button — sunny yellow sticker capsule with
+                // ink text. Preserves the existing primary CTA shape so
+                // the button is still the obvious dismiss target.
                 Button(action: onContinue) {
                     HStack(spacing: 10) {
                         Text("Continue")
@@ -169,13 +157,18 @@ public struct LessonCompleteCelebration: View {
                             .font(.title2)
                             .accessibilityHidden(true)
                     }
-                    .foregroundStyle(NovaPalette.ink)
+                    .foregroundStyle(NovaPalette.classroomInk)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 16)
                     .background(
-                        Capsule().fill(NovaPalette.sun)
+                        Capsule(style: .continuous)
+                            .fill(NovaPalette.classroomSun)
                     )
-                    .shadow(color: NovaPalette.sun.opacity(0.6), radius: 12, y: 4)
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(NovaPalette.classroomInk.opacity(0.4), lineWidth: 2)
+                    )
+                    .shadow(color: NovaPalette.classroomInk.opacity(0.35), radius: 12, y: 4)
                 }
                 .opacity(showButton ? 1 : 0)
                 .offset(y: showButton ? 0 : 40)
@@ -183,6 +176,7 @@ public struct LessonCompleteCelebration: View {
                 .accessibilityHint("Dismisses the trophy celebration and returns to lessons")
             }
             .padding(.top, 60)
+            .padding(.horizontal, Spacing.lg)
         }
         .onAppear {
             // Sequence the reveals — orchestrated for dopamine pacing.
@@ -223,19 +217,95 @@ public struct LessonCompleteCelebration: View {
         }
     }
 
+    /// Chalkboard backdrop — saturated classroom green anchor with a
+    /// soft chalk-dust glow centered behind the certificate card.
+    private var chalkboardBackdrop: some View {
+        ZStack {
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    NovaPalette.classroomChalkboard,
+                    NovaPalette.classroomChalkboard.opacity(0.92)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            RadialGradient(
+                gradient: Gradient(colors: [
+                    NovaPalette.classroomChalkDust.opacity(0.18),
+                    Color.clear
+                ]),
+                center: .center,
+                startRadius: 60,
+                endRadius: 360
+            )
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// Golden sticker frame around the lesson hero image. Pulsing ring
+    /// only renders when Reduce Motion is off.
+    private var trophyFrame: some View {
+        ZStack {
+            // S11-07: BadgeUnlockBurst-style ring pulse (motion-gated).
+            if reduceMotion == false {
+                Circle()
+                    .stroke(NovaPalette.classroomSun.opacity(0.4), lineWidth: 6)
+                    .scaleEffect(showRing ? 1.4 : 0.6)
+                    .opacity(showRing ? 0 : 0.8)
+                    .animation(
+                        .easeOut(duration: 1.4).repeatForever(autoreverses: false),
+                        value: showRing
+                    )
+                    .frame(width: 220, height: 220)
+            }
+
+            // Solid sun-yellow ring frame on the paper card.
+            Circle()
+                .stroke(NovaPalette.classroomSun, lineWidth: 8)
+                .frame(width: 220, height: 220)
+                .shadow(color: NovaPalette.classroomSun.opacity(0.55), radius: 16)
+
+            // Trophy art — lesson's hero image, or sticker fallback.
+            Group {
+                if let url = heroImageURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        case .empty, .failure:
+                            trophyPlaceholder
+                        @unknown default:
+                            trophyPlaceholder
+                        }
+                    }
+                } else {
+                    trophyPlaceholder
+                }
+            }
+            .frame(width: 200, height: 200)
+            .clipShape(Circle())
+        }
+        .scaleEffect(showTrophy ? 1.0 : 0.3)
+        .opacity(showTrophy ? 1 : 0)
+    }
+
     private var trophyPlaceholder: some View {
         ZStack {
             LinearGradient(
                 gradient: Gradient(colors: [
-                    NovaPalette.coral.opacity(0.7),
-                    NovaPalette.sun.opacity(0.7)
+                    NovaPalette.classroomSun,
+                    NovaPalette.classroomSun.opacity(0.75)
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             Image(systemName: "trophy.fill")
                 .font(.system(size: 80))
-                .foregroundStyle(.white)
+                .foregroundStyle(NovaPalette.classroomInk)
+                .accessibilityHidden(true)
         }
     }
 }

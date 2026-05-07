@@ -131,7 +131,16 @@ public struct ClassroomObjectButton: View {
             .multilineTextAlignment(.center)
             .lineLimit(2)
             .minimumScaleFactor(0.75)
-            .padding(.horizontal, Spacing.xs)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, 3)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(NovaPalette.classroomPaper.opacity(0.90))
+            )
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.45), lineWidth: 1)
+            }
     }
 
     private var highlightedStroke: Color {
@@ -205,21 +214,33 @@ public struct ClassroomObjectButton: View {
     }
 
     private var chalkboard: some View {
-        VStack(spacing: Spacing.xs) {
+        ZStack(alignment: .bottom) {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(NovaPalette.classroomChalkboard.opacity(0.92))
                 .overlay {
-                    VStack(spacing: Spacing.xs) {
+                    VStack(spacing: Spacing.sm) {
                         Image(systemName: "sparkles")
-                            .font(.title2)
+                            .font(.title)
                             .foregroundStyle(NovaPalette.classroomSun)
                             .accessibilityHidden(true)
-                        Text("Ready")
-                            .font(NovaPalette.displayFont(size: 20, relativeTo: .headline))
+                        Text(object.state == .highlighted ? "Ready" : "Today")
+                            .font(NovaPalette.displayFont(size: 24, relativeTo: .headline))
                             .foregroundStyle(NovaPalette.classroomChalkDust)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
+                }
+                .overlay(alignment: .bottom) {
+                    HStack(spacing: 8) {
+                        Rectangle()
+                            .fill(NovaPalette.classroomChalkDust.opacity(0.75))
+                            .frame(width: 62, height: 5)
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(NovaPalette.classroomSchoolRed.opacity(0.88))
+                            .frame(width: 32, height: 7)
+                    }
+                    .padding(.bottom, 10)
+                    .accessibilityHidden(true)
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -230,40 +251,81 @@ public struct ClassroomObjectButton: View {
                         .stroke(NovaPalette.classroomWood, lineWidth: 2)
                         .padding(3)
                 }
+
             title
+                .offset(y: 13)
         }
         .padding(Spacing.sm)
     }
 
     private var bookshelf: some View {
-        VStack(spacing: Spacing.xs) {
-            HStack(alignment: .bottom, spacing: Spacing.xs) {
-                book(NovaPalette.classroomSchoolRed, height: 58)
-                book(NovaPalette.classroomSky, height: 76)
-                book(NovaPalette.classroomSun, height: 66)
-                book(NovaPalette.classroomPurple, height: 84)
-            }
-            .padding(.horizontal, Spacing.sm)
-            .padding(.top, Spacing.md)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaPalette.classroomWood.opacity(0.30))
-            )
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.classroomWood.opacity(0.34))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 3)
+                }
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(NovaPalette.classroomWood.opacity(0.70))
+                        .frame(width: 12)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.leading, Spacing.sm)
+                }
+                .overlay(alignment: .trailing) {
+                    Rectangle()
+                        .fill(NovaPalette.classroomWood.opacity(0.70))
+                        .frame(width: 12)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.trailing, Spacing.sm)
+                }
             .overlay(alignment: .bottom) {
                 Rectangle()
                     .fill(NovaPalette.classroomWood)
-                    .frame(height: 3)
+                    .frame(height: 5)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.bottom, Spacing.sm)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(NovaPalette.classroomInk, lineWidth: 3)
+                VStack(spacing: Spacing.md) {
+                    shelfRow(heights: [44, 64, 54, 70])
+                    shelfRow(heights: [60, 48, 72])
+                    shelfRow(heights: [42, 56, 46, 68])
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.lg)
             }
+
             title
+                .offset(y: 12)
         }
         .padding(Spacing.sm)
+    }
+
+    private func shelfRow(heights: [CGFloat]) -> some View {
+        VStack(spacing: 5) {
+            HStack(alignment: .bottom, spacing: Spacing.xs) {
+                ForEach(Array(heights.enumerated()), id: \.offset) { index, height in
+                    book(bookColor(index), height: height)
+                }
+                Spacer(minLength: 0)
+            }
+            Rectangle()
+                .fill(NovaPalette.classroomInk.opacity(0.65))
+                .frame(height: 2)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func bookColor(_ index: Int) -> Color {
+        [
+            NovaPalette.classroomSchoolRed,
+            NovaPalette.classroomSky,
+            NovaPalette.classroomSun,
+            NovaPalette.classroomPurple,
+            NovaPalette.classroomLeaf,
+        ][index % 5]
     }
 
     private func book(_ color: Color, height: CGFloat) -> some View {
@@ -278,85 +340,190 @@ public struct ClassroomObjectButton: View {
     }
 
     private var projectTable: some View {
-        VStack(spacing: Spacing.xs) {
-            ZStack(alignment: .top) {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(NovaPalette.classroomWood.opacity(0.45))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(NovaPalette.classroomInk, lineWidth: 3)
-                    }
-                HStack(spacing: Spacing.sm) {
-                    Circle()
-                        .fill(NovaPalette.classroomSky)
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(NovaPalette.classroomSun)
-                    Circle()
-                        .fill(NovaPalette.classroomSchoolRed)
-                }
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(NovaPalette.classroomWood.opacity(0.42))
                 .overlay {
-                    HStack(spacing: Spacing.sm) {
-                        Circle().stroke(NovaPalette.classroomInk, lineWidth: 2)
-                        RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(NovaPalette.classroomInk, lineWidth: 2)
-                        Circle().stroke(NovaPalette.classroomInk, lineWidth: 2)
-                    }
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.75), lineWidth: 3)
                 }
-                .frame(height: 48)
-                .padding(Spacing.md)
+                .overlay(alignment: .top) {
+                    HStack(spacing: Spacing.sm) {
+                        Circle()
+                            .fill(NovaPalette.classroomSky)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(NovaPalette.classroomSun)
+                        Circle()
+                            .fill(NovaPalette.classroomSchoolRed)
+                    }
+                    .overlay {
+                        HStack(spacing: Spacing.sm) {
+                            Circle().stroke(NovaPalette.classroomInk, lineWidth: 2)
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(NovaPalette.classroomInk, lineWidth: 2)
+                            Circle().stroke(NovaPalette.classroomInk, lineWidth: 2)
+                        }
+                    }
+                    .frame(height: 36)
+                    .padding(Spacing.md)
+                    .accessibilityHidden(true)
+                }
+
+            HStack(spacing: Spacing.xl) {
+                Rectangle()
+                    .fill(NovaPalette.classroomInk.opacity(0.50))
+                    .frame(width: 6, height: 34)
+                Rectangle()
+                    .fill(NovaPalette.classroomInk.opacity(0.50))
+                    .frame(width: 6, height: 34)
             }
+            .offset(y: 18)
+            .accessibilityHidden(true)
+
             title
+                .offset(y: 12)
         }
         .padding(Spacing.sm)
     }
 
     private var dashyDesk: some View {
-        VStack(spacing: Spacing.xs) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(NovaPalette.classroomPurple.opacity(0.22))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(NovaPalette.classroomInk, lineWidth: 3)
-                    }
-                VStack(spacing: Spacing.xs) {
-                    Circle()
-                        .fill(NovaPalette.classroomSun)
-                        .overlay(Circle().stroke(NovaPalette.classroomInk, lineWidth: 2))
-                        .frame(width: 54, height: 54)
-                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .foregroundStyle(NovaPalette.classroomPurple)
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            NovaPalette.classroomWood.opacity(0.82),
+                            NovaPalette.classroomWood.opacity(0.58)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 3)
+                }
+                .overlay(alignment: .topLeading) {
+                    pencilCup
+                        .frame(width: 70, height: 70)
+                        .padding(.leading, Spacing.lg)
+                        .padding(.top, Spacing.md)
                         .accessibilityHidden(true)
                 }
-            }
+                .overlay(alignment: .topTrailing) {
+                    dashyFace
+                        .frame(width: 78, height: 78)
+                        .padding(.trailing, Spacing.xl)
+                        .padding(.top, Spacing.sm)
+                        .accessibilityHidden(true)
+                }
+                .overlay {
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.title)
+                        .foregroundStyle(NovaPalette.classroomPurple)
+                        .padding(.top, 28)
+                        .accessibilityHidden(true)
+                }
+
             title
+                .offset(y: -10)
+        }
+        .padding(.horizontal, Spacing.sm)
+        .padding(.top, Spacing.sm)
+    }
+
+    private var pencilCup: some View {
+        ZStack(alignment: .bottom) {
+            HStack(spacing: 4) {
+                Rectangle()
+                    .fill(NovaPalette.classroomSchoolRed)
+                    .frame(width: 8, height: 52)
+                    .rotationEffect(.degrees(-10))
+                Rectangle()
+                    .fill(NovaPalette.classroomSun)
+                    .frame(width: 8, height: 60)
+                Rectangle()
+                    .fill(NovaPalette.classroomSky)
+                    .frame(width: 8, height: 48)
+                    .rotationEffect(.degrees(10))
+            }
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NovaPalette.classroomPurple.opacity(0.72))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                }
+                .frame(width: 52, height: 34)
+        }
+    }
+
+    private var dashyFace: some View {
+        Circle()
+            .fill(NovaPalette.classroomSun)
+            .overlay(Circle().stroke(NovaPalette.classroomInk, lineWidth: 2))
+            .overlay {
+                VStack(spacing: 7) {
+                    HStack(spacing: 14) {
+                        Circle()
+                            .fill(NovaPalette.classroomInk)
+                            .frame(width: 7, height: 7)
+                        Circle()
+                            .fill(NovaPalette.classroomInk)
+                            .frame(width: 7, height: 7)
+                    }
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.classroomSchoolRed, lineWidth: 2)
+                        .frame(width: 28, height: 12)
+                        .mask(alignment: .bottom) {
+                            Rectangle()
+                                .frame(height: 7)
+                        }
+                }
+            }
+    }
+
+    private var trophyShelf: some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.classroomSky.opacity(0.16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(NovaPalette.classroomWood, lineWidth: 6)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                        .padding(5)
+                }
+                .overlay {
+                    VStack(spacing: Spacing.sm) {
+                        HStack(spacing: Spacing.md) {
+                            trophyIcon(size: 26)
+                            Image(systemName: "star.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(NovaPalette.classroomSchoolRed)
+                            Image(systemName: "rosette")
+                                .font(.title2)
+                                .foregroundStyle(NovaPalette.classroomSun)
+                        }
+                        Rectangle()
+                            .fill(NovaPalette.classroomWood)
+                            .frame(height: 3)
+                            .padding(.horizontal, Spacing.md)
+                    }
+                    .accessibilityHidden(true)
+                }
+
+            title
+                .offset(y: 12)
         }
         .padding(Spacing.sm)
     }
 
-    private var trophyShelf: some View {
-        VStack(spacing: Spacing.xs) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaPalette.classroomWood.opacity(0.28))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(NovaPalette.classroomInk, lineWidth: 3)
-                    }
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "trophy.fill")
-                    Image(systemName: "star.circle.fill")
-                    Image(systemName: "rosette")
-                }
-                .font(.title2)
-                .foregroundStyle(
-                    NovaPalette.classroomSun,
-                    NovaPalette.classroomSchoolRed
-                )
-                .accessibilityHidden(true)
-            }
-            title
-        }
-        .padding(Spacing.sm)
+    private func trophyIcon(size: CGFloat) -> some View {
+        Image(systemName: "trophy.fill")
+            .font(.system(size: size, weight: .bold))
+            .foregroundStyle(NovaPalette.classroomSun)
+            .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 2, y: 1)
     }
 
     private var backpack: some View {

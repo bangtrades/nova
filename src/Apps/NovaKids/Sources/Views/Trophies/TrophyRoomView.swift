@@ -114,42 +114,51 @@ public struct TrophyRoomView: View {
         }
     }
 
-    /// S13: Trophies earned from completing lessons. Each tile shows
-    /// the lesson's hero image inside a gold ring. Empty state hidden —
-    /// section only renders when at least one trophy exists.
+    /// S13: Trophies earned from completing lessons, restyled in S-classroom
+    /// as a wooden shelf with paper-strap label. Each tile is a sticker
+    /// inside a sun ring so the row reads like classroom shelf cubbies.
+    /// Empty state hidden — section only renders when at least one trophy
+    /// exists.
     @ViewBuilder
     private var yourTrophiesSection: some View {
         let trophies = completionStore.trophies(for: appState.currentChild?.id)
         if !trophies.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                HStack(spacing: 8) {
-                    Text("Your Trophies")
-                        .font(NovaPalette.headingFont())
-                        .foregroundStyle(NovaPalette.ink)
-                    Text("(\(trophies.count))")
-                        .font(NovaPalette.bodyFont())
-                        .foregroundStyle(NovaPalette.ink.opacity(0.5))
-                    Spacer()
-                }
-                LazyVGrid(columns: columns, spacing: Spacing.md) {
-                    ForEach(trophies) { trophy in
-                        lessonTrophyTile(trophy)
+                sectionLabel(
+                    text: "Your Trophies",
+                    icon: "rosette",
+                    accent: NovaPalette.classroomSun,
+                    countSuffix: "(\(trophies.count))"
+                )
+                shelfPanel {
+                    LazyVGrid(columns: columns, spacing: Spacing.md) {
+                        ForEach(trophies) { trophy in
+                            lessonTrophyTile(trophy)
+                        }
                     }
                 }
             }
         }
     }
 
-    /// One trophy tile. Hero image + trophy name caption. Square
-    /// aspect ratio matches the achievements grid below for visual
-    /// rhythm.
+    /// One trophy tile, restyled as a paper sticker pinned to the wooden
+    /// shelf — sun ring around the lesson hero, ink stroke, soft drop shadow,
+    /// caption underneath.
     @ViewBuilder
     private func lessonTrophyTile(_ trophy: LessonCompletionStore.TrophyRecord) -> some View {
         VStack(spacing: Spacing.sm) {
             ZStack {
                 Circle()
-                    .stroke(NovaPalette.sun, lineWidth: 4)
-                    .shadow(color: NovaPalette.sun.opacity(0.4), radius: 8)
+                    .fill(NovaPalette.classroomPaper)
+                    .overlay {
+                        Circle()
+                            .stroke(NovaPalette.classroomSun, lineWidth: 5)
+                    }
+                    .overlay {
+                        Circle()
+                            .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                    }
+                    .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 5, x: 0, y: 3)
 
                 Group {
                     if let urlString = trophy.lessonHeroImageURL,
@@ -169,13 +178,13 @@ public struct TrophyRoomView: View {
                     }
                 }
                 .clipShape(Circle())
-                .padding(6) // Inset so image stays inside the gold ring
+                .padding(8) // Inset so image stays inside the sun + ink ring
             }
             .aspectRatio(1, contentMode: .fit)
 
             Text(trophy.trophyName)
-                .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.ink)
+                .font(NovaPalette.captionFont().weight(.semibold))
+                .foregroundStyle(NovaPalette.classroomInk)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
@@ -189,15 +198,80 @@ public struct TrophyRoomView: View {
         ZStack {
             LinearGradient(
                 gradient: Gradient(colors: [
-                    NovaPalette.coral.opacity(0.6),
-                    NovaPalette.sun.opacity(0.6)
+                    NovaPalette.classroomSun.opacity(0.85),
+                    NovaPalette.classroomSchoolRed.opacity(0.65)
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             Image(systemName: "trophy.fill")
                 .font(.title)
-                .foregroundStyle(.white)
+                .foregroundStyle(NovaPalette.classroomInk)
+        }
+    }
+
+    /// Wood-toned shelf panel that hosts a row/grid of trophy tiles. Mirrors
+    /// the bookshelf object on the classroom home so trophies feel like they
+    /// share furniture with the rest of the classroom.
+    @ViewBuilder
+    private func shelfPanel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(NovaPalette.classroomWood.opacity(0.30))
+            )
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(NovaPalette.classroomWood)
+                    .frame(height: 4)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.bottom, Spacing.sm)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(NovaPalette.classroomInk, lineWidth: 3)
+            }
+            .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 6, x: 0, y: 3)
+    }
+
+    /// Paper-strap sticker label used above each shelf section. Gives every
+    /// section the same "pinned note" identity as the classroom home.
+    private func sectionLabel(
+        text: String,
+        icon: String,
+        accent: Color,
+        countSuffix: String? = nil
+    ) -> some View {
+        HStack(spacing: Spacing.sm) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .accessibilityHidden(true)
+                Text(text)
+                    .font(NovaPalette.headingFont())
+                    .foregroundStyle(NovaPalette.classroomInk)
+                if let countSuffix {
+                    Text(countSuffix)
+                        .font(NovaPalette.bodyFont())
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.55))
+                }
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.xs)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(accent.opacity(0.42))
+            )
+            .overlay {
+                Capsule(style: .continuous)
+                    .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+            }
+            .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 2, x: 0, y: 1)
+
+            Spacer()
         }
     }
 
@@ -205,10 +279,11 @@ public struct TrophyRoomView: View {
     private func errorBanner(message: String) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(NovaPalette.coral)
+                .foregroundStyle(NovaPalette.classroomSchoolRed)
+                .accessibilityHidden(true)
             Text(message)
                 .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.ink)
+                .foregroundStyle(NovaPalette.classroomInk)
                 .lineLimit(2)
             Spacer()
             Button("Try Again") {
@@ -219,11 +294,11 @@ public struct TrophyRoomView: View {
         .padding(Spacing.md)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaPalette.page)
+                .fill(NovaPalette.classroomPaper)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(NovaPalette.ink, lineWidth: 2)
+                .stroke(NovaPalette.classroomInk, lineWidth: 2)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Error loading trophies: \(message)")
@@ -231,67 +306,101 @@ public struct TrophyRoomView: View {
 
     // MARK: - Sections
 
-    /// Streak + badges-earned header. Coral accent on the card nudges the
-    /// eye to the trophy-room-identity moment without shouting.
+    /// Chalkboard-banner header. The room reads like the same classroom the
+    /// kid just left — wooden frame around a chalkboard, chalk-dust title,
+    /// streak as a chalk note, and a sun-tinted sticker for the badges-earned
+    /// count so it lands as a "look what you got!" moment.
     private var headerCard: some View {
-        NovaCard {
-            HStack(alignment: .center, spacing: Spacing.md) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("My Trophies")
-                        .font(NovaPalette.displayFont(size: 28))
-                        .foregroundStyle(NovaPalette.ink)
+        HStack(alignment: .center, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("My Trophies")
+                    .font(NovaPalette.displayFont(size: 28))
+                    .foregroundStyle(NovaPalette.classroomChalkDust)
 
-                    HStack(spacing: Spacing.xs) {
-                        Image(systemName: "flame.fill")
-                            .foregroundStyle(NovaPalette.coral)
-                        Text("\(viewModel.currentStreak) day streak")
-                            .font(NovaPalette.bodyFont().weight(.semibold))
-                            .foregroundStyle(NovaPalette.ink.opacity(0.75))
-                    }
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(NovaPalette.classroomSchoolRed)
+                        .accessibilityHidden(true)
+                    Text("\(viewModel.currentStreak) day streak")
+                        .font(NovaPalette.bodyFont().weight(.semibold))
+                        .foregroundStyle(NovaPalette.classroomChalkDust.opacity(0.85))
                 }
+            }
 
-                Spacer(minLength: Spacing.md)
+            Spacer(minLength: Spacing.md)
 
-                VStack(alignment: .trailing, spacing: Spacing.xs) {
-                    Text("\(earnedCount)")
-                        .font(NovaPalette.displayFont(size: 40))
-                        .foregroundStyle(NovaPalette.sun)
-                        .shadow(color: NovaPalette.ink, radius: 0, x:  1, y:  0)
-                        .shadow(color: NovaPalette.ink, radius: 0, x: -1, y:  0)
-                        .shadow(color: NovaPalette.ink, radius: 0, x:  0, y:  1)
-                        .shadow(color: NovaPalette.ink, radius: 0, x:  0, y: -1)
-
-                    Text("badges earned")
-                        .font(NovaPalette.captionFont())
-                        .foregroundStyle(NovaPalette.ink.opacity(0.7))
-                }
+            earnedCountSticker
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(earnedCount) badges earned")
-            }
         }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(NovaPalette.classroomChalkboard.opacity(0.94))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(NovaPalette.classroomInk, lineWidth: 3)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.classroomWood, lineWidth: 2)
+                .padding(4)
+        }
+        .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 8, x: 0, y: 4)
+    }
+
+    /// Sun-sticker count that sits on the chalkboard banner. Mirrors the
+    /// classroom-home trophy-shelf badge so the surfaces feel like they
+    /// share one sticker family.
+    private var earnedCountSticker: some View {
+        VStack(spacing: 2) {
+            Text("\(earnedCount)")
+                .font(NovaPalette.displayFont(size: 36))
+                .foregroundStyle(NovaPalette.classroomInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text("badges earned")
+                .font(NovaPalette.captionFont().weight(.bold))
+                .foregroundStyle(NovaPalette.classroomInk.opacity(0.78))
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.classroomSun)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.classroomInk, lineWidth: 2)
+        }
+        .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 4, x: 0, y: 2)
     }
 
     /// Three-across stat row — lessons completed, level, badges completion
-    /// fraction. Trio uses ink / sun / coral to match the 3+1 palette.
+    /// fraction. Trio adopts classroom tokens (sky / sun / leaf) so the row
+    /// reads like a strip of classroom sticky-note tiles.
     private var statRow: some View {
         HStack(spacing: Spacing.md) {
             StatTile(
                 icon: "book.fill",
                 label: "Lessons",
                 value: "\(viewModel.totalLessonsCompleted)",
-                tint: NovaPalette.ink
+                tint: NovaPalette.classroomSky
             )
             StatTile(
                 icon: "star.fill",
                 label: "Level",
                 value: "Explorer",
-                tint: NovaPalette.sun
+                tint: NovaPalette.classroomSun
             )
             StatTile(
                 icon: "checkmark.seal.fill",
                 label: "Complete",
                 value: "\(earnedCount)/\(viewModel.badges.count)",
-                tint: NovaPalette.coral
+                tint: NovaPalette.classroomLeaf
             )
         }
     }
@@ -303,9 +412,11 @@ public struct TrophyRoomView: View {
             emptyState
         } else {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("Achievements")
-                    .font(NovaPalette.displayFont(size: 24))
-                    .foregroundStyle(NovaPalette.ink)
+                sectionLabel(
+                    text: "Achievements",
+                    icon: "checkmark.seal.fill",
+                    accent: NovaPalette.classroomSchoolRed
+                )
 
                 LazyVGrid(columns: columns, spacing: Spacing.md) {
                     ForEach(viewModel.badges) { item in
@@ -327,29 +438,50 @@ public struct TrophyRoomView: View {
         }
     }
 
-    /// Empty-state pane shown when the learner has zero badges in view (new
-    /// account, pre-first-lesson). Wraps in a `NovaCard` so the empty state
-    /// still feels like a furnished room, not a blank screen.
+    /// Empty classroom shelf with a single dashed-chalk cubby outlined in the
+    /// middle. Reads as "this is where your first sticker will go" rather
+    /// than "blank screen". Accessibility text mirrors the visual copy.
     private var emptyState: some View {
-        NovaCard(accent: NovaPalette.sun) {
-            VStack(spacing: Spacing.md) {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 56, weight: .semibold))
-                    .foregroundStyle(NovaPalette.sun)
-                    .shadow(color: NovaPalette.ink.opacity(0.15), radius: 4, x: 0, y: 2)
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            sectionLabel(
+                text: "Your Trophy Shelf",
+                icon: "rosette",
+                accent: NovaPalette.classroomSun
+            )
 
-                Text("No Badges Yet")
-                    .font(NovaPalette.displayFont(size: 22))
-                    .foregroundStyle(NovaPalette.ink)
+            shelfPanel {
+                VStack(spacing: Spacing.md) {
+                    ZStack {
+                        Circle()
+                            .strokeBorder(
+                                NovaPalette.classroomInk.opacity(0.45),
+                                style: StrokeStyle(lineWidth: 2.5, dash: [6, 5])
+                            )
+                            .frame(width: 96, height: 96)
 
-                Text("Complete lessons to earn your first badge!")
-                    .font(NovaPalette.bodyFont())
-                    .foregroundStyle(NovaPalette.ink.opacity(0.75))
-                    .multilineTextAlignment(.center)
+                        Image(systemName: "rosette")
+                            .font(.system(size: 36, weight: .semibold))
+                            .foregroundStyle(NovaPalette.classroomInk.opacity(0.55))
+                            .accessibilityHidden(true)
+                    }
+
+                    Text("First trophy goes here")
+                        .font(NovaPalette.displayFont(size: 22))
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .multilineTextAlignment(.center)
+
+                    Text("Finish a lesson and your first sticker lands on this shelf.")
+                        .font(NovaPalette.bodyFont())
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.78))
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.lg)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.lg)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Trophy shelf, empty")
+        .accessibilityValue("Finish a lesson and your first sticker lands on this shelf.")
     }
 
     // MARK: - Helpers
@@ -375,17 +507,25 @@ private struct StatTile: View {
             VStack(spacing: Spacing.xs) {
                 Image(systemName: icon)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(tint)
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .padding(8)
+                    .background(
+                        Circle().fill(tint.opacity(0.30))
+                    )
+                    .overlay {
+                        Circle().stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                    }
+                    .accessibilityHidden(true)
 
                 Text(value)
                     .font(NovaPalette.displayFont(size: 22))
-                    .foregroundStyle(NovaPalette.ink)
+                    .foregroundStyle(NovaPalette.classroomInk)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
                 Text(label)
                     .font(NovaPalette.captionFont())
-                    .foregroundStyle(NovaPalette.ink.opacity(0.7))
+                    .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
             }
             .frame(maxWidth: .infinity)
         }

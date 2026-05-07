@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "classroom_home_67_landscape.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "novai-classroom-v2",
+    "version" : 1
+  }
+}

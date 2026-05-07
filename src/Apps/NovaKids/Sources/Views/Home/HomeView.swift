@@ -24,7 +24,7 @@ public struct HomeView: View {
     public var body: some View {
         NavigationStack(path: $classroomPath) {
             rootContent
-            .novaNavigationStyle(title: "Nova Kids")
+            .novaNavigationStyle(title: classroomV2Enabled ? "" : "Nova Kids")
             .navigationDestination(for: ClassroomDestination.self) { destination in
                 classroomDestination(destination)
             }
@@ -57,13 +57,7 @@ public struct HomeView: View {
     private var classroomHome: some View {
         ZStack(alignment: .top) {
             ClassroomSceneView(
-                model: .home(
-                    currentLesson: viewModel.currentLesson,
-                    learningPaths: viewModel.learningPaths,
-                    lessons: viewModel.allLessons,
-                    completedLessonIds: completedLessonIds,
-                    trophyCount: trophyCount
-                ),
+                model: classroomSceneModel,
                 onSelect: handleClassroomDestination(_:)
             )
 
@@ -76,6 +70,42 @@ public struct HomeView: View {
         .refreshable {
             await viewModel.refresh()
         }
+    }
+
+    /// Resolve the classroom scene model. The default age band comes
+    /// from the currently selected child profile via
+    /// `ClassroomAgeBand.forChildProfile(_:)` — a 4-5 child gets the
+    /// preschool classroom, a 6-7 child gets the maker lab. When no
+    /// profile is loaded yet (cold launch before sign-in) the helper
+    /// falls back to `.classroom45` so the experience stays unchanged
+    /// from the previous shipping behavior.
+    ///
+    /// In developer runs the `NOVA_CLASSROOM_FORCE_AGE_BAND` env var
+    /// re-writes the resulting model with the forced age band so the
+    /// engineer can preview 6–7 / 8+ artwork without poking at backend
+    /// profile data. The override is *only* read from `ProcessInfo`,
+    /// has no UI affordance, and degrades silently to the default when
+    /// the variable is unset or holds an unrecognized value.
+    private var classroomSceneModel: ClassroomSceneModel {
+        let baseModel = ClassroomSceneModel.home(
+            currentLesson: viewModel.currentLesson,
+            learningPaths: viewModel.learningPaths,
+            lessons: viewModel.allLessons,
+            completedLessonIds: completedLessonIds,
+            trophyCount: trophyCount,
+            ageBand: ClassroomAgeBand.forChildProfile(appState.currentChild)
+        )
+
+        guard let forcedBand = ClassroomAgeBand.developerForcedOverride() else {
+            return baseModel
+        }
+
+        return ClassroomSceneModel(
+            id: baseModel.id,
+            ageBand: forcedBand,
+            objects: baseModel.objects,
+            activePrompt: baseModel.activePrompt
+        )
     }
 
     private var classicHome: some View {

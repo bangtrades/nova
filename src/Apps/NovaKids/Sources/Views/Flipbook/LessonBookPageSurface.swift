@@ -1,0 +1,141 @@
+import SwiftUI
+import UIKit
+
+/// A reusable "book page" paper panel used **inside** lesson card
+/// content. Renders as a paper-tinted rounded rectangle with a soft
+/// classroom-ink stroke and drop-shadow, so a stretch of body text or
+/// a small diagram reads as a page from a picture book / workbook
+/// rather than a generic UI card.
+///
+/// This is **not** a top-level card surface — that role belongs to
+/// `ChalkboardLessonCardSurface`. `LessonBookPageSurface` is a
+/// content-level panel that sits *inside* a chalkboard surface, much
+/// like a page pinned to the classroom board.
+///
+/// Two presets:
+///
+/// - `.storybook` — picture-book page: warm paper fill, generous
+///   padding, larger corner radius. Use for narrative copy on
+///   `StoryCardView`.
+/// - `.workbook` — workbook / lesson-note page: paper fill with a
+///   faint left margin rule (school-red, low-opacity), tighter
+///   corners. Use for the "big idea" explanation on `ConceptCardView`.
+///
+/// All padding, corners, palette, and shadow values are derived from
+/// `Spacing` and `NovaPalette.classroom*` tokens; no hard-coded
+/// colors or numerics that fight the rest of the classroom look.
+public struct LessonBookPageSurface<Content: View>: View {
+    public enum Mood {
+        case storybook
+        case workbook
+    }
+
+    private let mood: Mood
+    private let content: Content
+
+    public init(
+        mood: Mood = .storybook,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.mood = mood
+        self.content = content()
+    }
+
+    public var body: some View {
+        content
+            .padding(contentPadding)
+            .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading)
+            .background(pageBackground)
+            .overlay(alignment: .leading) {
+                if mood == .workbook && hasLessonPageAsset == false {
+                    // Faint left margin rule like a notebook page.
+                    Rectangle()
+                        .fill(NovaPalette.classroomSchoolRed.opacity(0.20))
+                        .frame(width: 2)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.leading, Spacing.md)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .overlay {
+                if hasLessonPageAsset == false {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.45), lineWidth: 1.5)
+                }
+            }
+            .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 4, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private var pageBackground: some View {
+        if let assetName {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(NovaPalette.classroomPaper)
+        }
+    }
+
+    private var assetName: String? {
+        let name: String
+        switch mood {
+        case .storybook:
+            name = "lesson_storybook_page_45_landscape"
+        case .workbook:
+            name = "lesson_workbook_worksheet_45_landscape"
+        }
+
+        return UIImage(named: name) == nil ? nil : name
+    }
+
+    private var hasLessonPageAsset: Bool {
+        assetName != nil
+    }
+
+    private var cornerRadius: CGFloat {
+        switch mood {
+        case .storybook: return 18
+        case .workbook: return 14
+        }
+    }
+
+    private var contentPadding: CGFloat {
+        switch mood {
+        case .storybook: return Spacing.lg
+        case .workbook: return Spacing.md
+        }
+    }
+
+    private var minimumHeight: CGFloat {
+        switch mood {
+        case .storybook: return 144
+        case .workbook: return 132
+        }
+    }
+}
+
+#Preview("Storybook page") {
+    LessonBookPageSurface(mood: .storybook) {
+        Text("Once upon a time, a curious child asked, “How do computers learn?” She wondered if they had little eyes.")
+            .font(NovaPalette.largeBodyFont())
+            .foregroundStyle(NovaPalette.classroomInk)
+    }
+    .padding(Spacing.lg)
+    .background(NovaPalette.classroomChalkboard)
+}
+
+#Preview("Workbook page") {
+    LessonBookPageSurface(mood: .workbook) {
+        Text("AI learns by looking at many examples and finding patterns.")
+            .font(NovaPalette.largeBodyFont())
+            .foregroundStyle(NovaPalette.classroomInk)
+    }
+    .padding(Spacing.lg)
+    .background(NovaPalette.classroomChalkboard)
+}

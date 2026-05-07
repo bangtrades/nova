@@ -1,0 +1,17 @@
+{
+  "images" : [
+    {
+      "filename" : "AppIcon-1024.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "novai-classroom-v2",
+    "version" : 1
+  },
+  "properties" : {
+    "comment" : "PLACEHOLDER — solid classroom-cream stand-in app icon. Do not ship as final."
+  }
+}

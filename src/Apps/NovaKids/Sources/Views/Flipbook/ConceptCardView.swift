@@ -1,6 +1,7 @@
 import SwiftUI
 import NovaCore
 import NovaVoice
+import UIKit
 
 /// Concept card view displaying a key learning concept.
 public struct ConceptCardView: View {
@@ -20,17 +21,45 @@ public struct ConceptCardView: View {
     }
 
     public var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             ChalkboardLessonCardSurface(cardKind: .concept, title: surfaceTitle) {
-                VStack(alignment: .leading, spacing: Spacing.lg) {
-                    heroPanel
+                ViewThatFits(in: .horizontal) {
+                    // Wide workbook layout (iPad landscape): diagram /
+                    // illustration on the leading edge, "big idea" page
+                    // alongside, read button trailing at the bottom of
+                    // the page column. The minWidth gate keeps narrow
+                    // sizes off this branch.
+                    HStack(alignment: .top, spacing: Spacing.lg) {
+                        heroPanel
+                            .frame(width: 320)
+                            .frame(maxHeight: 260)
 
-                    HStack(alignment: .bottom, spacing: Spacing.lg) {
+                        VStack(alignment: .leading, spacing: Spacing.md) {
+                            explanationNote
+
+                            HStack(spacing: Spacing.sm) {
+                                Spacer()
+                                speakerButton
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(minWidth: 940, alignment: .leading)
+
+                    // Stacked workbook layout (iPad portrait, narrow
+                    // splits): diagram on top, big-idea page in the
+                    // middle, read button trailing-aligned at the
+                    // bottom.
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
+                        heroPanel
+                            .frame(maxHeight: 240)
+
                         explanationNote
 
-                        Spacer(minLength: Spacing.sm)
-
-                        speakerButton
+                        HStack(spacing: Spacing.sm) {
+                            Spacer()
+                            speakerButton
+                        }
                     }
                 }
             }
@@ -84,41 +113,44 @@ public struct ConceptCardView: View {
         .accessibilityHidden(card.imageURL == nil)
     }
 
+    /// "Big idea" workbook page: the explanation rendered on a paper
+    /// note pinned inside the chalkboard surface, with a small
+    /// sun-circle + ruled cap that nods to a worksheet header.
     @ViewBuilder
     private var explanationNote: some View {
         if let explanation = card.content.explanation {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                HStack(spacing: Spacing.sm) {
-                    Circle()
-                        .fill(NovaPalette.classroomSun)
-                        .frame(width: 10, height: 10)
-                        .accessibilityHidden(true)
+            LessonBookPageSurface(mood: .workbook) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack(spacing: Spacing.sm) {
+                        Circle()
+                            .fill(NovaPalette.classroomSun)
+                            .overlay {
+                                Circle().stroke(NovaPalette.classroomInk.opacity(0.55), lineWidth: 1)
+                            }
+                            .frame(width: 12, height: 12)
+                            .accessibilityHidden(true)
 
-                    Capsule(style: .continuous)
-                        .fill(NovaPalette.classroomChalkDust.opacity(0.42))
-                        .frame(width: 92, height: 5)
-                        .accessibilityHidden(true)
+                        Capsule(style: .continuous)
+                            .fill(NovaPalette.classroomInk.opacity(0.20))
+                            .frame(width: 92, height: 4)
+                            .accessibilityHidden(true)
+                    }
+
+                    Text(explanation)
+                        .font(NovaPalette.largeBodyFont())
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .lineSpacing(4)
+                        .lineLimit(5)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
                 }
-
-                Text(explanation)
-                    .font(NovaPalette.largeBodyFont())
-                    .foregroundStyle(NovaPalette.classroomChalkDust)
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: Spacing.sm, style: .continuous)
-                    .fill(NovaPalette.classroomChalkboard.opacity(0.72))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: Spacing.sm, style: .continuous)
-                    .stroke(NovaPalette.classroomChalkDust.opacity(0.30), lineWidth: 1.5)
             }
         }
     }
 
+    /// Read-aloud control rendered as a sun-tinted classroom sticker
+    /// matching the rest of the classroom-shell sticker family. Pulse
+    /// gated on Reduce Motion.
     private var speakerButton: some View {
         Button(action: {
             if let script = card.voiceScript ?? card.content.explanation {
@@ -131,11 +163,10 @@ public struct ConceptCardView: View {
             }
         }) {
             ZStack {
-                // Pulsing background when speaking
                 if isSpeaking && !reduceMotion {
                     Circle()
-                        .fill(NovaPalette.classroomSun.opacity(0.34))
-                        .scaleEffect(pulseAnimation ? 1.3 : 1.0)
+                        .fill(NovaPalette.classroomSun.opacity(0.45))
+                        .scaleEffect(pulseAnimation ? 1.25 : 1.0)
                         .animation(
                             Animation.easeInOut(duration: 0.8)
                                 .repeatForever(autoreverses: true),
@@ -143,25 +174,51 @@ public struct ConceptCardView: View {
                         )
                 }
 
-                // Button content
-                Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.1.fill")
-                    .font(.title3)
-                    .foregroundStyle(NovaPalette.classroomInk)
-                    .accessibilityHidden(true)
+                HStack(spacing: 6) {
+                    Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.1.fill")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .accessibilityHidden(true)
+
+                    Text("Read")
+                        .font(NovaPalette.captionFont().weight(.black))
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+                .background(readAloudBackground)
             }
-            .frame(width: 48, height: 48)
-            .background(NovaPalette.classroomSun)
-            .clipShape(Circle())
-            .overlay {
-                Circle()
-                    .stroke(NovaPalette.classroomInk.opacity(0.55), lineWidth: 2)
-            }
+            .frame(minWidth: 88, minHeight: 44)
         }
+        .buttonStyle(.plain)
         .disabled(isSpeaking)
         .accessibilityLabel("Read aloud")
         .accessibilityValue(isSpeaking ? "Currently speaking" : "Not speaking")
         .onAppear {
             pulseAnimation = true
+        }
+    }
+
+    @ViewBuilder
+    private var readAloudBackground: some View {
+        if UIImage(named: "lesson_read_aloud_45") != nil {
+            Image("lesson_read_aloud_45")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 116, height: 50)
+                .clipped()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            Capsule(style: .continuous)
+                .fill(NovaPalette.classroomSun)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                }
+                .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 2, x: 0, y: 1)
         }
     }
 }
