@@ -25,8 +25,20 @@ public struct ClassroomLessonLibraryView: View {
 
     public var body: some View {
         ZStack {
-            NovaPalette.classroomPaper
-                .ignoresSafeArea()
+            // Soft classroom-paper-to-wood vertical wash so the
+            // background reads as the wall behind a bookshelf rather
+            // than a flat app surface. Stays inside the classroom
+            // palette tokens; no neon, no hard color edges.
+            LinearGradient(
+                colors: [
+                    NovaPalette.classroomPaper,
+                    NovaPalette.classroomPaper.opacity(0.92),
+                    NovaPalette.classroomWood.opacity(0.18)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: Spacing.xl) {
@@ -51,18 +63,42 @@ public struct ClassroomLessonLibraryView: View {
         }
     }
 
+    /// Library header — a small book-stack sticker beside the
+    /// "Bookshelf" title, with the friendly subtitle below. The
+    /// sticker anchors the page so it reads as a labeled bookshelf
+    /// section instead of a generic title row.
     private var header: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Bookshelf")
-                .font(NovaPalette.titleFont())
-                .foregroundStyle(NovaPalette.classroomInk)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+        HStack(alignment: .center, spacing: Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(NovaPalette.classroomSun)
+                    .overlay(
+                        Circle()
+                            .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                    )
+                Image(systemName: "books.vertical.fill")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .accessibilityHidden(true)
+            }
+            .frame(width: 48, height: 48)
+            .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 3, x: 0, y: 2)
+            .accessibilityHidden(true)
 
-            Text("Pick a lesson book.")
-                .font(NovaPalette.bodyFont())
-                .foregroundStyle(NovaPalette.classroomInk.opacity(0.72))
-                .lineLimit(2)
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Bookshelf")
+                    .font(NovaPalette.titleFont())
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Text("Pick a lesson book.")
+                    .font(NovaPalette.bodyFont())
+                    .foregroundStyle(NovaPalette.classroomInk.opacity(0.72))
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)
     }
@@ -94,7 +130,7 @@ public struct ClassroomLessonLibraryView: View {
                 return lhs.sortOrder < rhs.sortOrder
             }
             .compactMap { path -> LessonShelfSection? in
-                guard let pathLessons = lessonsByPath[path.id], !pathLessons.isEmpty else {
+                guard let pathLessons = lessonsByPath[path.id], pathLessons.isEmpty == false else {
                     return nil
                 }
 
@@ -110,10 +146,10 @@ public struct ClassroomLessonLibraryView: View {
         let knownPathIds = Set(pathsById.keys)
         let extraLessons = lessons.filter { lesson in
             guard let pathId = lesson.pathId else { return true }
-            return !knownPathIds.contains(pathId)
+            return knownPathIds.contains(pathId) == false
         }
 
-        if !extraLessons.isEmpty {
+        if extraLessons.isEmpty == false {
             sections.append(
                 LessonShelfSection(
                     id: "other-lessons",
@@ -135,15 +171,6 @@ public struct ClassroomLessonLibraryView: View {
             }
             return lhs.sortOrder < rhs.sortOrder
         }
-    }
-
-    private var shelfBoard: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(NovaPalette.classroomWood)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(NovaPalette.classroomInk, lineWidth: 2)
-            )
     }
 
     private var emptyShelfPrompt: some View {
@@ -301,16 +328,31 @@ private struct ClassroomLessonShelfSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+            HStack(alignment: .center, spacing: Spacing.sm) {
                 Text(section.title)
                     .font(NovaPalette.headingFont())
                     .foregroundStyle(NovaPalette.classroomInk)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
+                // Section count rendered as a small paper sticker
+                // pill so each shelf row reads as a labeled section
+                // ("Space Missions · 5 books") rather than two
+                // floating text fragments.
                 Text(section.subtitle)
-                    .font(NovaPalette.captionFont())
-                    .foregroundStyle(NovaPalette.classroomInk.opacity(0.68))
+                    .font(NovaPalette.captionFont().weight(.semibold))
+                    .foregroundStyle(NovaPalette.classroomInk)
+                    .lineLimit(1)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(NovaPalette.classroomSun.opacity(0.55))
+                    )
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(NovaPalette.classroomInk.opacity(0.50), lineWidth: 1)
+                    )
 
                 Spacer(minLength: Spacing.sm)
             }

@@ -62,7 +62,10 @@ public struct TrophyRoomView: View {
                         // the skeleton so a failed retry doesn't obscure
                         // the last-known content.
                         if let error = viewModel.loadError {
-                            errorBanner(message: error.errorDescription ?? "Something went wrong")
+                            ClassroomErrorBanner(
+                                message: error.errorDescription ?? "Something went wrong",
+                                context: "trophies"
+                            ) { Task { await viewModel.refreshBadges() } }
                         }
 
                         if viewModel.isLoading {
@@ -273,35 +276,6 @@ public struct TrophyRoomView: View {
 
             Spacer()
         }
-    }
-
-    @ViewBuilder
-    private func errorBanner(message: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(NovaPalette.classroomSchoolRed)
-                .accessibilityHidden(true)
-            Text(message)
-                .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.classroomInk)
-                .lineLimit(2)
-            Spacer()
-            Button("Try Again") {
-                Task { await viewModel.refreshBadges() }
-            }
-            .novaSecondary()
-        }
-        .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaPalette.classroomPaper)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(NovaPalette.classroomInk, lineWidth: 2)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Error loading trophies: \(message)")
     }
 
     // MARK: - Sections

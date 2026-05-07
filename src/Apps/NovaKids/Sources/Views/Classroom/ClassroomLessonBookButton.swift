@@ -73,12 +73,12 @@ public struct ClassroomLessonBookButton: View {
         }
         .buttonStyle(.plain)
         .frame(minWidth: 148, minHeight: 184)
-        .scaleEffect(isPressing && !reduceMotion ? 0.97 : 1.0)
+        .scaleEffect(isPressing && reduceMotion == false ? 0.97 : 1.0)
         .animation(reduceMotion ? .none : .easeOut(duration: 0.12), value: isPressing)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    if !isPressing {
+                    if isPressing == false {
                         isPressing = true
                     }
                 }

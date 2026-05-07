@@ -35,12 +35,34 @@ public struct CardProgressDots: View {
 
             Spacer()
 
+            // Workbook page-tag pill — frames "Page X of Y" as a
+            // small paper tab so it reads as a page-number sticker
+            // instead of an app-shell label.
             Text("Page \(currentIndex + 1) of \(totalCards)")
-                .font(NovaPalette.captionFont())
-                .foregroundStyle(.secondary)
+                .font(NovaPalette.captionFont().weight(.semibold))
+                .foregroundStyle(NovaPalette.classroomInk)
+                .lineLimit(1)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(NovaPalette.classroomPaper)
+                )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.50), lineWidth: 1)
+                )
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(NovaPalette.classroomPaper.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(NovaPalette.classroomInk.opacity(0.30), lineWidth: 1)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Page indicator")
         .accessibilityValue("Page \(currentIndex + 1) of \(totalCards)")

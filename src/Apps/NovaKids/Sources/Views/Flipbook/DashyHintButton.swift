@@ -20,29 +20,32 @@ public struct DashyHintButton: View {
             showHintSheet = true
         }) {
             ZStack {
-                // S11-10 reskin: `coral` fill + `ink` 2pt stroke puts this
-                // gateway button in the same comic-palette family as the
-                // character body. Coral reads as "action" in the 3+1
-                // system, which fits — tapping this IS the Dashy action
-                // on the flipbook card.
+                // Workbook reskin: classroom-school-red fill +
+                // classroom-ink 2pt stroke + soft drop shadow puts
+                // the hint button in the same sticker family as the
+                // classroom-home tap stickers and the lesson-reader
+                // page-turn buttons. Red reads as "action" inside
+                // the warm classroom palette without pulling the
+                // whole reader back into the S11 comic look.
                 Circle()
-                    .fill(NovaPalette.coral)
-                    .frame(width: 50, height: 50)
+                    .fill(NovaPalette.classroomSchoolRed)
+                    .frame(width: 52, height: 52)
                     .overlay(
                         Circle()
-                            .strokeBorder(NovaPalette.ink, lineWidth: 2)
+                            .strokeBorder(NovaPalette.classroomInk, lineWidth: 2)
                     )
+                    .shadow(color: NovaPalette.classroomInk.opacity(0.30), radius: 4, x: 0, y: 2)
 
-                // Glyph in ink so it reads against the coral fill with the
-                // same weight as the body silhouette stroke.
-                VStack(spacing: 2) {
-                    Image(systemName: "bubble.left.fill")
-                        .font(.title3)
-                        .foregroundStyle(NovaPalette.ink)
-                        .accessibilityHidden(true)
-                }
+                // Speech-bubble glyph in classroom paper so it reads
+                // against the red sticker without competing with the
+                // ink outline.
+                Image(systemName: "bubble.left.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(NovaPalette.classroomPaper)
+                    .accessibilityHidden(true)
             }
         }
+        .frame(minWidth: 52, minHeight: 52)
         .accessibilityLabel("Hint from Dashy")
         .accessibilityHint("Get a helpful tip about this card")
         .scaleEffect(1.0)

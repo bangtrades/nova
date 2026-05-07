@@ -7,10 +7,11 @@ import UIKit
 /// a small diagram reads as a page from a picture book / workbook
 /// rather than a generic UI card.
 ///
-/// This is **not** a top-level card surface — that role belongs to
-/// `ChalkboardLessonCardSurface`. `LessonBookPageSurface` is a
-/// content-level panel that sits *inside* a chalkboard surface, much
-/// like a page pinned to the classroom board.
+/// This is **not** a top-level card surface. Story and concept
+/// cards no longer nest a chalkboard surface — they render directly
+/// inside the `LessonBookReaderShell` workbook chrome. The page
+/// surface here is a content-level panel that sits *inside* that
+/// shell as a paper note tucked into the open book.
 ///
 /// Two presets:
 ///
@@ -127,7 +128,7 @@ public struct LessonBookPageSurface<Content: View>: View {
             .foregroundStyle(NovaPalette.classroomInk)
     }
     .padding(Spacing.lg)
-    .background(NovaPalette.classroomChalkboard)
+    .background(NovaPalette.classroomPaper)
 }
 
 #Preview("Workbook page") {
@@ -137,5 +138,5 @@ public struct LessonBookPageSurface<Content: View>: View {
             .foregroundStyle(NovaPalette.classroomInk)
     }
     .padding(Spacing.lg)
-    .background(NovaPalette.classroomChalkboard)
+    .background(NovaPalette.classroomPaper)
 }

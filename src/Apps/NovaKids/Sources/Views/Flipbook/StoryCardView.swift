@@ -4,13 +4,16 @@ import NovaVoice
 import UIKit
 
 /// Story card view — a picture-book page rendered inside the
-/// classroom chalkboard surface.
+/// `LessonBookReaderShell` workbook chrome.
 ///
-/// The hero illustration sits on a paper "mat" with two corner-tape
-/// stickers, narrative copy is rendered on a `LessonBookPageSurface`
-/// (storybook mood), and the read-aloud button is a sun-tinted
-/// classroom sticker that matches the rest of the classroom Home
-/// shell. All animation is gated on `accessibilityReduceMotion`.
+/// The card no longer nests a chalkboard surface; the workbook
+/// shell already provides the paper-page silhouette. Story content
+/// is laid out as a storybook page: a small bookmark + title header
+/// at the top, the hero illustration framed as a paper-mat plate
+/// with optional painted-frame asset, narrative copy on a
+/// `LessonBookPageSurface` (storybook mood), and a sun-tinted
+/// read-aloud sticker. All animation is gated on
+/// `accessibilityReduceMotion`.
 public struct StoryCardView: View {
     /// The card to display.
     let card: Card
@@ -29,7 +32,9 @@ public struct StoryCardView: View {
 
     public var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            ChalkboardLessonCardSurface(cardKind: .story, title: cardTitle) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                pageHeader
+
                 ViewThatFits(in: .horizontal) {
                     // Wide layout (iPad landscape): illustration on the
                     // leading edge, narrative + read button alongside.
@@ -51,7 +56,7 @@ public struct StoryCardView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(minWidth: 940, alignment: .leading)
+                    .frame(minWidth: 880, alignment: .leading)
 
                     // Stacked layout (iPad portrait, iPhone, narrow
                     // splits): illustration on top, narrative below,
@@ -69,12 +74,66 @@ public struct StoryCardView: View {
                     }
                 }
             }
-            .padding(Spacing.md)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(cardTitle) story card")
         .accessibilityValue(card.content.narrativeText ?? "")
+    }
+
+    /// Storybook page header — a small bookmark ribbon followed by
+    /// the lesson title. Replaces the chalkboard surface header that
+    /// previously labelled the card; sized to feel like a page-top
+    /// title inside the open book rather than a top-of-screen badge.
+    private var pageHeader: some View {
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            bookmarkOrnament
+                .frame(width: 22, height: 36)
+                .accessibilityHidden(true)
+
+            Text(cardTitle)
+                .font(NovaPalette.headingFont())
+                .foregroundStyle(NovaPalette.classroomInk)
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Spacing.xs)
+    }
+
+    /// Painted bookmark sticker if the asset is in the bundle,
+    /// otherwise a SwiftUI school-red ribbon stand-in.
+    @ViewBuilder
+    private var bookmarkOrnament: some View {
+        if UIImage(named: "lesson_bookmark_45") != nil {
+            Image("lesson_bookmark_45")
+                .resizable()
+                .scaledToFit()
+        } else {
+            ZStack(alignment: .bottom) {
+                Rectangle()
+                    .fill(NovaPalette.classroomSchoolRed.opacity(0.88))
+                    .overlay(
+                        Rectangle()
+                            .stroke(NovaPalette.classroomInk.opacity(0.40), lineWidth: 1)
+                    )
+
+                // Small notched tail at the bottom of the ribbon.
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: 0))
+                    path.addLine(to: CGPoint(x: 11, y: 6))
+                    path.addLine(to: CGPoint(x: 22, y: 0))
+                    path.closeSubpath()
+                }
+                .fill(NovaPalette.classroomPaper)
+                .frame(height: 6)
+            }
+        }
     }
 
     private var cardTitle: String {
@@ -87,60 +146,88 @@ public struct StoryCardView: View {
     }
 
     /// Hero illustration framed as a paper-mat plate pinned to the
-    /// chalkboard. Falls back to a paper placeholder with a book glyph
-    /// when no `imageURL` is available.
+    /// chalkboard. When the painted-frame asset
+    /// `lesson_storybook_frame_45_landscape` is available, the inner
+    /// image is inset to fit inside the painted border. When it is
+    /// not, we drop the asset-specific inset and use a SwiftUI paper
+    /// mat with normal `Spacing.sm` padding so the inner illustration
+    /// fills the visible frame.
     private var heroPlate: some View {
-        ZStack {
-            CardHeroImage(url: card.imageURL) {
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            NovaPalette.classroomSky.opacity(0.32),
-                            NovaPalette.classroomPaper,
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-
-                    VStack(spacing: Spacing.sm) {
-                        Image(systemName: "book.closed.fill")
-                            .font(.system(size: 44, weight: .semibold))
-                            .foregroundStyle(NovaPalette.classroomInk)
-                            .accessibilityHidden(true)
-
-                        Text("Storybook")
-                            .font(NovaPalette.captionFont().weight(.bold))
-                            .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
-                    }
-                }
-            }
-            .padding(.horizontal, 68)
-            .padding(.vertical, 52)
-
+        Group {
             if UIImage(named: "lesson_storybook_frame_45_landscape") != nil {
-                Image("lesson_storybook_frame_45_landscape")
-                    .resizable()
-                    .scaledToFit()
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                assetFramedHero
             } else {
-                fallbackHeroMat
+                swiftUIMattedHero
             }
         }
         .aspectRatio(1448.0 / 1086.0, contentMode: .fit)
         .accessibilityHidden(card.imageURL == nil)
     }
 
-    private var fallbackHeroMat: some View {
-        RoundedRectangle(cornerRadius: Spacing.md + 4, style: .continuous)
-            .fill(NovaPalette.classroomPaper.opacity(0.92))
+    /// Hero composed against the painted picture-book frame asset.
+    /// The 68/52 horizontal/vertical inset is calibrated to land the
+    /// inner illustration inside the painted border; do not edit
+    /// those numerics without re-checking the frame artwork.
+    private var assetFramedHero: some View {
+        ZStack {
+            heroIllustration
+                .padding(.horizontal, 68)
+                .padding(.vertical, 52)
+
+            Image("lesson_storybook_frame_45_landscape")
+                .resizable()
+                .scaledToFit()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// Hero composed against a SwiftUI paper mat for builds where the
+    /// painted frame asset has not landed yet. Uses normal padding so
+    /// the illustration fills the visible mat instead of inheriting
+    /// the asset-frame inset.
+    private var swiftUIMattedHero: some View {
+        heroIllustration
+            .padding(Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: Spacing.md + 4, style: .continuous)
+                    .fill(NovaPalette.classroomPaper.opacity(0.92))
+            )
             .overlay {
                 RoundedRectangle(cornerRadius: Spacing.md + 4, style: .continuous)
                     .stroke(NovaPalette.classroomInk.opacity(0.55), lineWidth: 2)
             }
             .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 6, x: 0, y: 3)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+    }
+
+    /// Inner hero illustration — the `CardHeroImage` async-loader plus
+    /// a paper-toned fallback. Shared by both the asset-framed and
+    /// SwiftUI-matted paths above.
+    private var heroIllustration: some View {
+        CardHeroImage(url: card.imageURL) {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        NovaPalette.classroomSky.opacity(0.32),
+                        NovaPalette.classroomPaper,
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                VStack(spacing: Spacing.sm) {
+                    Image(systemName: "book.closed.fill")
+                        .font(.system(size: 44, weight: .semibold))
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .accessibilityHidden(true)
+
+                    Text("Storybook")
+                        .font(NovaPalette.captionFont().weight(.bold))
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: Spacing.md, style: .continuous))
     }
 
     /// Narrative text rendered on a storybook paper page so the copy

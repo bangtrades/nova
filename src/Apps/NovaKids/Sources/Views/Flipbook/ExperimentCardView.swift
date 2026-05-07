@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import Combine
 import NovaCore
+import UIKit
 
 /// Interactive drag-and-drop experiment card.
 ///
@@ -121,8 +122,10 @@ public struct ExperimentCardView: View {
         }
     }
 
-    /// Drop targets sit on a paper "tabletop tray" so the kid sees a clear
-    /// surface to drop manipulatives onto.
+    /// Drop targets sit on a tabletop activity surface. When the painted
+    /// `lesson_experiment_table_45_landscape` asset is available it
+    /// supplies the wood-tabletop look; otherwise a paper-tinted
+    /// rounded rectangle stands in.
     private var dropTargetsBlock: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Drop here:")
@@ -141,14 +144,28 @@ public struct ExperimentCardView: View {
             .frame(height: 100)
         }
         .padding(Spacing.md)
-        .background(
-            NovaPalette.classroomPaper.opacity(0.5),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
-        .overlay(
+        .background(experimentTableBackground)
+        .overlay {
+            if UIImage(named: "lesson_experiment_table_45_landscape") == nil {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.18), lineWidth: 1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var experimentTableBackground: some View {
+        if UIImage(named: "lesson_experiment_table_45_landscape") != nil {
+            Image("lesson_experiment_table_45_landscape")
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(NovaPalette.classroomInk.opacity(0.18), lineWidth: 1)
-        )
+                .fill(NovaPalette.classroomPaper.opacity(0.5))
+        }
     }
 
     /// Draggable manipulatives row at the bottom of the tabletop. Items hide
@@ -219,8 +236,12 @@ public struct ExperimentCardView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Spacing.md)
                         .background(NovaPalette.classroomLeaf)
-                        .foregroundStyle(.white)
-                        .cornerRadius(12)
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                        }
                 }
             }
             .padding(.horizontal, Spacing.lg)
@@ -351,23 +372,17 @@ public struct ExperimentCardView: View {
     }
 }
 
-/// Draggable item view.
+/// Draggable manipulative — reads as a classroom material tile sitting
+/// on the tabletop: sun-tinted paper fill, ink stroke, soft drop-shadow.
+/// Same sticker family as the trophy/Tap stickers on the classroom-home
+/// shell so the experiment row feels like an extension of that surface.
 private struct DraggableItemView: View {
     let item: ExperimentCardView.DragItemState
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            NovaPalette.novaOrange,
-                            NovaPalette.novaPink,
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(NovaPalette.classroomSun)
 
             VStack(spacing: 4) {
                 if let imageURL = item.imageURL {
@@ -379,26 +394,36 @@ private struct DraggableItemView: View {
                 } else {
                     Image(systemName: "cube.fill")
                         .font(.title2)
+                        .foregroundStyle(NovaPalette.classroomInk)
                         .accessibilityHidden(true)
                 }
 
                 Text(item.label)
                     .font(NovaPalette.smallHeadingFont())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(NovaPalette.classroomInk)
                     .minimumScaleFactor(0.7)
                     .lineLimit(1)
             }
             .padding(8)
         }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+        }
+        .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 3, x: 0, y: 2)
         .draggable(item) {
             VStack {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(NovaPalette.novaOrange)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(NovaPalette.classroomSun)
 
                     Text(item.label)
                         .font(NovaPalette.smallHeadingFont())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NovaPalette.classroomInk)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
                 }
                 .frame(height: 60)
             }
@@ -421,46 +446,51 @@ private struct DropTargetView: View {
 
     var body: some View {
         ZStack {
-            // Base zone
-            RoundedRectangle(cornerRadius: 12)
+            // Base zone — dashed chalk outline that brightens when a tile
+            // is hovering, drawn in classroom palette so it matches the
+            // tabletop instead of the previous comic-book novaBlue/novaGreen.
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(
+                    isTargeted ? NovaPalette.classroomLeaf : NovaPalette.classroomSky,
                     style: StrokeStyle(lineWidth: 2, dash: [8])
                 )
-                .foregroundStyle(isTargeted ? NovaPalette.novaGreen : NovaPalette.novaBlue)
 
             if let filledItemId = target.filledWith,
                let filledItem = dragItems.first(where: { $0.id == filledItemId }) {
-                // Show placed item
+                // Show placed item — leaf-tinted paper rectangle with a
+                // green check, reading as "this tile landed correctly".
                 VStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(NovaPalette.titleFont())
-                        .foregroundStyle(NovaPalette.novaGreen)
+                        .foregroundStyle(NovaPalette.classroomLeaf)
                         .accessibilityHidden(true)
 
                     Text(filledItem.label)
                         .font(NovaPalette.smallHeadingFont())
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(NovaPalette.classroomInk)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(maxHeight: .infinity)
                 .background(
-                    colorScheme == .dark
-                        ? NovaPalette.novaGreen.opacity(0.15)
-                        : NovaPalette.novaGreen.opacity(0.1)
+                    NovaPalette.classroomLeaf.opacity(colorScheme == .dark ? 0.18 : 0.14),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
-                .cornerRadius(12)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(NovaPalette.classroomLeaf.opacity(0.65), lineWidth: 1.5)
+                }
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "arrow.down.circle")
                         .font(.title2)
-                        .foregroundStyle(NovaPalette.novaBlue)
+                        .foregroundStyle(NovaPalette.classroomSky)
                         .accessibilityHidden(true)
 
                     Text(target.label)
                         .font(NovaPalette.smallHeadingFont())
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(NovaPalette.classroomInk)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                 }

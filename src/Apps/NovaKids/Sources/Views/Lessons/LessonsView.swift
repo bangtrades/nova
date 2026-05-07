@@ -44,7 +44,12 @@ public struct LessonsView: View {
                         // banner can speak the semantic message (unauthorized /
                         // not found / network down) instead of a raw string.
                         if let error = viewModel.loadError {
-                            errorBanner(message: error.errorDescription ?? "Something went wrong")
+                            ClassroomErrorBanner(
+                                message: error.errorDescription ?? "Something went wrong",
+                                context: "lessons"
+                            ) { Task { await viewModel.refresh() } }
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.top, Spacing.md)
                         }
 
                         if viewModel.isLoading {
@@ -78,38 +83,6 @@ public struct LessonsView: View {
             // flipbook view doesn't re-narrate.
             .narrate("lessons")
         }
-    }
-
-    /// Thin error banner. Matches the Dashy error card language (S11-13):
-    /// page fill + ink stroke + coral icon + `.novaSecondary()` retry button.
-    @ViewBuilder
-    private func errorBanner(message: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(NovaPalette.coral)
-            Text(message)
-                .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.ink)
-                .lineLimit(2)
-            Spacer()
-            Button("Try Again") {
-                Task { await viewModel.refresh() }
-            }
-            .novaSecondary()
-        }
-        .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaPalette.page)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(NovaPalette.ink, lineWidth: 2)
-        )
-        .padding(.horizontal, Spacing.lg)
-        .padding(.top, Spacing.md)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Error loading lessons: \(message)")
     }
 
     /// The non-loading body — filter row + masonry grid.

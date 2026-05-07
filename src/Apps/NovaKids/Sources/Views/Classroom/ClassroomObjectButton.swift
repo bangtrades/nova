@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 public struct ClassroomObjectButton: View {
     let object: ClassroomObject
@@ -24,7 +25,7 @@ public struct ClassroomObjectButton: View {
         }
         .buttonStyle(.plain)
         .frame(minWidth: 88, minHeight: 88)
-        .scaleEffect(isPressed && !reduceMotion ? 0.96 : 1.0)
+        .scaleEffect(isPressed && reduceMotion == false ? 0.96 : 1.0)
         .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.72), value: isPressed)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
@@ -563,11 +564,21 @@ public struct ClassroomObjectButton: View {
 
                 VStack(spacing: Spacing.xs) {
                     HStack(spacing: Spacing.xs) {
-                        pinnedNote(
-                            color: NovaPalette.classroomPaper,
-                            rotation: -7,
-                            icon: "sparkles"
-                        )
+                        // First pin uses the painted yellow hint-note
+                        // sticker when the asset is in the bundle.
+                        // Falls back to the SwiftUI pinned-note shape
+                        // so the bulletin board still reads as a
+                        // pin-board when the asset is missing.
+                        if UIImage(named: "lesson_hint_note_45") != nil {
+                            paintedHintPin(rotation: -7)
+                        } else {
+                            pinnedNote(
+                                color: NovaPalette.classroomPaper,
+                                rotation: -7,
+                                icon: "sparkles"
+                            )
+                        }
+
                         pinnedNote(
                             color: NovaPalette.classroomSun,
                             rotation: 6,
@@ -596,6 +607,35 @@ public struct ClassroomObjectButton: View {
             title
         }
         .padding(Spacing.sm)
+    }
+
+    /// Painted hint-note sticker pinned to the cork. Used by the
+    /// bulletin board to ground the mission-board art with one
+    /// painted note alongside the SwiftUI-drawn star note. Falls
+    /// through to `pinnedNote` when the asset is unavailable.
+    private func paintedHintPin(rotation: Double) -> some View {
+        ZStack(alignment: .top) {
+            Image("lesson_hint_note_45")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 42)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .accessibilityHidden(true)
+
+            // Thumbtack on top so the painted note still reads as
+            // pinned to the cork (the painted asset has no tack).
+            Circle()
+                .fill(NovaPalette.classroomSchoolRed)
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1)
+                }
+                .frame(width: 10, height: 10)
+                .offset(y: -4)
+        }
+        .frame(width: 36, height: 42)
+        .rotationEffect(.degrees(rotation))
+        .accessibilityHidden(true)
     }
 
     private func pinnedNote(color: Color, rotation: Double, icon: String) -> some View {

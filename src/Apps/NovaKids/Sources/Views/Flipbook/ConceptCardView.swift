@@ -3,7 +3,16 @@ import NovaCore
 import NovaVoice
 import UIKit
 
-/// Concept card view displaying a key learning concept.
+/// Concept card view — a workbook explanation page rendered inside
+/// the `LessonBookReaderShell` workbook chrome.
+///
+/// The card no longer nests a chalkboard surface; the workbook
+/// shell already provides the paper-page silhouette. Concept
+/// content is laid out as a worksheet: a small sun-circle + title
+/// header, a paper-toned diagram / hero panel, the "big idea"
+/// rendered on a `LessonBookPageSurface` (workbook mood), and a
+/// sun-tinted read-aloud sticker. All animation is gated on
+/// `accessibilityReduceMotion`.
 public struct ConceptCardView: View {
     /// The card to display.
     let card: Card
@@ -22,7 +31,9 @@ public struct ConceptCardView: View {
 
     public var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            ChalkboardLessonCardSurface(cardKind: .concept, title: surfaceTitle) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                pageHeader
+
                 ViewThatFits(in: .horizontal) {
                     // Wide workbook layout (iPad landscape): diagram /
                     // illustration on the leading edge, "big idea" page
@@ -44,7 +55,7 @@ public struct ConceptCardView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(minWidth: 940, alignment: .leading)
+                    .frame(minWidth: 880, alignment: .leading)
 
                     // Stacked workbook layout (iPad portrait, narrow
                     // splits): diagram on top, big-idea page in the
@@ -65,7 +76,9 @@ public struct ConceptCardView: View {
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Concept Card")
         .accessibilityValue(card.content.explanation ?? "")
@@ -73,19 +86,50 @@ public struct ConceptCardView: View {
 
     private var surfaceTitle: String {
         if let title = card.content.title?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !title.isEmpty {
+           title.isEmpty == false {
             return title
         }
         return "Concept"
     }
 
+    /// Workbook page header — a sun-circle "lesson dot" plus the
+    /// concept title. Replaces the chalkboard surface header that
+    /// previously labelled the card; sized to read as a worksheet
+    /// page-top title inside the open book.
+    private var pageHeader: some View {
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            Circle()
+                .fill(NovaPalette.classroomSun)
+                .overlay(
+                    Circle().stroke(NovaPalette.classroomInk.opacity(0.55), lineWidth: 1)
+                )
+                .frame(width: 18, height: 18)
+                .accessibilityHidden(true)
+
+            Text(surfaceTitle)
+                .font(NovaPalette.headingFont())
+                .foregroundStyle(NovaPalette.classroomInk)
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Spacing.xs)
+    }
+
+    /// Diagram / hero panel for the concept card. Paper-and-sky
+    /// gradient (no chalkboard tones) so the diagram reads as a
+    /// workbook illustration rather than a green-board scribble.
+    /// Falls back to a paper-toned placeholder with a lightbulb
+    /// glyph when the lesson has no painted hero image.
     private var heroPanel: some View {
         CardHeroImage(url: card.imageURL) {
             ZStack {
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        NovaPalette.classroomChalkboard,
-                        NovaPalette.classroomSky.opacity(0.34),
+                        NovaPalette.classroomPaper,
+                        NovaPalette.classroomSky.opacity(0.22),
                     ]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -97,9 +141,9 @@ public struct ConceptCardView: View {
                         .foregroundStyle(NovaPalette.classroomSun)
                         .accessibilityHidden(true)
 
-                    Text("Concept Card")
-                        .font(NovaPalette.headingFont())
-                        .foregroundStyle(NovaPalette.classroomChalkDust)
+                    Text("Concept")
+                        .font(NovaPalette.captionFont().weight(.bold))
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
                 }
                 .padding(Spacing.lg)
             }
@@ -108,8 +152,9 @@ public struct ConceptCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: Spacing.md, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Spacing.md, style: .continuous)
-                .stroke(NovaPalette.classroomChalkDust.opacity(0.42), lineWidth: 2)
+                .stroke(NovaPalette.classroomInk.opacity(0.40), lineWidth: 2)
         }
+        .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 4, x: 0, y: 2)
         .accessibilityHidden(card.imageURL == nil)
     }
 
@@ -163,7 +208,7 @@ public struct ConceptCardView: View {
             }
         }) {
             ZStack {
-                if isSpeaking && !reduceMotion {
+                if isSpeaking && reduceMotion == false {
                     Circle()
                         .fill(NovaPalette.classroomSun.opacity(0.45))
                         .scaleEffect(pulseAnimation ? 1.25 : 1.0)

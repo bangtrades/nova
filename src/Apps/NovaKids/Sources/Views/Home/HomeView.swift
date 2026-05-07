@@ -62,7 +62,10 @@ public struct HomeView: View {
             )
 
             if let error = viewModel.loadError {
-                errorBanner(message: error.errorDescription ?? "Something went wrong")
+                ClassroomErrorBanner(
+                    message: error.errorDescription ?? "Something went wrong",
+                    context: "home"
+                ) { Task { await viewModel.refresh() } }
                     .padding(.horizontal, Spacing.lg)
                     .padding(.top, Spacing.md)
             }
@@ -121,7 +124,10 @@ public struct HomeView: View {
                     // of LessonsView / DashyView — page fill + ink
                     // stroke + coral icon + Try Again on .novaSecondary.
                     if let error = viewModel.loadError {
-                        errorBanner(message: error.errorDescription ?? "Something went wrong")
+                        ClassroomErrorBanner(
+                    message: error.errorDescription ?? "Something went wrong",
+                    context: "home"
+                ) { Task { await viewModel.refresh() } }
                     }
 
                     // Featured lesson — NavigationLink owns the tap so
@@ -253,33 +259,6 @@ public struct HomeView: View {
         completionStore.trophyCount(for: appState.currentChild?.id)
     }
 
-    @ViewBuilder
-    private func errorBanner(message: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(NovaPalette.coral)
-            Text(message)
-                .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.ink)
-                .lineLimit(2)
-            Spacer()
-            Button("Try Again") {
-                Task { await viewModel.refresh() }
-            }
-            .novaSecondary()
-        }
-        .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaPalette.page)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(NovaPalette.ink, lineWidth: 2)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Error loading home: \(message)")
-    }
 }
 
 /// Quick stats row showing badges and achievements.

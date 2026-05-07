@@ -62,8 +62,11 @@ public struct FlipbookView: View {
                 // Trophy language — page fill + ink stroke + coral icon +
                 // .novaSecondary() retry.
                 if let error = viewModel.loadError {
-                    errorBanner(message: error.errorDescription ?? "Something went wrong")
-                        .padding(.horizontal, Spacing.lg)
+                    ClassroomErrorBanner(
+                        message: error.errorDescription ?? "Something went wrong",
+                        context: "cards"
+                    ) { Task { await viewModel.retryLoad() } }
+                    .padding(.horizontal, Spacing.lg)
                 }
 
                 // Classroom loading state — reads as "the teacher is
@@ -160,22 +163,21 @@ public struct FlipbookView: View {
                     .padding(20)
                 }
 
-                // Navigation buttons — S11-11 moved these onto the
-                // shared `NovaSecondaryButtonStyle` so the prev / next pair
-                // picks up the ink-outline / page-fill / coral-text comic
-                // chrome. Two secondary buttons read cleanly here because
-                // neither is a top-of-screen primary CTA — the primary
-                // action is the card content itself.
-                // S12-01 caps the Prev/Next pair at 600pt so the two
-                // buttons don't land on opposite ends of an iPad landscape
-                // viewport. Keeps them reading as a paired control rather
-                // than two orphaned buttons.
+                // Navigation buttons — workbook page-turn pair. Each
+                // button reads as a paper page tab: classroom-paper
+                // fill, classroom-ink stroke, classroom-school-red
+                // chevron + label. The Finish variant swaps to a
+                // sun-yellow sticker so the lesson-complete moment
+                // stands out from the routine page-turn pair.
+                // S12-01 caps the pair at 600pt so the two buttons
+                // don't land on opposite ends of an iPad landscape
+                // viewport.
                 if viewModel.cards.isEmpty == false {
                     HStack(spacing: Spacing.md) {
                         let isAtStart = viewModel.currentCardIndex == 0
                         let isAtEnd = viewModel.isLastCard
 
-                        // Previous
+                        // Previous — paper page-turn going back.
                         Button {
                             // S11-16: card index transition animates under default,
                             // snaps instant under reduce-motion. The TabView page
@@ -185,26 +187,21 @@ public struct FlipbookView: View {
                                 viewModel.previousCard()
                             }
                         } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "chevron.left")
-                                    .font(.headline)
-                                    .accessibilityHidden(true)
-                                Text("Previous")
-                            }
+                            workbookPageTurnLabel(
+                                title: "Previous",
+                                direction: .leading,
+                                tone: .paper
+                            )
                         }
-                        .novaSecondary()
+                        .buttonStyle(.plain)
                         .disabled(isAtStart)
                         .opacity(isAtStart ? 0.5 : 1.0)
                         .accessibilityLabel("Previous card")
 
-                        // Next / Finish
-                        // S13: when isAtEnd, fire the lesson-complete flow
-                        // (record + celebrate) instead of advancing the index.
-                        // The previous shape disabled the button at the
-                        // last card, which made the kid hit a dead end —
-                        // they finished the quiz, tapped Finish, and
-                        // nothing happened. Now Finish is always live and
-                        // semantically correct.
+                        // Next / Finish — paper page-turn forward, or
+                        // sun-sticker Finish on the last card.
+                        // S13: when isAtEnd, fire the lesson-complete
+                        // flow instead of advancing the index.
                         Button {
                             if isAtEnd {
                                 finishLesson()
@@ -217,18 +214,13 @@ public struct FlipbookView: View {
                                 }
                             }
                         } label: {
-                            HStack(spacing: 8) {
-                                Text(isAtEnd ? "Finish" : "Next")
-                                Image(
-                                    systemName: isAtEnd
-                                        ? "checkmark.circle.fill"
-                                        : "chevron.right"
-                                )
-                                .font(.headline)
-                                .accessibilityHidden(true)
-                            }
+                            workbookPageTurnLabel(
+                                title: isAtEnd ? "Finish" : "Next",
+                                direction: .trailing,
+                                tone: isAtEnd ? .finish : .paper
+                            )
                         }
-                        .novaSecondary()
+                        .buttonStyle(.plain)
                         .accessibilityLabel(isAtEnd ? "Finish lesson" : "Next card")
                     }
                     .frame(maxWidth: 600)
@@ -459,36 +451,80 @@ public struct FlipbookView: View {
         }
     }
 
-    /// Classroom-tokened error banner. Same shape and "Try Again"
-    /// affordance as before, but recolored to read as a "note pinned to
-    /// the chalkboard" rather than the generic comic-page error pill.
+    /// Direction of a workbook nav-button page turn. Drives whether
+    /// the chevron sits leading or trailing the title.
+    private enum WorkbookNavDirection {
+        case leading
+        case trailing
+    }
+
+    /// Tone of a workbook nav button. Routine page turns use
+    /// `.paper` (classroom-paper fill, school-red accent). The
+    /// last-card Finish action uses `.finish` (sun-yellow sticker)
+    /// so the lesson-complete moment stands out from the regular
+    /// page-turn pair.
+    private enum WorkbookNavTone {
+        case paper
+        case finish
+    }
+
+    /// Label content for a workbook page-turn button: a
+    /// classroom-tokened pill with chevron + title that reads as a
+    /// page tab in the workbook chrome rather than a generic
+    /// comic-page button. Internal styling lives here so the two
+    /// Prev/Next buttons stay consistent without exporting another
+    /// shared button style.
     @ViewBuilder
-    private func errorBanner(message: String) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(NovaPalette.classroomSchoolRed)
-                .accessibilityHidden(true)
-            Text(message)
-                .font(NovaPalette.captionFont())
-                .foregroundStyle(NovaPalette.classroomInk)
-                .lineLimit(2)
-            Spacer()
-            Button("Try Again") {
-                Task { await viewModel.retryLoad() }
+    private func workbookPageTurnLabel(
+        title: String,
+        direction: WorkbookNavDirection,
+        tone: WorkbookNavTone
+    ) -> some View {
+        let accent: Color = {
+            switch tone {
+            case .paper: return NovaPalette.classroomSchoolRed
+            case .finish: return NovaPalette.classroomInk
             }
-            .novaSecondary()
+        }()
+        let fill: Color = {
+            switch tone {
+            case .paper: return NovaPalette.classroomPaper
+            case .finish: return NovaPalette.classroomSun
+            }
+        }()
+        let chevronName = direction == .leading ? "chevron.left" : (tone == .finish ? "checkmark.circle.fill" : "chevron.right")
+
+        HStack(spacing: 8) {
+            if direction == .leading {
+                Image(systemName: chevronName)
+                    .font(.headline)
+                    .foregroundStyle(accent)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+                .font(NovaPalette.smallHeadingFont().weight(.bold))
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if direction == .trailing {
+                Image(systemName: chevronName)
+                    .font(.headline)
+                    .foregroundStyle(accent)
+                    .accessibilityHidden(true)
+            }
         }
-        .padding(Spacing.md)
+        .padding(.vertical, 12)
+        .padding(.horizontal, Spacing.lg)
+        .frame(maxWidth: .infinity, minHeight: 52)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaPalette.classroomPaper)
+                .fill(fill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(NovaPalette.classroomSchoolRed.opacity(0.7), lineWidth: 2)
+                .stroke(NovaPalette.classroomInk.opacity(0.7), lineWidth: 2)
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Error loading cards: \(message)")
+        .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 4, x: 0, y: 2)
     }
 
     /// Loading state styled as "today's lesson is being chalked onto the

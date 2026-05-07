@@ -29,8 +29,11 @@ public struct LessonBookReaderShell<Content: View>: View {
                 .accessibilityHidden(true)
 
             bookSpread
-                .padding(.bottom, 36)
+                .frame(maxWidth: WorkbookArt.maxBookWidth)
+                .padding(.bottom, WorkbookArt.bookDeskOverlap)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Wooden desk slab anchored at the bottom of the shell. The book
@@ -265,6 +268,23 @@ private enum WorkbookArt {
     /// rim shows under the book; negative values would lift it up
     /// behind the book.
     static let deskOffsetBelowBaseline: CGFloat = 48
+
+    /// Maximum rendered width of the painted book, in points. The
+    /// book is `.aspectRatio(_, .fit)` so without this cap a 12.9"
+    /// iPad in landscape would render the book ~1200 pt wide and
+    /// dominate the viewport. The 600 pt cap on `CardProgressDots`
+    /// and the Prev/Next pair sets the visual rhythm; clamping the
+    /// book to 1000 pt keeps it generous (still ~70% of a 12.9"
+    /// landscape width) without competing with those controls.
+    static let maxBookWidth: CGFloat = 1000
+
+    /// Vertical distance the bottom edge of the book sits above the
+    /// bottom of the shell, so the painted desk slab peeks under the
+    /// book by exactly this much. Tuned by inspection of the desk
+    /// PNG — large enough to read as "the book sits on a desk",
+    /// small enough that the desk does not steal vertical room from
+    /// the page area.
+    static let bookDeskOverlap: CGFloat = 36
 }
 
 /// Inset model describing how much of the painted workbook PNG is

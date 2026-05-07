@@ -1,5 +1,6 @@
 import SwiftUI
 import NovaCore
+import UIKit
 
 /// Multiple-choice quiz card composed through the S11 design system.
 ///
@@ -160,8 +161,13 @@ public struct QuizCardView: View {
         }
     }
 
-    /// Vertically-stacked answer tiles. Empty if the card has no options —
-    /// we don't show a placeholder because a malformed quiz card is a
+    /// Vertically-stacked answer tiles wrapped in a workbook tray so the
+    /// row reads as classroom magnetic-tile manipulatives rather than a
+    /// plain button list. The tray uses
+    /// `lesson_answer_tiles_45_landscape` as a painted backdrop when the
+    /// asset is available; falls back to a paper-tinted rounded rectangle
+    /// with ink stroke when not. Empty if the card has no options — we
+    /// don't show a placeholder because a malformed quiz card is a
     /// content-pipeline bug, not a UX state the view should paper over.
     @ViewBuilder
     private var answerList: some View {
@@ -177,6 +183,29 @@ public struct QuizCardView: View {
                     )
                 }
             }
+            .padding(Spacing.md)
+            .background(answerTrayBackground)
+            .overlay {
+                if UIImage(named: "lesson_answer_tiles_45_landscape") == nil {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.20), lineWidth: 1.5)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var answerTrayBackground: some View {
+        if UIImage(named: "lesson_answer_tiles_45_landscape") != nil {
+            Image("lesson_answer_tiles_45_landscape")
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(NovaPalette.classroomPaper.opacity(0.55))
         }
     }
 
@@ -223,25 +252,45 @@ public struct QuizCardView: View {
 
     /// Hint pill — shows only after the penultimate attempt fails, giving
     /// the kid one chance to retry with context before the final strike.
+    /// Renders on top of the painted hint-note asset
+    /// (`lesson_hint_note_45`) when present so the hint reads as a
+    /// classroom sticky note pinned next to the answer tray; falls back
+    /// to a sun-tinted rounded rectangle when the asset is absent.
     private func hintPill(text: String) -> some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
             Image(systemName: "lightbulb.fill")
                 .font(.subheadline)
-                .foregroundStyle(NovaPalette.Category.yellow)
+                .foregroundStyle(NovaPalette.classroomSchoolRed)
                 .accessibilityHidden(true)
 
             Text(text)
                 .font(NovaPalette.bodyFont())
-                .foregroundStyle(NovaPalette.ink.opacity(0.8))
+                .foregroundStyle(NovaPalette.classroomInk)
 
             Spacer(minLength: 0)
         }
         .padding(Spacing.md)
-        .background(
-            NovaPalette.Category.yellow.opacity(0.15),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
+        .background(hintNoteBackground)
         .accessibilityLabel("Hint: \(text)")
+    }
+
+    @ViewBuilder
+    private var hintNoteBackground: some View {
+        if UIImage(named: "lesson_hint_note_45") != nil {
+            Image("lesson_hint_note_45")
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(NovaPalette.classroomSun.opacity(0.32))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(NovaPalette.classroomSun.opacity(0.55), lineWidth: 2)
+                )
+        }
     }
 
     /// Post-evaluation action button: Next on correct, Try Again on

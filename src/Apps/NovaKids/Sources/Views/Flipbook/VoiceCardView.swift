@@ -1,6 +1,7 @@
 import SwiftUI
 import NovaCore
 import NovaVoice
+import UIKit
 
 /// Voice interaction card — the kid hears Dashy's prompt, speaks their answer,
 /// and Dashy reacts with a celebration or a soft-reset hint based on how the
@@ -87,6 +88,9 @@ public struct VoiceCardView: View {
 
     // MARK: - Subviews
 
+    /// Teacher-prompt speech bubble. Hosts the prompt text on the
+    /// `lesson_voice_prompt_45` painted bubble asset when present;
+    /// falls back to a SwiftUI paper bubble with ink stroke when not.
     @ViewBuilder private var promptBubble: some View {
         if let prompt = card.content.promptText, !prompt.isEmpty {
             HStack(alignment: .top, spacing: Spacing.sm) {
@@ -111,16 +115,32 @@ public struct VoiceCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(Spacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(NovaPalette.classroomPaper)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(NovaPalette.classroomInk.opacity(0.45), lineWidth: 2)
-                    )
+                    .background(promptBubbleBackground)
                     .accessibilityAddTraits(.isHeader)
             }
+        }
+    }
+
+    /// Background for the prompt bubble. Uses the painted speech-bubble
+    /// asset (`lesson_voice_prompt_45`) when it ships in the bundle so
+    /// the prompt reads as a teacher-spoken line; falls back to a paper
+    /// rounded-rect with ink stroke when the asset is absent.
+    @ViewBuilder
+    private var promptBubbleBackground: some View {
+        if UIImage(named: "lesson_voice_prompt_45") != nil {
+            Image("lesson_voice_prompt_45")
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(NovaPalette.classroomPaper)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(NovaPalette.classroomInk.opacity(0.45), lineWidth: 2)
+                )
         }
     }
 
