@@ -339,6 +339,7 @@ enum APIHost {
            let url = URL(string: "http://\(host)/api/v1") {
             return url
         }
-        return URL(string: "http://localhost:3000/api/v1")!
+        return URL(string: "http://localhost:3000/api/v1")
+            ?? URL(fileURLWithPath: "/")
     }
 }

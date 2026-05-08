@@ -122,10 +122,11 @@ public struct ExperimentCardView: View {
         }
     }
 
-    /// Drop targets sit on a tabletop activity surface. When the painted
-    /// `lesson_experiment_table_45_landscape` asset is available it
-    /// supplies the wood-tabletop look; otherwise a paper-tinted
-    /// rounded rectangle stands in.
+    /// Drop targets sit on a tabletop activity surface. The painted
+    /// asset is resolved through `LessonArtSlot.experimentTabletopLandscape`
+    /// (canonical: `lesson_experiment_tabletop_45_landscape`; legacy:
+    /// `lesson_experiment_table_45_landscape`); otherwise a paper-
+    /// tinted rounded rectangle stands in.
     private var dropTargetsBlock: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Drop here:")
@@ -146,7 +147,7 @@ public struct ExperimentCardView: View {
         .padding(Spacing.md)
         .background(experimentTableBackground)
         .overlay {
-            if UIImage(named: "lesson_experiment_table_45_landscape") == nil {
+            if LessonArtSlot.experimentTabletopLandscape.hasAsset == false {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(NovaPalette.classroomInk.opacity(0.18), lineWidth: 1)
             }
@@ -155,8 +156,8 @@ public struct ExperimentCardView: View {
 
     @ViewBuilder
     private var experimentTableBackground: some View {
-        if UIImage(named: "lesson_experiment_table_45_landscape") != nil {
-            Image("lesson_experiment_table_45_landscape")
+        if let asset = LessonArtSlot.experimentTabletopLandscape.resolvedName {
+            Image(asset)
                 .resizable()
                 .scaledToFill()
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

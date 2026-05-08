@@ -1,6 +1,5 @@
 import SwiftUI
 import NovaCore
-import NovaVoice
 import UIKit
 
 /// Story card view — a picture-book page rendered inside the
@@ -10,19 +9,16 @@ import UIKit
 /// shell already provides the paper-page silhouette. Story content
 /// is laid out as a storybook page: a small bookmark + title header
 /// at the top, the hero illustration framed as a paper-mat plate
-/// with optional painted-frame asset, narrative copy on a
-/// `LessonBookPageSurface` (storybook mood), and a sun-tinted
-/// read-aloud sticker. All animation is gated on
-/// `accessibilityReduceMotion`.
+/// with optional painted-frame asset, and narrative copy on a
+/// `LessonBookPageSurface` (storybook mood).
+///
+/// Read-aloud lives at the workbook shell level, not on the card —
+/// `FlipbookView` owns the lesson-level Read Page button so a kid
+/// has one obvious way to hear the current page. The in-card
+/// speaker sticker that previously duplicated it has been removed.
 public struct StoryCardView: View {
     /// The card to display.
     let card: Card
-
-    /// Voice manager for TTS narration.
-    @EnvironmentObject var voiceManager: VoiceManager
-
-    @State private var isSpeaking = false
-    @State private var pulseAnimation = false
 
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
@@ -36,41 +32,28 @@ public struct StoryCardView: View {
                 pageHeader
 
                 ViewThatFits(in: .horizontal) {
-                    // Wide layout (iPad landscape): illustration on the
-                    // leading edge, narrative + read button alongside.
-                    // The minWidth gate keeps `ViewThatFits` from picking
-                    // this branch on iPad portrait where the text column
-                    // would squeeze.
+                    // Wide layout (iPad landscape): illustration on
+                    // the leading edge, narrative alongside. The
+                    // minWidth gate keeps `ViewThatFits` from picking
+                    // this branch on iPad portrait where the text
+                    // column would squeeze.
                     HStack(alignment: .top, spacing: Spacing.lg) {
                         heroPlate
                             .frame(width: 320)
                             .frame(maxHeight: 260)
 
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            storyPage
-
-                            HStack(spacing: Spacing.sm) {
-                                Spacer()
-                                speakerSticker
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        storyPage
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(minWidth: 880, alignment: .leading)
 
                     // Stacked layout (iPad portrait, iPhone, narrow
-                    // splits): illustration on top, narrative below,
-                    // read button trailing-aligned at the bottom.
+                    // splits): illustration on top, narrative below.
                     VStack(alignment: .leading, spacing: Spacing.lg) {
                         heroPlate
                             .frame(maxHeight: 260)
 
                         storyPage
-
-                        HStack(spacing: Spacing.sm) {
-                            Spacer()
-                            speakerSticker
-                        }
                     }
                 }
             }
@@ -107,11 +90,15 @@ public struct StoryCardView: View {
     }
 
     /// Painted bookmark sticker if the asset is in the bundle,
-    /// otherwise a SwiftUI school-red ribbon stand-in.
+    /// otherwise a SwiftUI school-red ribbon stand-in. The lookup is
+    /// routed through `LessonArtSlot.storyBookmark` so the canonical
+    /// vault name (`lesson_story_bookmark_45`) wins automatically once
+    /// the new artwork lands while the legacy `lesson_bookmark_45`
+    /// imageset that ships today still resolves.
     @ViewBuilder
     private var bookmarkOrnament: some View {
-        if UIImage(named: "lesson_bookmark_45") != nil {
-            Image("lesson_bookmark_45")
+        if let asset = LessonArtSlot.storyBookmark.resolvedName {
+            Image(asset)
                 .resizable()
                 .scaledToFit()
         } else {
@@ -146,16 +133,17 @@ public struct StoryCardView: View {
     }
 
     /// Hero illustration framed as a paper-mat plate pinned to the
-    /// chalkboard. When the painted-frame asset
-    /// `lesson_storybook_frame_45_landscape` is available, the inner
-    /// image is inset to fit inside the painted border. When it is
-    /// not, we drop the asset-specific inset and use a SwiftUI paper
-    /// mat with normal `Spacing.sm` padding so the inner illustration
-    /// fills the visible frame.
+    /// chalkboard. When the `LessonArtSlot.storyPictureFrame` slot
+    /// resolves (canonical: `lesson_story_picture_frame_45`; legacy:
+    /// `lesson_storybook_frame_45_landscape`), the inner image is
+    /// inset to fit inside the painted border. When the slot does not
+    /// resolve we drop the asset-specific inset and use a SwiftUI
+    /// paper mat with normal `Spacing.sm` padding so the inner
+    /// illustration fills the visible frame.
     private var heroPlate: some View {
         Group {
-            if UIImage(named: "lesson_storybook_frame_45_landscape") != nil {
-                assetFramedHero
+            if let frameAsset = LessonArtSlot.storyPictureFrame.resolvedName {
+                assetFramedHero(asset: frameAsset)
             } else {
                 swiftUIMattedHero
             }
@@ -168,13 +156,13 @@ public struct StoryCardView: View {
     /// The 68/52 horizontal/vertical inset is calibrated to land the
     /// inner illustration inside the painted border; do not edit
     /// those numerics without re-checking the frame artwork.
-    private var assetFramedHero: some View {
+    private func assetFramedHero(asset: String) -> some View {
         ZStack {
             heroIllustration
                 .padding(.horizontal, 68)
                 .padding(.vertical, 52)
 
-            Image("lesson_storybook_frame_45_landscape")
+            Image(asset)
                 .resizable()
                 .scaledToFit()
                 .allowsHitTesting(false)
@@ -247,81 +235,6 @@ public struct StoryCardView: View {
         }
     }
 
-    /// Read-aloud control rendered as a sun-tinted classroom sticker —
-    /// matches the sticker family used by the classroom-home tap
-    /// stickers and trophy count badge. Pulses on the sun ring while
-    /// speaking, fully gated on Reduce Motion.
-    private var speakerSticker: some View {
-        Button(action: speakStory) {
-            ZStack {
-                if isSpeaking && reduceMotion == false {
-                    Circle()
-                        .fill(NovaPalette.classroomSun.opacity(0.45))
-                        .scaleEffect(pulseAnimation ? 1.25 : 1.0)
-                        .animation(
-                            Animation.easeInOut(duration: 0.8)
-                                .repeatForever(autoreverses: true),
-                            value: pulseAnimation
-                        )
-                }
-
-                HStack(spacing: 6) {
-                    Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.1.fill")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(NovaPalette.classroomInk)
-                        .accessibilityHidden(true)
-
-                    Text("Read")
-                        .font(NovaPalette.captionFont().weight(.black))
-                        .foregroundStyle(NovaPalette.classroomInk)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-                .background(readAloudBackground)
-            }
-            .frame(minWidth: 88, minHeight: 44)
-        }
-        .buttonStyle(.plain)
-        .disabled(isSpeaking)
-        .accessibilityLabel("Read aloud")
-        .accessibilityValue(isSpeaking ? "Currently speaking" : "Not speaking")
-        .onAppear {
-            pulseAnimation = true
-        }
-    }
-
-    @ViewBuilder
-    private var readAloudBackground: some View {
-        if UIImage(named: "lesson_read_aloud_45") != nil {
-            Image("lesson_read_aloud_45")
-                .resizable()
-                .scaledToFill()
-                .frame(width: 116, height: 50)
-                .clipped()
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        } else {
-            Capsule(style: .continuous)
-                .fill(NovaPalette.classroomSun)
-                .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
-                }
-                .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 2, x: 0, y: 1)
-        }
-    }
-
-    private func speakStory() {
-        if let script = card.voiceScript ?? card.content.narrativeText {
-            Task {
-                isSpeaking = true
-                try? await voiceManager.speak(text: script)
-                isSpeaking = false
-            }
-        }
-    }
 }
 
 #Preview {
@@ -337,9 +250,5 @@ public struct StoryCardView: View {
         voiceScript: "Once upon a time, a curious child asked, How do computers learn?"
     )
 
-    let speechSynthesizer = SpeechSynthesizer()
-    let voiceManager = VoiceManager(speechSynthesizer: speechSynthesizer)
-
     StoryCardView(card: card)
-        .environmentObject(voiceManager)
 }

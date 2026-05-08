@@ -86,12 +86,14 @@ public class TrophyRoomViewModel: ObservableObject {
             }()
 
             let (catalog, earned) = try await (catalogFetch, earnedFetch)
+            let displayCatalog = catalog.isEmpty ? Self.defaultBadgeCatalog : catalog
+
             // Index earned-by-badge-id so the zip is O(N+M) not O(N*M).
             let earnedByBadgeId: [UUID: EarnedBadge] = Dictionary(
                 uniqueKeysWithValues: earned.map { ($0.badgeId, $0) }
             )
 
-            self.badges = catalog.map { badge in
+            self.badges = displayCatalog.map { badge in
                 if let record = earnedByBadgeId[badge.id] {
                     return BadgeDisplayItem(
                         badge: badge,
@@ -119,8 +121,14 @@ public class TrophyRoomViewModel: ObservableObject {
             self.totalLessonsCompleted = earned.count
             self.loadError = nil
         } catch let error as APIError {
+            if badges.isEmpty {
+                loadDefaultBadgeCatalog()
+            }
             self.loadError = error
         } catch {
+            if badges.isEmpty {
+                loadDefaultBadgeCatalog()
+            }
             self.loadError = .custom(error.localizedDescription)
         }
     }
@@ -131,6 +139,104 @@ public class TrophyRoomViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
+
+    private static var defaultBadgeCatalog: [Badge] {
+        defaultBadgeDefinitions.map { definition in
+            Badge(
+                id: stableUUID(definition.id),
+                title: definition.title,
+                description: definition.description,
+                icon: definition.icon,
+                criteria: definition.criteria
+            )
+        }
+    }
+
+    /// Stable fallback catalog for beta runs where the backend has not
+    /// seeded badge definitions yet. Without this, the trophy page can
+    /// look like it failed to load even though local lesson trophies
+    /// rendered correctly.
+    private static let defaultBadgeDefinitions: [(
+        id: String,
+        title: String,
+        description: String,
+        icon: String,
+        criteria: BadgeCriteria
+    )] = [
+        (
+            "11111111-1111-4111-8111-111111111111",
+            "First Lesson",
+            "Complete your first lesson",
+            "book.circle.fill",
+            .init(type: .lessonsCompleted, count: 1)
+        ),
+        (
+            "22222222-2222-4222-8222-222222222222",
+            "Lesson Master",
+            "Complete 5 lessons",
+            "books.vertical.circle.fill",
+            .init(type: .lessonsCompleted, count: 5)
+        ),
+        (
+            "33333333-3333-4333-8333-333333333333",
+            "Experiment Explorer",
+            "Complete 3 experiments",
+            "flask.fill",
+            .init(type: .experimentsCompleted, count: 3)
+        ),
+        (
+            "44444444-4444-4444-8444-444444444444",
+            "Quiz Whiz",
+            "Answer 10 quiz questions correctly",
+            "questionmark.circle.fill",
+            .init(type: .lessonsCompleted, count: 10)
+        ),
+        (
+            "55555555-5555-4555-8555-555555555555",
+            "Voice Adventurer",
+            "Record 5 voice responses",
+            "mic.circle.fill",
+            .init(type: .voiceInteractions, count: 5)
+        ),
+        (
+            "66666666-6666-4666-8666-666666666666",
+            "3-Day Streak",
+            "Learn for 3 days in a row",
+            "flame.circle.fill",
+            .init(type: .daysStreak, count: 3)
+        ),
+        (
+            "77777777-7777-4777-8777-777777777777",
+            "AI Genius",
+            "Complete the AI Basics path",
+            "sparkles",
+            .init(type: .pathCompleted, count: 1)
+        ),
+        (
+            "88888888-8888-4888-8888-888888888888",
+            "Week Warrior",
+            "Learn for 7 days straight",
+            "calendar.circle.fill",
+            .init(type: .daysStreak, count: 7)
+        ),
+    ]
+
+    private static func stableUUID(_ rawValue: String) -> UUID {
+        UUID(uuidString: rawValue) ?? UUID()
+    }
+
+    private func loadDefaultBadgeCatalog() {
+        badges = Self.defaultBadgeCatalog.map { badge in
+            BadgeDisplayItem(
+                badge: badge,
+                isEarned: false,
+                earnedDate: nil,
+                progress: 0
+            )
+        }
+        currentStreak = 0
+        totalLessonsCompleted = 0
+    }
 
     private func loadMockData() {
         // Create mock badges

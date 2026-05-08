@@ -29,6 +29,12 @@ public class AuthViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    private static let placeholderBaseURL: URL = {
+        URL(string: "https://api.nova.local")
+            ?? URL(string: "about:blank")
+            ?? URL(fileURLWithPath: "/")
+    }()
+
     /// Initialize the ViewModel with an AuthManager.
     ///
     /// - Parameters:
@@ -40,7 +46,7 @@ public class AuthViewModel: ObservableObject {
             // Create a new AuthManager with default API client
             self.authManager = AuthManager(
                 apiClient: APIClient(
-                    baseURL: URL(string: "https://api.nova.local")!,
+                    baseURL: Self.placeholderBaseURL,
                     tokenProvider: _DefaultTokenProvider()
                 )
             )

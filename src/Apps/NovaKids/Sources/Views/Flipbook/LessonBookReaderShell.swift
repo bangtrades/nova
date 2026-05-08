@@ -251,11 +251,25 @@ public struct LessonBookReaderShell<Content: View>: View {
 /// sprinkle string literals or magic ratios across the file.
 private enum WorkbookArt {
     /// Asset name for the open-book PNG with two paper pages, wooden
-    /// cover, three yellow side tabs, and a red bookmark.
-    static let workbookImageName = "lesson_workbook_45_landscape"
+    /// cover, three yellow side tabs, and a red bookmark. Routed
+    /// through `LessonArtSlot.readerWorkbookLandscape` so the slot
+    /// candidate list owns the actual imageset name; falls back to
+    /// the legacy literal when no candidate resolves so the existing
+    /// `hasAsset(_:)` probe at the call site still produces the
+    /// correct miss/hit signal.
+    static var workbookImageName: String {
+        LessonArtSlot.readerWorkbookLandscape.resolvedName
+            ?? "lesson_workbook_45_landscape"
+    }
 
-    /// Asset name for the wooden desk slab the book rests on.
-    static let deskImageName = "lesson_desktop_45_landscape"
+    /// Asset name for the wooden desk slab the book rests on. Routed
+    /// through `LessonArtSlot.readerDeskLandscape` (canonical:
+    /// `lesson_reader_desk_45_landscape`; legacy:
+    /// `lesson_desktop_45_landscape`).
+    static var deskImageName: String {
+        LessonArtSlot.readerDeskLandscape.resolvedName
+            ?? "lesson_desktop_45_landscape"
+    }
 
     /// Aspect ratio of the painted workbook PNG (width / height).
     /// Used by `aspectRatio(_, contentMode: .fit)` so the GeometryReader

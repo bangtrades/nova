@@ -164,11 +164,14 @@ public struct QuizCardView: View {
     /// Vertically-stacked answer tiles wrapped in a workbook tray so the
     /// row reads as classroom magnetic-tile manipulatives rather than a
     /// plain button list. The tray uses
-    /// `lesson_answer_tiles_45_landscape` as a painted backdrop when the
-    /// asset is available; falls back to a paper-tinted rounded rectangle
-    /// with ink stroke when not. Empty if the card has no options — we
-    /// don't show a placeholder because a malformed quiz card is a
-    /// content-pipeline bug, not a UX state the view should paper over.
+    /// `LessonArtSlot.quizAnswerTilesTray` (canonical:
+    /// `lesson_quiz_answer_tiles_45`; legacy:
+    /// `lesson_answer_tiles_45_landscape`) as a painted backdrop when
+    /// the asset is available; falls back to a paper-tinted rounded
+    /// rectangle with ink stroke when not. Empty if the card has no
+    /// options — we don't show a placeholder because a malformed quiz
+    /// card is a content-pipeline bug, not a UX state the view should
+    /// paper over.
     @ViewBuilder
     private var answerList: some View {
         if let options = card.content.options {
@@ -186,7 +189,7 @@ public struct QuizCardView: View {
             .padding(Spacing.md)
             .background(answerTrayBackground)
             .overlay {
-                if UIImage(named: "lesson_answer_tiles_45_landscape") == nil {
+                if LessonArtSlot.quizAnswerTilesTray.hasAsset == false {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(NovaPalette.classroomInk.opacity(0.20), lineWidth: 1.5)
                 }
@@ -196,8 +199,8 @@ public struct QuizCardView: View {
 
     @ViewBuilder
     private var answerTrayBackground: some View {
-        if UIImage(named: "lesson_answer_tiles_45_landscape") != nil {
-            Image("lesson_answer_tiles_45_landscape")
+        if let asset = LessonArtSlot.quizAnswerTilesTray.resolvedName {
+            Image(asset)
                 .resizable()
                 .scaledToFill()
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -250,12 +253,14 @@ public struct QuizCardView: View {
         )
     }
 
-    /// Hint pill — shows only after the penultimate attempt fails, giving
-    /// the kid one chance to retry with context before the final strike.
-    /// Renders on top of the painted hint-note asset
-    /// (`lesson_hint_note_45`) when present so the hint reads as a
-    /// classroom sticky note pinned next to the answer tray; falls back
-    /// to a sun-tinted rounded rectangle when the asset is absent.
+    /// Hint pill — shows only after the penultimate attempt fails,
+    /// giving the kid one chance to retry with context before the
+    /// final strike. Renders on top of the painted hint-note asset
+    /// resolved through `LessonArtSlot.quizHintNote` (canonical:
+    /// `lesson_quiz_hint_note_45`; legacy: `lesson_hint_note_45`)
+    /// when present so the hint reads as a classroom sticky note
+    /// pinned next to the answer tray; falls back to a sun-tinted
+    /// rounded rectangle when the asset is absent.
     private func hintPill(text: String) -> some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
             Image(systemName: "lightbulb.fill")
@@ -276,8 +281,8 @@ public struct QuizCardView: View {
 
     @ViewBuilder
     private var hintNoteBackground: some View {
-        if UIImage(named: "lesson_hint_note_45") != nil {
-            Image("lesson_hint_note_45")
+        if let asset = LessonArtSlot.quizHintNote.resolvedName {
+            Image(asset)
                 .resizable()
                 .scaledToFill()
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

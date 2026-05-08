@@ -29,6 +29,12 @@ public class BackgroundTaskManager: NSObject, ObservableObject {
     /// Reference to asset cache manager for preloading.
     private weak var assetCacheManager: AssetCacheManager?
 
+    /// BGTaskScheduler registration is process-global and should happen
+    /// once. `NovaKidsApp` can re-run `.onAppear` as the root view switches
+    /// between auth/onboarding/main tabs, so this guard prevents duplicate
+    /// registration attempts during beta testing.
+    private var didRegisterTasks = false
+
     override init() {
         super.init()
     }
@@ -44,12 +50,19 @@ public class BackgroundTaskManager: NSObject, ObservableObject {
         self.syncManager = syncManager
         self.assetCacheManager = assetCacheManager
 
+        guard didRegisterTasks == false else { return }
+        didRegisterTasks = true
+
         // Register sync task handler
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.nova.sync",
             using: nil
         ) { [weak self] task in
-            self?.handleSyncTask(task as! BGAppRefreshTask)
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self?.handleSyncTask(refreshTask)
         }
 
         // Register asset download task handler
@@ -57,7 +70,11 @@ public class BackgroundTaskManager: NSObject, ObservableObject {
             forTaskWithIdentifier: "com.nova.assets",
             using: nil
         ) { [weak self] task in
-            self?.handleAssetTask(task as! BGProcessingTask)
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self?.handleAssetTask(processingTask)
         }
 
         // Schedule initial sync

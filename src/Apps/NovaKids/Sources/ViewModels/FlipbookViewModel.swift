@@ -194,6 +194,11 @@ public class FlipbookViewModel: ObservableObject {
         currentCardIndex == cards.count - 1
     }
 
+    /// Current page text for the main lesson read-aloud control.
+    var currentReadAloudText: String? {
+        currentCard?.lessonReadAloudText
+    }
+
     /// Gets the current hint for the active card.
     var currentHint: String {
         guard let card = currentCard else {
@@ -213,26 +218,14 @@ public class FlipbookViewModel: ObservableObject {
 
     // MARK: - Voice Narration
 
-    /// Speaks the current card's voice script.
+    /// Speaks the current card's lesson text.
     ///
-    /// Prefers the voiceScript if available, otherwise falls back to
-    /// narrativeText (story) or explanation (concept).
-    public func speakCurrentCard() async throws {
-        guard let card = currentCard else { return }
-
-        let textToSpeak = card.voiceScript
-            ?? card.content.narrativeText
-            ?? card.content.explanation
-            ?? ""
-
-        guard !textToSpeak.isEmpty else { return }
-
-        // S13-09: VoiceManager now defaults to OpenAI TTS through the
-        // backend proxy. The kid's selected persona lives on
-        // voiceManager.currentVoice and was set at picker / app-launch
-        // time from VoicePreferenceStore. AVSpeech survives only as the
-        // offline fallback.
-        try await voiceManager.speak(text: textToSpeak)
+    /// Beta path uses local AVSpeech first so the read-aloud affordance
+    /// never depends on backend TTS/auth being healthy. Premium voices can
+    /// return once the end-to-end TTS proxy is verified in simulator.
+    public func speakCurrentCard(preferLocal: Bool = true) async throws {
+        guard let textToSpeak = currentReadAloudText else { return }
+        try await voiceManager.speak(text: textToSpeak, preferLocal: preferLocal)
     }
 
     /// Stops the current speech.

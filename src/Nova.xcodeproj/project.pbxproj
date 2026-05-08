@@ -147,6 +147,9 @@
 		DE51617100000017000000B1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000017000000C1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift */; };
 		DE51617100000018000000B1 /* Sources/Views/Common/ClassroomErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000018000000C1 /* Sources/Views/Common/ClassroomErrorBanner.swift */; };
 		DE51617100000019000000B1 /* Sources/Views/Common/ClassroomSpinner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000019000000C1 /* Sources/Views/Common/ClassroomSpinner.swift */; };
+		DE51617100000020000000B1 /* Sources/Views/Flipbook/CardReadAloudText.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000020000000C1 /* Sources/Views/Flipbook/CardReadAloudText.swift */; };
+		DE51617100000020000000B2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000020000000C2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift */; };
+		DE51617100000021000000B1 /* Sources/Views/Flipbook/LessonArtSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000021000000C1 /* Sources/Views/Flipbook/LessonArtSlot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -175,6 +178,9 @@
 		DE51617100000017000000C1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonBookPageSurface.swift; sourceTree = "<group>"; };
 		DE51617100000018000000C1 /* Sources/Views/Common/ClassroomErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ClassroomErrorBanner.swift; sourceTree = "<group>"; };
 		DE51617100000019000000C1 /* Sources/Views/Common/ClassroomSpinner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ClassroomSpinner.swift; sourceTree = "<group>"; };
+		DE51617100000020000000C1 /* Sources/Views/Flipbook/CardReadAloudText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/CardReadAloudText.swift; sourceTree = "<group>"; };
+		DE51617100000020000000C2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonReadAloudButton.swift; sourceTree = "<group>"; };
+		DE51617100000021000000C1 /* Sources/Views/Flipbook/LessonArtSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonArtSlot.swift; sourceTree = "<group>"; };
 		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
 		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
 		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
@@ -333,11 +339,14 @@
 				3481AF2E024363FB811EDF95 /* Sources/Views/Trophies/BadgeView.swift */,
 				E70FA0BE404EAC27908DD1A0 /* Sources/Views/Flipbook/CardProgressDots.swift */,
 				CA3D1EA02226951D31C0EA02 /* Sources/Views/Flipbook/CardHeroImage.swift */,
+				DE51617100000020000000C1 /* Sources/Views/Flipbook/CardReadAloudText.swift */,
 				DE51617100000012000000C1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift */,
+				DE51617100000021000000C1 /* Sources/Views/Flipbook/LessonArtSlot.swift */,
 				CA3D1EA02226951D31C0EA04 /* Sources/Services/LessonCompletionStore.swift */,
 				CA3D1EA02226951D31C0EA06 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift */,
 				DE51617100000016000000C1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift */,
 				DE51617100000017000000C1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift */,
+				DE51617100000020000000C2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift */,
 				DE51617100000018000000C1 /* Sources/Views/Common/ClassroomErrorBanner.swift */,
 				DE51617100000019000000C1 /* Sources/Views/Common/ClassroomSpinner.swift */,
 				CA3D1EA02226951D31C0EA08 /* Sources/Services/VoicePreferenceStore.swift */,
@@ -594,10 +603,13 @@
 				354F2FCBCC7FB979632B87DF /* Sources/Views/Trophies/BadgeView.swift in Sources */,
 				236C65E7346FBEF4626EC34C /* Sources/Views/Flipbook/CardProgressDots.swift in Sources */,
 				CA3D1EA02226951D31C0EA01 /* Sources/Views/Flipbook/CardHeroImage.swift in Sources */,
+				DE51617100000020000000B1 /* Sources/Views/Flipbook/CardReadAloudText.swift in Sources */,
+				DE51617100000021000000B1 /* Sources/Views/Flipbook/LessonArtSlot.swift in Sources */,
 				CA3D1EA02226951D31C0EA03 /* Sources/Services/LessonCompletionStore.swift in Sources */,
 				CA3D1EA02226951D31C0EA05 /* Sources/Views/Flipbook/LessonCompleteCelebration.swift in Sources */,
 				DE51617100000016000000B1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift in Sources */,
 				DE51617100000017000000B1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift in Sources */,
+				DE51617100000020000000B2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift in Sources */,
 				DE51617100000018000000B1 /* Sources/Views/Common/ClassroomErrorBanner.swift in Sources */,
 				DE51617100000019000000B1 /* Sources/Views/Common/ClassroomSpinner.swift in Sources */,
 				CA3D1EA02226951D31C0EA07 /* Sources/Services/VoicePreferenceStore.swift in Sources */,

@@ -44,12 +44,10 @@ public class AssetCacheManager: NSObject, ObservableObject {
 
     public override init() {
         // Setup cache directory
-        guard let cachesURL = fileManager.urls(
+        let cachesURL = fileManager.urls(
             for: .cachesDirectory,
             in: .userDomainMask
-        ).first else {
-            fatalError("Cannot access Caches directory")
-        }
+        ).first ?? fileManager.temporaryDirectory
 
         self.cacheDirectory = cachesURL.appendingPathComponent("NovaAssets", isDirectory: true)
 

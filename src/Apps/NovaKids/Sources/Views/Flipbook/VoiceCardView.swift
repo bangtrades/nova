@@ -89,8 +89,11 @@ public struct VoiceCardView: View {
     // MARK: - Subviews
 
     /// Teacher-prompt speech bubble. Hosts the prompt text on the
-    /// `lesson_voice_prompt_45` painted bubble asset when present;
-    /// falls back to a SwiftUI paper bubble with ink stroke when not.
+    /// painted bubble asset resolved through
+    /// `LessonArtSlot.voicePromptBubble` (canonical:
+    /// `lesson_voice_prompt_bubble_45`; legacy: `lesson_voice_prompt_45`)
+    /// when present; falls back to a SwiftUI paper bubble with ink
+    /// stroke when not.
     @ViewBuilder private var promptBubble: some View {
         if let prompt = card.content.promptText, !prompt.isEmpty {
             HStack(alignment: .top, spacing: Spacing.sm) {
@@ -121,14 +124,16 @@ public struct VoiceCardView: View {
         }
     }
 
-    /// Background for the prompt bubble. Uses the painted speech-bubble
-    /// asset (`lesson_voice_prompt_45`) when it ships in the bundle so
-    /// the prompt reads as a teacher-spoken line; falls back to a paper
+    /// Background for the prompt bubble. Uses the painted speech-
+    /// bubble asset resolved through `LessonArtSlot.voicePromptBubble`
+    /// (canonical: `lesson_voice_prompt_bubble_45`; legacy:
+    /// `lesson_voice_prompt_45`) when it ships in the bundle so the
+    /// prompt reads as a teacher-spoken line; falls back to a paper
     /// rounded-rect with ink stroke when the asset is absent.
     @ViewBuilder
     private var promptBubbleBackground: some View {
-        if UIImage(named: "lesson_voice_prompt_45") != nil {
-            Image("lesson_voice_prompt_45")
+        if let asset = LessonArtSlot.voicePromptBubble.resolvedName {
+            Image(asset)
                 .resizable()
                 .scaledToFill()
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

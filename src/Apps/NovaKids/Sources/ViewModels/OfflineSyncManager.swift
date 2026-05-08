@@ -228,7 +228,7 @@ private struct AnySyncablePayload: Encodable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: DynamicKey.self)
         for (key, value) in value {
-            let dynamicKey = DynamicKey(stringValue: key)!
+            guard let dynamicKey = DynamicKey(stringValue: key) else { continue }
             if let intValue = value as? Int {
                 try container.encode(intValue, forKey: dynamicKey)
             } else if let stringValue = value as? String {

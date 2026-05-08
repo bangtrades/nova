@@ -58,9 +58,9 @@ public struct OpenAIOAuthConfig {
 
         return OpenAIOAuthConfig(
             clientId: clientId,
-            redirectURI: URL(string: "nova://oauth-callback")!,
-            authorizationURL: URL(string: "https://auth.openai.com/authorize")!,
-            tokenURL: URL(string: "https://auth.openai.com/token")!,
+            redirectURI: safeURL("nova://oauth-callback"),
+            authorizationURL: safeURL("https://auth.openai.com/authorize"),
+            tokenURL: safeURL("https://auth.openai.com/token"),
             scopes: [
                 "openid",
                 "email",
@@ -77,14 +77,20 @@ public struct OpenAIOAuthConfig {
             ?? "staging-placeholder"
         return OpenAIOAuthConfig(
             clientId: clientId,
-            redirectURI: URL(string: "nova-dev://oauth-callback")!,
-            authorizationURL: URL(string: "https://staging-auth.openai.com/authorize")!,
-            tokenURL: URL(string: "https://staging-auth.openai.com/token")!,
+            redirectURI: safeURL("nova-dev://oauth-callback"),
+            authorizationURL: safeURL("https://staging-auth.openai.com/authorize"),
+            tokenURL: safeURL("https://staging-auth.openai.com/token"),
             scopes: [
                 "openid",
                 "email",
                 "profile",
             ]
         )
+    }
+
+    private static func safeURL(_ rawValue: String) -> URL {
+        URL(string: rawValue)
+            ?? URL(string: "about:blank")
+            ?? URL(fileURLWithPath: "/")
     }
 }

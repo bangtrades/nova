@@ -1,6 +1,5 @@
 import SwiftUI
 import NovaCore
-import NovaVoice
 import UIKit
 
 /// Concept card view — a workbook explanation page rendered inside
@@ -9,19 +8,16 @@ import UIKit
 /// The card no longer nests a chalkboard surface; the workbook
 /// shell already provides the paper-page silhouette. Concept
 /// content is laid out as a worksheet: a small sun-circle + title
-/// header, a paper-toned diagram / hero panel, the "big idea"
-/// rendered on a `LessonBookPageSurface` (workbook mood), and a
-/// sun-tinted read-aloud sticker. All animation is gated on
-/// `accessibilityReduceMotion`.
+/// header, a paper-toned diagram / hero panel, and the "big idea"
+/// rendered on a `LessonBookPageSurface` (workbook mood).
+///
+/// Read-aloud lives at the workbook shell level, not on the card —
+/// `FlipbookView` owns the lesson-level Read Page button so a kid
+/// has one obvious way to hear the current page. The in-card
+/// speaker sticker that previously duplicated it has been removed.
 public struct ConceptCardView: View {
     /// The card to display.
     let card: Card
-
-    /// Voice manager for TTS narration.
-    @EnvironmentObject var voiceManager: VoiceManager
-
-    @State private var isSpeaking = false
-    @State private var pulseAnimation = false
 
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
@@ -36,41 +32,26 @@ public struct ConceptCardView: View {
 
                 ViewThatFits(in: .horizontal) {
                     // Wide workbook layout (iPad landscape): diagram /
-                    // illustration on the leading edge, "big idea" page
-                    // alongside, read button trailing at the bottom of
-                    // the page column. The minWidth gate keeps narrow
+                    // illustration on the leading edge, "big idea"
+                    // page alongside. The minWidth gate keeps narrow
                     // sizes off this branch.
                     HStack(alignment: .top, spacing: Spacing.lg) {
                         heroPanel
                             .frame(width: 320)
                             .frame(maxHeight: 260)
 
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            explanationNote
-
-                            HStack(spacing: Spacing.sm) {
-                                Spacer()
-                                speakerButton
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        explanationNote
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(minWidth: 880, alignment: .leading)
 
                     // Stacked workbook layout (iPad portrait, narrow
-                    // splits): diagram on top, big-idea page in the
-                    // middle, read button trailing-aligned at the
-                    // bottom.
+                    // splits): diagram on top, big-idea page below.
                     VStack(alignment: .leading, spacing: Spacing.lg) {
                         heroPanel
                             .frame(maxHeight: 240)
 
                         explanationNote
-
-                        HStack(spacing: Spacing.sm) {
-                            Spacer()
-                            speakerButton
-                        }
                     }
                 }
             }
@@ -193,79 +174,6 @@ public struct ConceptCardView: View {
         }
     }
 
-    /// Read-aloud control rendered as a sun-tinted classroom sticker
-    /// matching the rest of the classroom-shell sticker family. Pulse
-    /// gated on Reduce Motion.
-    private var speakerButton: some View {
-        Button(action: {
-            if let script = card.voiceScript ?? card.content.explanation {
-                Task {
-                    isSpeaking = true
-                    // S13-09: defaults to OpenAI TTS via backend proxy.
-                    try? await voiceManager.speak(text: script)
-                    isSpeaking = false
-                }
-            }
-        }) {
-            ZStack {
-                if isSpeaking && reduceMotion == false {
-                    Circle()
-                        .fill(NovaPalette.classroomSun.opacity(0.45))
-                        .scaleEffect(pulseAnimation ? 1.25 : 1.0)
-                        .animation(
-                            Animation.easeInOut(duration: 0.8)
-                                .repeatForever(autoreverses: true),
-                            value: pulseAnimation
-                        )
-                }
-
-                HStack(spacing: 6) {
-                    Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.1.fill")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(NovaPalette.classroomInk)
-                        .accessibilityHidden(true)
-
-                    Text("Read")
-                        .font(NovaPalette.captionFont().weight(.black))
-                        .foregroundStyle(NovaPalette.classroomInk)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-                .background(readAloudBackground)
-            }
-            .frame(minWidth: 88, minHeight: 44)
-        }
-        .buttonStyle(.plain)
-        .disabled(isSpeaking)
-        .accessibilityLabel("Read aloud")
-        .accessibilityValue(isSpeaking ? "Currently speaking" : "Not speaking")
-        .onAppear {
-            pulseAnimation = true
-        }
-    }
-
-    @ViewBuilder
-    private var readAloudBackground: some View {
-        if UIImage(named: "lesson_read_aloud_45") != nil {
-            Image("lesson_read_aloud_45")
-                .resizable()
-                .scaledToFill()
-                .frame(width: 116, height: 50)
-                .clipped()
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        } else {
-            Capsule(style: .continuous)
-                .fill(NovaPalette.classroomSun)
-                .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
-                }
-                .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 2, x: 0, y: 1)
-        }
-    }
 }
 
 #Preview {
@@ -281,9 +189,5 @@ public struct ConceptCardView: View {
         voiceScript: "AI learns by looking at many examples and finding patterns."
     )
 
-    let speechSynthesizer = SpeechSynthesizer()
-    let voiceManager = VoiceManager(speechSynthesizer: speechSynthesizer)
-
     ConceptCardView(card: card)
-        .environmentObject(voiceManager)
 }

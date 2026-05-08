@@ -12,6 +12,16 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
     /// Speech synthesizer instance.
     private let synthesizer = AVSpeechSynthesizer()
 
+    /// Continuation for the active utterance. `speak` now awaits finish
+    /// or cancellation so lesson-level read controls can show accurate
+    /// "Reading" state instead of flipping back to idle immediately.
+    private var speechContinuation: CheckedContinuation<Void, Never>?
+
+    /// Active utterance identity. AVSpeech delegate callbacks can arrive
+    /// after a new utterance starts, so only the active utterance is
+    /// allowed to complete the continuation.
+    private var activeUtterance: AVSpeechUtterance?
+
     /// Voice style for the synthesizer.
     public enum VoiceStyle {
         case dashy      // Kid-friendly, energetic
@@ -82,10 +92,16 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
     ///   - rate: Speech rate (0.0 = slowest, 1.0 = normal, 2.0 = fastest).
     @MainActor
     public func speak(_ text: String, voice: VoiceStyle = .narrator, rate: Float = 0.45) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
         // Stop any current speech
+        speechContinuation?.resume()
+        speechContinuation = nil
+        activeUtterance = nil
         synthesizer.stopSpeaking(at: .immediate)
 
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: trimmed)
         utterance.voice = voice.getVoice()
         utterance.rate = rate
         utterance.pitchMultiplier = voice.getPitchMultiplier()
@@ -93,12 +109,21 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
         // Add slight pause between sentences
         utterance.postUtteranceDelay = 0.1
 
-        synthesizer.speak(utterance)
+        activeUtterance = utterance
+        isSpeaking = true
+
+        await withCheckedContinuation { continuation in
+            speechContinuation = continuation
+            synthesizer.speak(utterance)
+        }
     }
 
     /// Stops the current speech immediately.
     @MainActor
     public func stop() {
+        speechContinuation?.resume()
+        speechContinuation = nil
+        activeUtterance = nil
         synthesizer.stopSpeaking(at: .immediate)
         isSpeaking = false
     }
@@ -122,6 +147,7 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
         didStart utterance: AVSpeechUtterance
     ) {
         DispatchQueue.main.async {
+            guard utterance === self.activeUtterance else { return }
             self.isSpeaking = true
         }
     }
@@ -131,7 +157,11 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
         didFinish utterance: AVSpeechUtterance
     ) {
         DispatchQueue.main.async {
+            guard utterance === self.activeUtterance else { return }
             self.isSpeaking = false
+            self.activeUtterance = nil
+            self.speechContinuation?.resume()
+            self.speechContinuation = nil
         }
     }
 
@@ -140,7 +170,11 @@ public class SpeechSynthesizer: NSObject, ObservableObject, AVSpeechSynthesizerD
         didCancel utterance: AVSpeechUtterance
     ) {
         DispatchQueue.main.async {
+            guard utterance === self.activeUtterance else { return }
             self.isSpeaking = false
+            self.activeUtterance = nil
+            self.speechContinuation?.resume()
+            self.speechContinuation = nil
         }
     }
 }

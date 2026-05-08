@@ -23,6 +23,7 @@ public struct FlipbookView: View {
     // record time so re-completes get the softer welcome-back beat.
     @State private var showCelebration = false
     @State private var celebrationIsFirstTime = true
+    @State private var lessonReadAloudState: LessonReadAloudButtonState = .idle
 
     public init(lesson: Lesson) {
         self.lesson = lesson
@@ -89,7 +90,7 @@ public struct FlipbookView: View {
                 // than a generic card on a screen.
                 if viewModel.cards.isEmpty == false {
                     LessonBookReaderShell {
-                        ZStack(alignment: .topTrailing) {
+                        ZStack(alignment: .top) {
                             TabView(selection: $viewModel.currentCardIndex) {
                                 ForEach(0..<viewModel.cards.count, id: \.self) { index in
                                     let card = viewModel.cards[index]
@@ -137,9 +138,20 @@ public struct FlipbookView: View {
                             .indexViewStyle(.page(backgroundDisplayMode: .never))
                             .padding(20)
 
-                            // Dashy Hint Button - top right
-                            DashyHintButton(showHintSheet: $viewModel.showDashyHint)
-                                .padding(20)
+                            HStack(alignment: .top) {
+                                LessonReadAloudButton(
+                                    state: lessonReadAloudState,
+                                    isEnabled: viewModel.currentReadAloudText != nil
+                                ) {
+                                    toggleLessonReadAloud()
+                                }
+
+                                Spacer()
+
+                                // Dashy Hint Button - top right
+                                DashyHintButton(showHintSheet: $viewModel.showDashyHint)
+                            }
+                            .padding(20)
                         }
                     }
                     .padding(.horizontal, Spacing.lg)
@@ -179,6 +191,7 @@ public struct FlipbookView: View {
 
                         // Previous — paper page-turn going back.
                         Button {
+                            stopLessonAudio()
                             // S11-16: card index transition animates under default,
                             // snaps instant under reduce-motion. The TabView page
                             // slide is ambient motion — progress dots + card
@@ -203,6 +216,7 @@ public struct FlipbookView: View {
                         // S13: when isAtEnd, fire the lesson-complete
                         // flow instead of advancing the index.
                         Button {
+                            stopLessonAudio()
                             if isAtEnd {
                                 finishLesson()
                             } else {
@@ -271,6 +285,70 @@ public struct FlipbookView: View {
                     dismiss()
                 }
             )
+        }
+        .onChange(of: viewModel.currentCardIndex) { _, _ in
+            // Page changes (Prev / Next button or TabView swipe) must
+            // stop in-flight audio so the kid never hears the previous
+            // page bleeding into the new one. Resetting only the local
+            // button state without calling `voiceManager.stop()` left
+            // audio playing during a swipe — fixed here.
+            stopLessonAudio()
+        }
+        .onDisappear {
+            // Backstop: leaving the lesson always stops audio. The
+            // page-change branch above covers in-lesson navigation;
+            // this one covers Back / Finish / app-state-driven exit.
+            stopLessonAudio()
+        }
+    }
+
+    private func toggleLessonReadAloud() {
+        // Light haptic on tap so the kid feels the affordance land
+        // before audio starts. The same haptic also confirms a
+        // tap-to-stop on the second tap.
+        NovaHaptics.tap()
+
+        if lessonReadAloudState == .reading {
+            stopLessonAudio()
+            return
+        }
+
+        guard let text = viewModel.currentReadAloudText else {
+            // No silent no-op when text is missing: the button
+            // surfaces an unavailable state, the wrong-haptic gives
+            // a tactile "nothing here" cue, and a page change resets
+            // back to idle.
+            NovaHaptics.wrong()
+            lessonReadAloudState = .unavailable
+            return
+        }
+
+        Task { @MainActor in
+            lessonReadAloudState = .reading
+            do {
+                // Local-first for beta: this gives the child dependable
+                // audio even when the dev server, auth token, or remote
+                // TTS proxy is unavailable. Premium voices return once
+                // the end-to-end TTS proxy is verified in simulator.
+                try await voiceManager.speak(text: text, preferLocal: true)
+                // Only flip back to idle if the user did not stop /
+                // change pages while we were speaking — those paths
+                // already set the state themselves.
+                if lessonReadAloudState == .reading {
+                    lessonReadAloudState = .idle
+                }
+            } catch {
+                lessonReadAloudState = .unavailable
+            }
+        }
+    }
+
+    private func stopLessonAudio() {
+        // Idempotent — safe to call from the page-change handler, the
+        // Prev/Next buttons, the on-disappear backstop, or the toggle.
+        voiceManager.stop()
+        if lessonReadAloudState != .idle {
+            lessonReadAloudState = .idle
         }
     }
 

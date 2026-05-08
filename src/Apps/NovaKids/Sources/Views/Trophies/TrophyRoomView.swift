@@ -418,7 +418,7 @@ public struct TrophyRoomView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             sectionLabel(
-                text: "Your Trophy Shelf",
+                text: "Achievement Shelf",
                 icon: "rosette",
                 accent: NovaPalette.classroomSun
             )
@@ -454,8 +454,8 @@ public struct TrophyRoomView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Trophy shelf, empty")
-        .accessibilityValue("Finish a lesson and your first sticker lands on this shelf.")
+        .accessibilityLabel("Achievement shelf, empty")
+        .accessibilityValue("Complete more activities to unlock classroom achievement badges.")
     }
 
     // MARK: - Helpers

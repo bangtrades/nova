@@ -83,16 +83,17 @@ public struct LessonBookPageSurface<Content: View>: View {
         }
     }
 
+    /// Resolves the painted page asset for the current `mood` via
+    /// `LessonArtSlot`. Returns `nil` when no candidate is in the
+    /// bundle, in which case the surface falls back to its SwiftUI
+    /// paper rendering.
     private var assetName: String? {
-        let name: String
         switch mood {
         case .storybook:
-            name = "lesson_storybook_page_45_landscape"
+            return LessonArtSlot.bookPageStorybook.resolvedName
         case .workbook:
-            name = "lesson_workbook_worksheet_45_landscape"
+            return LessonArtSlot.bookPageWorkbook.resolvedName
         }
-
-        return UIImage(named: name) == nil ? nil : name
     }
 
     private var hasLessonPageAsset: Bool {

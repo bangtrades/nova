@@ -54,7 +54,12 @@ public class OAuthManager: NSObject, ObservableObject, ASWebAuthenticationPresen
             let codeChallenge = generateCodeChallenge(from: codeVerifier)
 
             // Build authorization URL
-            var components = URLComponents(url: config.authorizationURL, resolvingAgainstBaseURL: false)!
+            guard var components = URLComponents(
+                url: config.authorizationURL,
+                resolvingAgainstBaseURL: false
+            ) else {
+                throw OAuthError.invalidCallbackURL
+            }
             components.queryItems = [
                 URLQueryItem(name: "client_id", value: config.clientId),
                 URLQueryItem(name: "redirect_uri", value: config.redirectURI.absoluteString),
@@ -64,7 +69,9 @@ public class OAuthManager: NSObject, ObservableObject, ASWebAuthenticationPresen
                 URLQueryItem(name: "code_challenge_method", value: "S256"),
             ]
 
-            let authorizationURL = components.url!
+            guard let authorizationURL = components.url else {
+                throw OAuthError.invalidCallbackURL
+            }
 
             // Perform web authentication
             // Store session reference BEFORE entering continuation to avoid
@@ -220,4 +227,3 @@ public enum OAuthError: LocalizedError {
 
 /// Empty response for endpoints that don't return data.
 private struct EmptyResponse: Decodable {}
-
