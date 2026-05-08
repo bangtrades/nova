@@ -150,6 +150,8 @@
 		DE51617100000020000000B1 /* Sources/Views/Flipbook/CardReadAloudText.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000020000000C1 /* Sources/Views/Flipbook/CardReadAloudText.swift */; };
 		DE51617100000020000000B2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000020000000C2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift */; };
 		DE51617100000021000000B1 /* Sources/Views/Flipbook/LessonArtSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000021000000C1 /* Sources/Views/Flipbook/LessonArtSlot.swift */; };
+		DE51617100000022000000B1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000022000000C1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift */; };
+		DE51617100000023000000B1 /* Sources/Views/Trophies/ClassroomRewardArtSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000023000000C1 /* Sources/Views/Trophies/ClassroomRewardArtSlot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -181,6 +183,8 @@
 		DE51617100000020000000C1 /* Sources/Views/Flipbook/CardReadAloudText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/CardReadAloudText.swift; sourceTree = "<group>"; };
 		DE51617100000020000000C2 /* Sources/Views/Flipbook/LessonReadAloudButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonReadAloudButton.swift; sourceTree = "<group>"; };
 		DE51617100000021000000C1 /* Sources/Views/Flipbook/LessonArtSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonArtSlot.swift; sourceTree = "<group>"; };
+		DE51617100000022000000C1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomLibraryArtSlot.swift; sourceTree = "<group>"; };
+		DE51617100000023000000C1 /* Sources/Views/Trophies/ClassroomRewardArtSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/ClassroomRewardArtSlot.swift; sourceTree = "<group>"; };
 		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
 		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
 		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
@@ -362,6 +366,7 @@
 				DE51617100000012000000C2 /* Sources/Views/Classroom/ClassroomIllustratedSceneView.swift */,
 				DE51617100000011000000D1 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift */,
 				DE51617100000011000000CF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift */,
+				DE51617100000022000000C1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift */,
 				DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */,
 				DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */,
 				DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */,
@@ -413,6 +418,7 @@
 				DE51617100000011000000C5 /* Sources/Views/Flipbook/QuizPowReaction.swift */,
 				DE51617100000011000000C6 /* Sources/Views/Common/DesignSystem/ProgressRing.swift */,
 				DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */,
+				DE51617100000023000000C1 /* Sources/Views/Trophies/ClassroomRewardArtSlot.swift */,
 				DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */,
 				DE51617100000013000000C1 /* Resources/Assets.xcassets */,
 			);
@@ -674,6 +680,8 @@
 				DE51617100000012000000B2 /* Sources/Views/Classroom/ClassroomIllustratedSceneView.swift in Sources */,
 				DE51617100000011000000D0 /* Sources/Views/Classroom/ClassroomLessonBookButton.swift in Sources */,
 				DE51617100000011000000BF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift in Sources */,
+				DE51617100000022000000B1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift in Sources */,
+				DE51617100000023000000B1 /* Sources/Views/Trophies/ClassroomRewardArtSlot.swift in Sources */,
 				DE51617100000011000000BC /* Sources/Views/Classroom/ClassroomObjectButton.swift in Sources */,
 				DE51617100000011000000BA /* Sources/Views/Classroom/ClassroomSceneModel.swift in Sources */,
 				DE51617100000011000000BB /* Sources/Views/Classroom/ClassroomSceneView.swift in Sources */,

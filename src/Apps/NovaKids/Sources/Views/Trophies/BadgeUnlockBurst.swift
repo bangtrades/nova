@@ -66,23 +66,13 @@ public struct BadgeUnlockBurst: View {
     }
 
     public var body: some View {
-        // "UNLOCKED!" is 9 characters — sized at 48pt it reads large without
-        // clipping on the narrowest iPhone sheet. POW! at 72pt is shorter
-        // so it can afford to be bigger; the burst language stays consistent.
-        Text("UNLOCKED!")
-            .font(NovaPalette.displayFont(size: 48))
-            .foregroundStyle(NovaPalette.sun)
-            // Stacked zero-radius ink shadows are the idiomatic way to fake
-            // a text stroke in SwiftUI — four cardinal offsets at 2pt give a
-            // crisp 2pt outline without dropping to Core Text.
-            .shadow(color: NovaPalette.ink, radius: 0, x:  2, y:  0)
-            .shadow(color: NovaPalette.ink, radius: 0, x: -2, y:  0)
-            .shadow(color: NovaPalette.ink, radius: 0, x:  0, y:  2)
-            .shadow(color: NovaPalette.ink, radius: 0, x:  0, y: -2)
-            // Drop shadow for the "lifted off the page" paper feel. Matches
-            // `NovaCard`'s shadow recipe so the burst feels native to the
-            // same world as the card underneath.
-            .shadow(color: NovaPalette.ink.opacity(0.25), radius: 6, x: 3, y: 4)
+        // Prefer the painted unlock-burst sticker
+        // (`trophy_unlock_burst_45`) when it ships in the bundle so
+        // the moment matches the rest of the classroom-reward art.
+        // Fall back to the comic-book "UNLOCKED!" word burst that has
+        // shipped since S11-07 — kid still gets the same celebration
+        // beat without the painted sticker.
+        burstContent
             .scaleEffect(scale)
             .rotationEffect(.degrees(rotation))
             .opacity(opacity)
@@ -95,6 +85,33 @@ public struct BadgeUnlockBurst: View {
             .onDisappear {
                 cycleTask?.cancel()
             }
+    }
+
+    /// Burst visual — painted sticker when the
+    /// `trophy_unlock_burst_45` asset ships, otherwise the existing
+    /// comic-book "UNLOCKED!" word. The animations, haptics, and
+    /// reduce-motion path are identical for both branches; only the
+    /// rendered glyph differs.
+    @ViewBuilder
+    private var burstContent: some View {
+        if let asset = ClassroomRewardArtSlot.trophyUnlockBurst.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(maxHeight: 140)
+                .shadow(color: NovaPalette.ink.opacity(0.25), radius: 6, x: 3, y: 4)
+        } else {
+            // "UNLOCKED!" is 9 characters — sized at 48pt it reads
+            // large without clipping on the narrowest iPhone sheet.
+            Text("UNLOCKED!")
+                .font(NovaPalette.displayFont(size: 48))
+                .foregroundStyle(NovaPalette.sun)
+                .shadow(color: NovaPalette.ink, radius: 0, x:  2, y:  0)
+                .shadow(color: NovaPalette.ink, radius: 0, x: -2, y:  0)
+                .shadow(color: NovaPalette.ink, radius: 0, x:  0, y:  2)
+                .shadow(color: NovaPalette.ink, radius: 0, x:  0, y: -2)
+                .shadow(color: NovaPalette.ink.opacity(0.25), radius: 6, x: 3, y: 4)
+        }
     }
 
     /// Plays one burst cycle: enter (spring scale + rotate + fade-in) →

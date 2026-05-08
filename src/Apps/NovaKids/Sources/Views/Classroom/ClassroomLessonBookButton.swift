@@ -107,16 +107,32 @@ public struct ClassroomLessonBookButton: View {
                     .foregroundStyle(NovaPalette.classroomInk)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(NovaPalette.classroomSun)
-                    )
-                    .overlay(
-                        Capsule(style: .continuous)
-                            .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
-                    )
+                    .background(newBookmarkBackground)
                     .accessibilityHidden(true)
             }
+        }
+    }
+
+    /// Background for the "NEW" pill. Prefers the painted bookmark
+    /// asset routed through `ClassroomLibraryArtSlot.lessonNewBookmark`;
+    /// falls back to the SwiftUI sun-yellow capsule + ink stroke when
+    /// the asset has not shipped. Live "NEW" text continues to render
+    /// as a SwiftUI label on top of the background.
+    @ViewBuilder
+    private var newBookmarkBackground: some View {
+        if let assetName = ClassroomLibraryArtSlot.lessonNewBookmark.resolvedName {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+                .clipShape(Capsule(style: .continuous))
+                .accessibilityHidden(true)
+        } else {
+            Capsule(style: .continuous)
+                .fill(NovaPalette.classroomSun)
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                )
         }
     }
 
@@ -135,14 +151,28 @@ public struct ClassroomLessonBookButton: View {
         }
     }
 
+    /// Completed-lesson badge. Prefers the painted sticker asset
+    /// routed through `ClassroomLibraryArtSlot.lessonCompletedSticker`;
+    /// falls back to a SwiftUI sun-yellow circle + ink stroke when
+    /// the asset has not shipped. The checkmark glyph stays in
+    /// SwiftUI on top of either background so the cue lands the
+    /// same way visually.
     private var completedBadge: some View {
         ZStack {
-            Circle()
-                .fill(NovaPalette.classroomSun)
-                .overlay {
-                    Circle()
-                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
-                }
+            if let assetName = ClassroomLibraryArtSlot.lessonCompletedSticker.resolvedName {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(Circle())
+                    .accessibilityHidden(true)
+            } else {
+                Circle()
+                    .fill(NovaPalette.classroomSun)
+                    .overlay {
+                        Circle()
+                            .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                    }
+            }
 
             Image(systemName: "checkmark")
                 .font(.caption.weight(.black))
@@ -154,14 +184,41 @@ public struct ClassroomLessonBookButton: View {
         .accessibilityHidden(true)
     }
 
+    /// Book silhouette. Prefers the painted spine asset for the
+    /// lesson's primary card type (routed through
+    /// `ClassroomLibraryArtSlot.spine(for:)`); falls back to the
+    /// SwiftUI `bookColor` rounded rectangle + ink stroke when no
+    /// painted spine has shipped or the lesson has not loaded its
+    /// cards yet.
+    @ViewBuilder
     private var bookShape: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(bookColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(NovaPalette.classroomInk, lineWidth: 2)
-            )
-            .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 5, x: 0, y: 3)
+        if let assetName = primarySpineSlot.resolvedName {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                )
+                .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 5, x: 0, y: 3)
+        } else {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(bookColor)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                )
+                .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 5, x: 0, y: 3)
+        }
+    }
+
+    /// Spine slot for the lesson's primary card type. Falls back to
+    /// `bookCoverPlaceholder` when the lesson has no fetched cards
+    /// (the cards endpoint returns lessons without their card
+    /// arrays, then `loadCardsIfNeeded()` populates them lazily).
+    private var primarySpineSlot: ClassroomLibraryArtSlot {
+        ClassroomLibraryArtSlot.spine(for: lesson.cards?.first?.type)
     }
 
     private var bookSpine: some View {

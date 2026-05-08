@@ -25,20 +25,8 @@ public struct ClassroomLessonLibraryView: View {
 
     public var body: some View {
         ZStack {
-            // Soft classroom-paper-to-wood vertical wash so the
-            // background reads as the wall behind a bookshelf rather
-            // than a flat app surface. Stays inside the classroom
-            // palette tokens; no neon, no hard color edges.
-            LinearGradient(
-                colors: [
-                    NovaPalette.classroomPaper,
-                    NovaPalette.classroomPaper.opacity(0.92),
-                    NovaPalette.classroomWood.opacity(0.18)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            libraryBackground
+                .ignoresSafeArea()
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: Spacing.xl) {
@@ -170,6 +158,49 @@ public struct ClassroomLessonLibraryView: View {
                 return lhs.title < rhs.title
             }
             return lhs.sortOrder < rhs.sortOrder
+        }
+    }
+
+    /// Library background. Prefers the painted bookshelf-library
+    /// scene asset routed through `ClassroomLibraryArtSlot`; falls
+    /// back to the SwiftUI paper-to-wood vertical wash when no
+    /// asset has shipped yet, so the screen never blanks during the
+    /// rolling art-import.
+    @ViewBuilder
+    private var libraryBackground: some View {
+        // `libraryBackground(isPortrait:)` only switches names — when
+        // neither the portrait nor landscape PNG exists, both branches
+        // resolve to nil and we fall back to the SwiftUI gradient.
+        // The runtime orientation is folded into the slot lookup
+        // inside the GeometryReader so the slot stays the single
+        // source of truth for the painted asset name.
+        GeometryReader { proxy in
+            let isPortrait = proxy.size.height >= proxy.size.width
+            let slot = ClassroomLibraryArtSlot.libraryBackground(isPortrait: isPortrait)
+
+            if let assetName = slot.resolvedName {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
+                    .accessibilityHidden(true)
+            } else {
+                // Soft classroom-paper-to-wood vertical wash so the
+                // background reads as the wall behind a bookshelf
+                // rather than a flat app surface. Stays inside the
+                // classroom palette tokens; no neon, no hard color
+                // edges.
+                LinearGradient(
+                    colors: [
+                        NovaPalette.classroomPaper,
+                        NovaPalette.classroomPaper.opacity(0.92),
+                        NovaPalette.classroomWood.opacity(0.18)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
         }
     }
 
@@ -402,14 +433,28 @@ private struct ClassroomLessonShelfSection: View {
         return colors[index % colors.count]
     }
 
+    /// Shelf-row plank that anchors a row of book spines. Prefers
+    /// the painted `bookshelfRow` asset when it has shipped; falls
+    /// back to the SwiftUI wood-rectangle plank so the layout never
+    /// blanks while art is in flight.
+    @ViewBuilder
     private var shelfBoard: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(NovaPalette.classroomWood)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(NovaPalette.classroomInk, lineWidth: 2)
-            )
-            .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 3, x: 0, y: 2)
+        if let assetName = ClassroomLibraryArtSlot.bookshelfRow.resolvedName {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 3, x: 0, y: 2)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(NovaPalette.classroomWood)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                )
+                .shadow(color: NovaPalette.classroomInk.opacity(0.16), radius: 3, x: 0, y: 2)
+        }
     }
 }
 

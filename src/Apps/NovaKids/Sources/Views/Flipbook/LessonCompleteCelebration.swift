@@ -66,17 +66,43 @@ public struct LessonCompleteCelebration: View {
 
     public var body: some View {
         ZStack {
-            // Chalkboard backdrop — anchors the moment in the classroom
-            // metaphor instead of the legacy purple-ink gradient.
-            chalkboardBackdrop
+            // Stage backdrop — prefers the painted
+            // `lesson_completion_stage_45` asset when it ships;
+            // otherwise the existing chalkboard gradient + chalk-dust
+            // glow from prior slices.
+            celebrationBackdrop
                 .ignoresSafeArea()
+
+            // Optional dashy celebration pose layered behind the
+            // certificate. Renders only when the painted asset is
+            // present; the certificate animation continues to sit on
+            // top regardless.
+            if let dashyAsset = ClassroomRewardArtSlot.dashyPoseCelebrating.resolvedName {
+                Image(dashyAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 320)
+                    .accessibilityHidden(true)
+                    .opacity(showName ? 1 : 0)
+                    .offset(y: showName ? -120 : -80)
+            }
 
             // Confetti only fires for first-time completions — replays
             // get the softer welcome-back beat without particle spam.
             if isFirstTime {
-                ConfettiView(isActive: $showConfetti)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
+                if let confettiAsset = ClassroomRewardArtSlot.lessonCompletionConfettiPieces.resolvedName,
+                   showConfetti {
+                    Image(confettiAsset)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                } else {
+                    ConfettiView(isActive: $showConfetti)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                }
             }
 
             VStack(spacing: Spacing.lg) {
@@ -113,14 +139,13 @@ public struct LessonCompleteCelebration: View {
                 .padding(.horizontal, Spacing.lg)
                 .padding(.vertical, Spacing.lg)
                 .frame(maxWidth: 480)
-                .background(
-                    NovaPalette.classroomPaper,
-                    in: RoundedRectangle(cornerRadius: 24, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(NovaPalette.classroomInk.opacity(0.22), lineWidth: 2)
-                )
+                .background(certificateBackground)
+                .overlay {
+                    if ClassroomRewardArtSlot.lessonCompletionCertificate.hasAsset == false {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(NovaPalette.classroomInk.opacity(0.22), lineWidth: 2)
+                    }
+                }
                 .overlay(alignment: .topTrailing) {
                     // Schoolhouse-red star "earned" sticker — used
                     // sparingly per the classroom palette guidance, only
@@ -148,7 +173,12 @@ public struct LessonCompleteCelebration: View {
 
                 // Continue button — sunny yellow sticker capsule with
                 // ink text. Preserves the existing primary CTA shape so
-                // the button is still the obvious dismiss target.
+                // the button is still the obvious dismiss target. When
+                // the painted continue-button asset
+                // (`lesson_completion_continue_button_object_45`) is
+                // available, the capsule is replaced with the painted
+                // object and the SwiftUI label still composes on top
+                // for live-text + accessibility reasons.
                 Button(action: onContinue) {
                     HStack(spacing: 10) {
                         Text("Continue")
@@ -160,14 +190,7 @@ public struct LessonCompleteCelebration: View {
                     .foregroundStyle(NovaPalette.classroomInk)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 16)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(NovaPalette.classroomSun)
-                    )
-                    .overlay(
-                        Capsule(style: .continuous)
-                            .stroke(NovaPalette.classroomInk.opacity(0.4), lineWidth: 2)
-                    )
+                    .background(continueButtonBackground)
                     .shadow(color: NovaPalette.classroomInk.opacity(0.35), radius: 12, y: 4)
                 }
                 .opacity(showButton ? 1 : 0)
@@ -217,8 +240,26 @@ public struct LessonCompleteCelebration: View {
         }
     }
 
+    /// Celebration backdrop — prefers the painted
+    /// `lesson_completion_stage_45` asset when available so the
+    /// completion moment reads as a classroom celebration stage;
+    /// otherwise falls back to the existing chalkboard gradient with
+    /// a soft chalk-dust glow.
+    @ViewBuilder
+    private var celebrationBackdrop: some View {
+        if let asset = ClassroomRewardArtSlot.lessonCompletionStage.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .accessibilityHidden(true)
+        } else {
+            chalkboardBackdrop
+        }
+    }
+
     /// Chalkboard backdrop — saturated classroom green anchor with a
     /// soft chalk-dust glow centered behind the certificate card.
+    /// Used as the SwiftUI fallback for `celebrationBackdrop`.
     private var chalkboardBackdrop: some View {
         ZStack {
             LinearGradient(
@@ -243,6 +284,48 @@ public struct LessonCompleteCelebration: View {
         }
     }
 
+    /// Background for the achievement-certificate card. Prefers the
+    /// painted `lesson_completion_certificate_45` asset when in the
+    /// bundle; otherwise the existing classroom-paper rounded
+    /// rectangle.
+    @ViewBuilder
+    private var certificateBackground: some View {
+        if let asset = ClassroomRewardArtSlot.lessonCompletionCertificate.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(NovaPalette.classroomPaper)
+        }
+    }
+
+    /// Background for the Continue capsule. Prefers the painted
+    /// continue-button object when available so the CTA reads as a
+    /// classroom material; otherwise the existing sun-tinted Capsule
+    /// with ink stroke.
+    @ViewBuilder
+    private var continueButtonBackground: some View {
+        if let asset = ClassroomRewardArtSlot.lessonCompletionContinueButton.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(Capsule(style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            Capsule(style: .continuous)
+                .fill(NovaPalette.classroomSun)
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.4), lineWidth: 2)
+                )
+        }
+    }
+
     /// Golden sticker frame around the lesson hero image. Pulsing ring
     /// only renders when Reduce Motion is off.
     private var trophyFrame: some View {
@@ -260,11 +343,20 @@ public struct LessonCompleteCelebration: View {
                     .frame(width: 220, height: 220)
             }
 
-            // Solid sun-yellow ring frame on the paper card.
-            Circle()
-                .stroke(NovaPalette.classroomSun, lineWidth: 8)
-                .frame(width: 220, height: 220)
-                .shadow(color: NovaPalette.classroomSun.opacity(0.55), radius: 16)
+            // Painted trophy frame when available; otherwise the
+            // existing sun-yellow ring frame on the paper card.
+            if let frameAsset = ClassroomRewardArtSlot.lessonCompletionTrophyFrame.resolvedName {
+                Image(frameAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 220, height: 220)
+                    .accessibilityHidden(true)
+            } else {
+                Circle()
+                    .stroke(NovaPalette.classroomSun, lineWidth: 8)
+                    .frame(width: 220, height: 220)
+                    .shadow(color: NovaPalette.classroomSun.opacity(0.55), radius: 16)
+            }
 
             // Trophy art — lesson's hero image, or sticker fallback.
             Group {

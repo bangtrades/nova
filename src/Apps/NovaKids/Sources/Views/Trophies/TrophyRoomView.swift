@@ -51,7 +51,7 @@ public struct TrophyRoomView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                NovaPalette.novaBackground
+                trophyRoomBackground
                     .ignoresSafeArea()
 
                 ScrollView(.vertical) {
@@ -151,17 +151,7 @@ public struct TrophyRoomView: View {
     private func lessonTrophyTile(_ trophy: LessonCompletionStore.TrophyRecord) -> some View {
         VStack(spacing: Spacing.sm) {
             ZStack {
-                Circle()
-                    .fill(NovaPalette.classroomPaper)
-                    .overlay {
-                        Circle()
-                            .stroke(NovaPalette.classroomSun, lineWidth: 5)
-                    }
-                    .overlay {
-                        Circle()
-                            .stroke(NovaPalette.classroomInk, lineWidth: 2)
-                    }
-                    .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 5, x: 0, y: 3)
+                trophyTileDisk
 
                 Group {
                     if let urlString = trophy.lessonHeroImageURL,
@@ -213,6 +203,35 @@ public struct TrophyRoomView: View {
         }
     }
 
+    /// Earned-trophy disk. Prefers the painted earned-badge asset
+    /// (`trophy_badge_disk_earned_45`) when it ships in the bundle so
+    /// the disk reads as a true trophy medallion; otherwise falls
+    /// back to the existing classroom-paper + sun-ring + ink-stroke
+    /// composition. The lesson hero image still composites *inside*
+    /// the disk via the surrounding ZStack regardless.
+    @ViewBuilder
+    private var trophyTileDisk: some View {
+        if let asset = ClassroomRewardArtSlot.trophyBadgeDiskEarned.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .accessibilityHidden(true)
+                .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 5, x: 0, y: 3)
+        } else {
+            Circle()
+                .fill(NovaPalette.classroomPaper)
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomSun, lineWidth: 5)
+                }
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                }
+                .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 5, x: 0, y: 3)
+        }
+    }
+
     /// Wood-toned shelf panel that hosts a row/grid of trophy tiles. Mirrors
     /// the bookshelf object on the classroom home so trophies feel like they
     /// share furniture with the rest of the classroom.
@@ -221,22 +240,71 @@ public struct TrophyRoomView: View {
         content()
             .padding(Spacing.md)
             .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(NovaPalette.classroomWood.opacity(0.30))
-            )
+            .background(shelfPanelBackground)
             .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(NovaPalette.classroomWood)
-                    .frame(height: 4)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.bottom, Spacing.sm)
+                if ClassroomRewardArtSlot.trophyShelfRow.hasAsset == false
+                    && ClassroomRewardArtSlot.trophyCase.hasAsset == false {
+                    Rectangle()
+                        .fill(NovaPalette.classroomWood)
+                        .frame(height: 4)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.bottom, Spacing.sm)
+                }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(NovaPalette.classroomInk, lineWidth: 3)
+                if ClassroomRewardArtSlot.trophyCase.hasAsset == false {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 3)
+                }
             }
             .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 6, x: 0, y: 3)
+    }
+
+    /// Painted shelf-panel backdrop. Prefers the painted trophy-case
+    /// asset when it ships in the bundle so trophy tiles read as
+    /// sitting inside a wall-mounted case; falls back to the existing
+    /// wood-tinted SwiftUI rectangle when the asset is absent.
+    @ViewBuilder
+    private var shelfPanelBackground: some View {
+        if let asset = ClassroomRewardArtSlot.trophyCase.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(NovaPalette.classroomWood.opacity(0.30))
+        }
+    }
+
+    /// Trophy-room scene background. Uses the painted scene asset
+    /// (orientation-aware) when available; otherwise the existing
+    /// `novaBackground` token. Routed through GeometryReader so the
+    /// portrait / landscape variants resolve at runtime without
+    /// requiring layout-time orientation reads from the parent.
+    private var trophyRoomBackground: some View {
+        GeometryReader { proxy in
+            let isPortrait = proxy.size.height >= proxy.size.width
+            let slot: ClassroomRewardArtSlot = isPortrait
+                ? .trophyRoomScenePortrait
+                : .trophyRoomSceneLandscape
+            ZStack {
+                NovaPalette.novaBackground
+
+                if let asset = slot.resolvedName ?? ClassroomRewardArtSlot.trophyRoomSceneLandscape.resolvedName {
+                    Image(asset)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
     }
 
     /// Paper-strap sticker label used above each shelf section. Gives every
@@ -292,8 +360,7 @@ public struct TrophyRoomView: View {
                     .foregroundStyle(NovaPalette.classroomChalkDust)
 
                 HStack(spacing: Spacing.xs) {
-                    Image(systemName: "flame.fill")
-                        .foregroundStyle(NovaPalette.classroomSchoolRed)
+                    streakFlameGlyph
                         .accessibilityHidden(true)
                     Text("\(viewModel.currentStreak) day streak")
                         .font(NovaPalette.bodyFont().weight(.semibold))
@@ -323,6 +390,23 @@ public struct TrophyRoomView: View {
                 .padding(4)
         }
         .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 8, x: 0, y: 4)
+    }
+
+    /// Streak flame glyph. Prefers the painted
+    /// `streak_flame_sticker_45` sticker when available so the streak
+    /// reads as a classroom sticker; otherwise the existing
+    /// `flame.fill` SF symbol on `classroomSchoolRed`.
+    @ViewBuilder
+    private var streakFlameGlyph: some View {
+        if let asset = ClassroomRewardArtSlot.streakFlameSticker.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 22, height: 22)
+        } else {
+            Image(systemName: "flame.fill")
+                .foregroundStyle(NovaPalette.classroomSchoolRed)
+        }
     }
 
     /// Sun-sticker count that sits on the chalkboard banner. Mirrors the
@@ -425,19 +509,7 @@ public struct TrophyRoomView: View {
 
             shelfPanel {
                 VStack(spacing: Spacing.md) {
-                    ZStack {
-                        Circle()
-                            .strokeBorder(
-                                NovaPalette.classroomInk.opacity(0.45),
-                                style: StrokeStyle(lineWidth: 2.5, dash: [6, 5])
-                            )
-                            .frame(width: 96, height: 96)
-
-                        Image(systemName: "rosette")
-                            .font(.system(size: 36, weight: .semibold))
-                            .foregroundStyle(NovaPalette.classroomInk.opacity(0.55))
-                            .accessibilityHidden(true)
-                    }
+                    emptyTrophySlotMarker
 
                     Text("First trophy goes here")
                         .font(NovaPalette.displayFont(size: 22))
@@ -456,6 +528,35 @@ public struct TrophyRoomView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Achievement shelf, empty")
         .accessibilityValue("Complete more activities to unlock classroom achievement badges.")
+    }
+
+    /// Empty-trophy-slot marker for the achievement-shelf empty
+    /// state. Prefers the painted `trophy_empty_slot_45` sticker
+    /// when available; otherwise falls back to the existing
+    /// dashed-chalk circle + ink rosette glyph.
+    @ViewBuilder
+    private var emptyTrophySlotMarker: some View {
+        if let asset = ClassroomRewardArtSlot.trophyEmptySlot.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .accessibilityHidden(true)
+        } else {
+            ZStack {
+                Circle()
+                    .strokeBorder(
+                        NovaPalette.classroomInk.opacity(0.45),
+                        style: StrokeStyle(lineWidth: 2.5, dash: [6, 5])
+                    )
+                    .frame(width: 96, height: 96)
+
+                Image(systemName: "rosette")
+                    .font(.system(size: 36, weight: .semibold))
+                    .foregroundStyle(NovaPalette.classroomInk.opacity(0.55))
+                    .accessibilityHidden(true)
+            }
+        }
     }
 
     // MARK: - Helpers
