@@ -67,7 +67,11 @@ public struct ParentalGateView: View {
         }
 
         static func generateRandom() -> MathProblem {
-            let operation: Operation = Operation.allCases.randomElement()!
+            // `Operation` is a non-empty enum, so `randomElement()`
+            // is non-nil in practice — but a force unwrap on a child-
+            // facing view is a crash risk we don't accept. Fall back
+            // to `.add` if the collection is somehow empty.
+            let operation: Operation = Operation.allCases.randomElement() ?? .add
 
             let num1: Int
             let num2: Int

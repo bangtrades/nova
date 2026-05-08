@@ -56,11 +56,27 @@ public struct DashyView: View {
     // Reduce-motion + Dynamic Type hooks used across subviews.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Hard-coded placeholder host the `DashyView()` no-arg init uses
+    /// for the `DashyViewModel` it owns before the real `APIRouter` is
+    /// injected by the parent. The string is a constant; the optional
+    /// is unwrapped here at compile-evaluation time so a future typo
+    /// surfaces as a non-nil sentinel URL instead of a runtime crash
+    /// inside a child-facing view.
+    private static let placeholderBaseURL: URL = {
+        // `URL(string:)` returns nil only when the string is malformed
+        // per RFC 3986. The literal here is a well-formed https URL —
+        // but if it ever becomes malformed, fall back to `about:blank`
+        // so the kid sees an empty Dashy state rather than a crash.
+        URL(string: "https://api.nova.local")
+            ?? URL(string: "about:blank")
+            ?? URL(fileURLWithPath: "/")
+    }()
+
     public init() {
         // Placeholder initialization — will be injected by parent
         _viewModel = StateObject(wrappedValue: DashyViewModel(
             apiRouter: APIRouter(apiClient: APIClient(
-                baseURL: URL(string: "https://api.nova.local")!,
+                baseURL: Self.placeholderBaseURL,
                 tokenProvider: EmptyTokenProvider()
             )),
             voiceManager: VoiceManager(speechSynthesizer: SpeechSynthesizer())

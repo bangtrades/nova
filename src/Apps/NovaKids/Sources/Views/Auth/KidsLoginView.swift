@@ -35,19 +35,19 @@ public struct KidsLoginView: View {
 
                 // Nova Logo and Branding
                 VStack(spacing: Spacing.md) {
-                    // Large Nova brand mark — coral→sun warm gradient over ink
-                    // outline. S11-17 flip: was novaBlue→novaPurple rainbow,
-                    // now honours the 3+1 palette so the first impression reads
-                    // as "comic-book ink on paper" from the moment the app
-                    // launches.
+                    // Brand mark dressed for the classroom beta: school-red →
+                    // sun warm gradient over a classroom-ink outline so the
+                    // first impression reads as a sticker pinned to the
+                    // classroom door. Inner sparkles + "Nova" wordmark stay in
+                    // classroom ink.
                     ZStack {
                         Circle()
                             .fill(
                                 LinearGradient(
                                     gradient: Gradient(
                                         colors: [
-                                            NovaPalette.coral,
-                                            NovaPalette.sun
+                                            NovaPalette.classroomSchoolRed,
+                                            NovaPalette.classroomSun,
                                         ]
                                     ),
                                     startPoint: .topLeading,
@@ -57,16 +57,17 @@ public struct KidsLoginView: View {
                             .frame(width: 120, height: 120)
                             .overlay(
                                 Circle()
-                                    .stroke(NovaPalette.ink, lineWidth: 2)
+                                    .stroke(NovaPalette.classroomInk, lineWidth: 2)
                             )
+                            .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 6, x: 0, y: 3)
 
                         VStack(spacing: 2) {
                             Image(systemName: "sparkles")
                                 .font(.largeTitle.weight(.semibold))
-                                .foregroundStyle(NovaPalette.ink)
+                                .foregroundStyle(NovaPalette.classroomInk)
                             Text("Nova")
                                 .font(.title3.weight(.bold))
-                                .foregroundStyle(NovaPalette.ink)
+                                .foregroundStyle(NovaPalette.classroomInk)
                         }
                     }
                     .padding(.bottom, Spacing.sm)
@@ -153,43 +154,42 @@ public struct KidsLoginView: View {
 
 // MARK: - Animated Background
 
-/// Floating shape animation for background.
+/// Floating shape animation for the login backdrop, dressed as a
+/// classroom paper backdrop with school-material accents.
 ///
-/// S11-17 flip: the four shapes previously used the rainbow (novaBlue,
-/// novaOrange, novaPurple, novaGreen) which stopped making sense once the 3+1
-/// palette became the app's visual language. They now ride on `ink.opacity(…)`
-/// / `coral.opacity(…)` / `sun.opacity(…)` so the login screen reads as the
-/// same comic-book-ink world as the rest of the app. `.page` is the surface
-/// (no more hand-rolled off-white gradient) so the dark-mode flip inherits the
-/// adaptive pair from `NovaPalette`.
+/// Surface uses `classroomPaper` so the login screen reads as a sheet
+/// of warm paper before the kid signs in. The four floating shapes
+/// pull from `classroomInk` (subtle ink dots), `classroomSchoolRed`
+/// (warm tape sticker), and `classroomSun` (sun sticker) — same
+/// classroom-sticker family as the rest of the workbook chrome.
 ///
-/// Reduce-motion: when the user has "Reduce Motion" enabled in iOS accessibility,
-/// we skip the `repeatForever(autoreverses: true)` loop entirely and render the
-/// shapes in their neutral (offset: 0) resting pose. Source-level branching (not
-/// a modifier-gated `withAnimation(reduceMotion ? nil : …)`) so the shapes
-/// don't wobble for a single frame at view-appear before settling.
+/// Reduce-motion: when the user has "Reduce Motion" enabled in iOS
+/// accessibility, we skip the `repeatForever(autoreverses: true)`
+/// loop entirely and render the shapes in their neutral (offset: 0)
+/// resting pose.
 private struct AnimatedBackgroundView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isAnimating = false
 
     var body: some View {
         ZStack {
-            // Flat page surface — lets the shapes carry the visual interest
-            // without a gradient competing with them.
-            NovaPalette.page
+            // Warm paper surface so the login backdrop reads as the
+            // same classroom-paper material the rest of the app uses
+            // (lesson book pages, error banners, empty-state notes).
+            NovaPalette.classroomPaper
 
-            // Floating shapes
+            // Floating school-material accents.
             VStack {
                 HStack {
                     Circle()
-                        .fill(NovaPalette.ink.opacity(0.08))
+                        .fill(NovaPalette.classroomInk.opacity(0.08))
                         .frame(width: 100)
                         .offset(y: isAnimating ? -20 : 20)
 
                     Spacer()
 
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(NovaPalette.coral.opacity(0.18))
+                        .fill(NovaPalette.classroomSchoolRed.opacity(0.20))
                         .frame(width: 80, height: 80)
                         .offset(y: isAnimating ? 20 : -20)
                 }
@@ -199,14 +199,14 @@ private struct AnimatedBackgroundView: View {
 
                 HStack {
                     RoundedRectangle(cornerRadius: 15)
-                        .fill(NovaPalette.ink.opacity(0.06))
+                        .fill(NovaPalette.classroomInk.opacity(0.06))
                         .frame(width: 70, height: 70)
                         .offset(y: isAnimating ? 20 : -20)
 
                     Spacer()
 
                     Circle()
-                        .fill(NovaPalette.sun.opacity(0.28))
+                        .fill(NovaPalette.classroomSun.opacity(0.34))
                         .frame(width: 90)
                         .offset(y: isAnimating ? -20 : 20)
                 }
@@ -215,10 +215,11 @@ private struct AnimatedBackgroundView: View {
             .ignoresSafeArea()
         }
         .onAppear {
-            // Reduce-motion: keep shapes at rest. Doing this in onAppear (not
-            // at declaration time) is deliberate — @Environment is only valid
-            // inside body/onAppear, and a future toggle while the view is on
-            // screen should still win without re-mounting.
+            // Reduce-motion: keep shapes at rest. Doing this in onAppear
+            // (not at declaration time) is deliberate — @Environment is
+            // only valid inside body/onAppear, and a future toggle
+            // while the view is on screen should still win without
+            // re-mounting.
             guard !reduceMotion else { return }
             withAnimation(
                 Animation.easeInOut(duration: 3.5)

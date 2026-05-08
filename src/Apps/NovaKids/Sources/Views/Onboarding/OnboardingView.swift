@@ -280,10 +280,15 @@ public struct OnboardingView: View {
             VStack(spacing: Spacing.sm + Spacing.xs) {
                 Image(systemName: avatar.systemImageName)
                     .font(.largeTitle)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(NovaPalette.classroomInk)
                     .frame(width: 80, height: 80)
                     .background(avatar.backgroundColor)
-                    .cornerRadius(12)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(NovaPalette.classroomInk, lineWidth: selectedAvatar == avatar ? 3 : 1.5)
+                    }
+                    .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 4, x: 0, y: 2)
                     // Selected-state scale bump is an instant state change
                     // (no withAnimation wrapper), so it respects reduce-motion
                     // implicitly — there's no animation to suppress.
@@ -291,10 +296,10 @@ public struct OnboardingView: View {
 
                 Text(avatar.displayName)
                     .font(NovaPalette.bodyFont())
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(NovaPalette.classroomInk)
             }
             .frame(maxWidth: .infinity)
-            .opacity(selectedAvatar == avatar ? 1.0 : 0.7)
+            .opacity(selectedAvatar == avatar ? 1.0 : 0.78)
         }
         .accessibilityLabel("Avatar: \(avatar.displayName)")
     }
@@ -315,14 +320,24 @@ public struct OnboardingView: View {
 
             Spacer()
 
-            // Large name input
+            // Large name input — paper page with classroom ink stroke so
+            // it reads as a name tag the kid is filling out, not a
+            // generic system text field.
             TextField("Type your name here...", text: $childName)
                 .font(NovaPalette.titleFont())
+                .foregroundStyle(NovaPalette.classroomInk)
                 .multilineTextAlignment(.center)
                 .padding(.vertical, Spacing.lg)
                 .padding(.horizontal, Spacing.lg)
-                .background(NovaPalette.novaCardBackground)
-                .cornerRadius(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(NovaPalette.classroomPaper)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.45), lineWidth: 2)
+                }
+                .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 4, x: 0, y: 2)
                 .frame(minHeight: 60)
                 .padding(.horizontal, Spacing.lg)
                 .accessibilityLabel("Name input field")
@@ -357,27 +372,46 @@ public struct OnboardingView: View {
 
             Spacer()
 
-            // Mini-lesson card. Lightbulb foreground flips to `.sun` so the
-            // card reads on-palette without the legacy novaYellow literal.
+            // Mini-lesson card dressed as a classroom workbook page —
+            // sun-tinted lightbulb on `classroomPaper` with a soft ink
+            // stroke and drop-shadow so the first-mission preview reads
+            // as a sample workbook page the kid is about to open.
             VStack(spacing: Spacing.md) {
-                Image(systemName: "lightbulb.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(NovaPalette.sun)
+                ZStack {
+                    Circle()
+                        .fill(NovaPalette.classroomSun)
+                        .frame(width: 64, height: 64)
+                        .overlay {
+                            Circle()
+                                .stroke(NovaPalette.classroomInk.opacity(0.55), lineWidth: 2)
+                        }
+                    Image(systemName: "lightbulb.fill")
+                        .font(.title)
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .accessibilityHidden(true)
+                }
 
                 Text("What is AI?")
                     .font(NovaPalette.headingFont())
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(NovaPalette.classroomInk)
 
                 Text("AI is like a smart helper that learns from examples!")
                     .font(NovaPalette.bodyFont())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(NovaPalette.classroomInk.opacity(0.78))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
             }
             .padding(Spacing.lg)
-            .background(NovaPalette.novaCardBackground)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(NovaPalette.classroomPaper)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.45), lineWidth: 1.5)
+            }
+            .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 4, x: 0, y: 2)
             .padding(.horizontal, Spacing.lg)
 
             Spacer()
@@ -464,16 +498,19 @@ enum AvatarOption: CaseIterable {
         }
     }
 
+    /// Classroom-palette tile backgrounds — each avatar lands on a
+    /// classroom-material color so the avatar grid feels like
+    /// classroom stickers rather than the previous comic-book rainbow.
     var backgroundColor: Color {
         switch self {
-        case .robot: return NovaPalette.novaBlue
-        case .rocket: return NovaPalette.novaPink
-        case .star: return NovaPalette.novaYellow
-        case .planet: return NovaPalette.novaGreen
-        case .dinosaur: return Color(red: 0.8, green: 0.6, blue: 0.2)
-        case .rainbow: return NovaPalette.novaPurple
-        case .unicorn: return NovaPalette.novaPink
-        case .astronaut: return NovaPalette.novaBlue
+        case .robot:     return NovaPalette.classroomSky
+        case .rocket:    return NovaPalette.classroomSchoolRed.opacity(0.78)
+        case .star:      return NovaPalette.classroomSun
+        case .planet:    return NovaPalette.classroomLeaf
+        case .dinosaur:  return NovaPalette.classroomWood
+        case .rainbow:   return NovaPalette.classroomPurple
+        case .unicorn:   return NovaPalette.classroomPaper
+        case .astronaut: return NovaPalette.classroomSky.opacity(0.85)
         }
     }
 }

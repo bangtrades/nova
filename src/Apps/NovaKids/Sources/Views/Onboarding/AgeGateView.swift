@@ -2,9 +2,16 @@ import SwiftUI
 
 /// Age verification screen shown on initial launch (before onboarding).
 ///
-/// Kid must confirm their birth year, then parent must enter their birth year to verify they're 18+.
-/// Once passed, stored via @AppStorage("hasPassedAgeGate") with no way to bypass.
+/// Kid must confirm their birth year, then parent must enter their
+/// birth year to verify they're 18+. Once passed, stored via
+/// `@AppStorage("hasPassedAgeGate")` with no way to bypass.
 /// COPPA-compliant design.
+///
+/// Visual contract: classroom paper note pinned to a soft chalkboard
+/// veil so the gate reads as the same workbook chrome as the rest of
+/// NovaKids — not a generic system form. The lock icon, action
+/// buttons, and the inline error card all pull from
+/// `NovaPalette.classroom*` tokens.
 public struct AgeGateView: View {
     @AppStorage("hasPassedAgeGate") var hasPassedAgeGate = false
 
@@ -20,30 +27,14 @@ public struct AgeGateView: View {
 
     public var body: some View {
         ZStack {
-            NovaPalette.novaBackground
+            chalkboardBackdrop
                 .ignoresSafeArea()
 
             VStack(spacing: 32) {
-                // Header
-                VStack(spacing: 12) {
-                    Image(systemName: "lock.circle.fill")
-                        .font(.largeTitle)
-                        .foregroundStyle(NovaPalette.novaPurple)
-
-                    Text("Getting Started")
-                        .font(NovaPalette.headingFont())
-                        .foregroundStyle(.primary)
-
-                    Text("A grown-up needs to help you get started!")
-                        .font(NovaPalette.bodyFont())
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.vertical, 24)
+                header
 
                 Spacer()
 
-                // Content based on stage
                 if stage == .childAge {
                     childAgePicker()
                 } else {
@@ -52,22 +43,9 @@ public struct AgeGateView: View {
 
                 Spacer()
 
-                // Error message
                 if let error = errorMessage {
-                    VStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.title3)
-                            .foregroundStyle(NovaPalette.novaPink)
-
-                        Text(error)
-                            .font(NovaPalette.bodyFont())
-                            .foregroundStyle(NovaPalette.novaPink)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(16)
-                    .background(NovaPalette.novaPink.opacity(0.15))
-                    .cornerRadius(12)
-                    .padding(.horizontal, 20)
+                    errorCard(message: error)
+                        .padding(.horizontal, 20)
                 }
 
                 Spacer()
@@ -76,40 +54,94 @@ public struct AgeGateView: View {
         }
     }
 
+    // MARK: - Backdrop & header
+
+    private var chalkboardBackdrop: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    NovaPalette.classroomChalkboard.opacity(0.92),
+                    NovaPalette.classroomChalkboard,
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            RadialGradient(
+                colors: [
+                    NovaPalette.classroomChalkDust.opacity(0.18),
+                    Color.clear,
+                ],
+                center: .center,
+                startRadius: 60,
+                endRadius: 360
+            )
+            .accessibilityHidden(true)
+        }
+    }
+
+    private var header: some View {
+        VStack(spacing: 12) {
+            // Lock-shaped sticker — school-red lock on a sun disc with an
+            // ink stroke. Reads as "a teacher needs to unlock this" rather
+            // than the previous purple bubble.
+            ZStack {
+                Circle()
+                    .fill(NovaPalette.classroomSun)
+                    .frame(width: 76, height: 76)
+                    .overlay {
+                        Circle()
+                            .stroke(NovaPalette.classroomInk, lineWidth: 2)
+                    }
+                    .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 4, x: 0, y: 2)
+
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(NovaPalette.classroomSchoolRed)
+                    .accessibilityHidden(true)
+            }
+
+            Text("Getting Started")
+                .font(NovaPalette.headingFont())
+                .foregroundStyle(NovaPalette.classroomChalkDust)
+
+            Text("A grown-up needs to help you get started!")
+                .font(NovaPalette.bodyFont())
+                .foregroundStyle(NovaPalette.classroomChalkDust.opacity(0.85))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, 24)
+        .padding(.horizontal, 20)
+    }
+
     // MARK: - Child Age Stage
 
     private func childAgePicker() -> some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 12) {
-                Text("What year were you born?")
-                    .font(NovaPalette.headingFont())
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 20)
+        paperPanel {
+            VStack(spacing: 24) {
+                VStack(spacing: 12) {
+                    Text("What year were you born?")
+                        .font(NovaPalette.headingFont())
+                        .foregroundStyle(NovaPalette.classroomInk)
 
-                Picker("Birth Year", selection: $childBirthYear) {
-                    ForEach(minChildYear...maxChildYear, id: \.self) { year in
-                        Text(String(year))
-                            .tag(year)
-                            .font(NovaPalette.bodyFont())
+                    Picker("Birth Year", selection: $childBirthYear) {
+                        ForEach(minChildYear...maxChildYear, id: \.self) { year in
+                            Text(String(year))
+                                .tag(year)
+                                .font(NovaPalette.bodyFont())
+                        }
                     }
+                    .pickerStyle(.wheel)
+                    .frame(height: 150)
                 }
-                .pickerStyle(.wheel)
-                .frame(height: 150)
-                .padding(.horizontal, 20)
-            }
 
-            Button(action: handleChildAgeConfirmed) {
-                Text("Next")
-                    .font(NovaPalette.headingFont())
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 60)
-                    .background(NovaPalette.novaOrange)
-                    .cornerRadius(12)
+                Button(action: handleChildAgeConfirmed) {
+                    Text("Next")
+                }
+                .novaPrimary()
+                .accessibilityLabel("Confirm birth year")
             }
-            .padding(.horizontal, 20)
-            .accessibilityLabel("Confirm birth year")
         }
+        .padding(.horizontal, 20)
     }
 
     // MARK: - Parent Verification Stage
@@ -121,61 +153,95 @@ public struct AgeGateView: View {
     }
 
     private func parentVerification() -> some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 12) {
-                Text("Now, we need to verify you're a parent!")
-                    .font(NovaPalette.headingFont())
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 20)
+        paperPanel {
+            VStack(spacing: 24) {
+                VStack(spacing: 12) {
+                    Text("Now, we need to verify you're a parent!")
+                        .font(NovaPalette.headingFont())
+                        .foregroundStyle(NovaPalette.classroomInk)
+                        .multilineTextAlignment(.center)
 
-                Text("What year were YOU born?")
-                    .font(NovaPalette.bodyFont())
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 20)
+                    Text("What year were YOU born?")
+                        .font(NovaPalette.bodyFont())
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.78))
+                        .multilineTextAlignment(.center)
 
-                Picker("Birth Year", selection: $parentBirthYear) {
-                    ForEach(parentYearRange, id: \.self) { year in
-                        Text(String(year))
-                            .tag(year)
-                            .font(NovaPalette.bodyFont())
+                    Picker("Birth Year", selection: $parentBirthYear) {
+                        ForEach(parentYearRange, id: \.self) { year in
+                            Text(String(year))
+                                .tag(year)
+                                .font(NovaPalette.bodyFont())
+                        }
                     }
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 150)
-                .padding(.horizontal, 20)
-            }
-
-            HStack(spacing: 12) {
-                Button(action: {
-                    errorMessage = nil
-                    stage = .childAge
-                }) {
-                    Text("Back")
-                        .font(NovaPalette.headingFont())
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(NovaPalette.novaCardBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(NovaPalette.novaBlue, lineWidth: 2)
-                        )
+                    .pickerStyle(.wheel)
+                    .frame(height: 150)
                 }
 
-                Button(action: handleParentVerification) {
-                    Text("Verify")
-                        .font(NovaPalette.headingFont())
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 60)
-                        .background(NovaPalette.novaOrange)
-                        .cornerRadius(12)
+                HStack(spacing: 12) {
+                    Button {
+                        errorMessage = nil
+                        stage = .childAge
+                    } label: {
+                        Text("Back")
+                    }
+                    .novaSecondary()
+
+                    Button(action: handleParentVerification) {
+                        Text("Verify")
+                    }
+                    .novaPrimary()
                 }
+                .accessibilityLabel("Verify parent age")
             }
-            .padding(.horizontal, 20)
-            .accessibilityLabel("Verify parent age")
         }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Shared paper panel
+
+    /// Wraps stage content in a classroom paper card so the gate reads
+    /// as a paper note pinned over the chalkboard veil.
+    @ViewBuilder
+    private func paperPanel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(Spacing.lg)
+            .frame(maxWidth: 520)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(NovaPalette.classroomPaper)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(NovaPalette.classroomInk.opacity(0.45), lineWidth: 2)
+            }
+            .shadow(color: NovaPalette.classroomInk.opacity(0.20), radius: 10, x: 0, y: 4)
+    }
+
+    // MARK: - Error card
+
+    private func errorCard(message: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title3)
+                .foregroundStyle(NovaPalette.classroomSchoolRed)
+                .accessibilityHidden(true)
+
+            Text(message)
+                .font(NovaPalette.bodyFont())
+                .foregroundStyle(NovaPalette.classroomInk)
+                .multilineTextAlignment(.center)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(NovaPalette.classroomPaper)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(NovaPalette.classroomSchoolRed.opacity(0.65), lineWidth: 2)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Verification failed: \(message)")
     }
 
     // MARK: - Actions
