@@ -205,12 +205,11 @@ public struct RetryableView<Content: View>: View {
                 .padding(20)
             } else if isLoading {
                 VStack(spacing: 12) {
-                    ProgressView()
-                        .tint(NovaPalette.novaOrange)
+                    ClassroomSpinner(size: .large, caption: "Loading")
 
                     Text("Loading...")
                         .font(NovaPalette.bodyFont())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.78))
                 }
             } else {
                 content()

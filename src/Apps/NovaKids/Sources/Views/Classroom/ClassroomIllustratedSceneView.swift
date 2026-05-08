@@ -277,13 +277,106 @@ private struct ClassroomHotspotButton: View {
     private var badge: some View {
         switch object.state {
         case .highlighted:
-            tapSticker
+            // The mission board's "highlighted" state is the
+            // load-bearing "a new mission is ready" cue, so it
+            // earns a distinct painted hint-note sticker rather
+            // than the generic Tap sticker that marks routine
+            // highlighted hotspots like the chalkboard.
+            if object.role == .bulletinBoard {
+                newMissionSticker
+            } else {
+                tapSticker
+            }
         case .disabled:
             soonBadge
         case .available:
+            // Trophy shelf shows the count when it has trophies;
+            // every other available hotspot (bookshelf, Dashy desk,
+            // and trophy shelf at zero) gets a small "tap me" dot
+            // so a 4-year-old can see *something* tappable on each
+            // classroom object. The painted artwork still carries
+            // the visible furniture; the dot is just the corner
+            // sticker that confirms "yes, this one too".
             if object.role == .trophyShelf, let text = object.badgeText {
                 countBadge(text: text)
+            } else {
+                availableTapDot
             }
+        }
+    }
+
+    /// Small sun-yellow tap-dot sticker used as the baseline
+    /// affordance on routine *available* hotspots. Sized to be
+    /// obvious without covering critical painted artwork — fits in
+    /// the top-trailing corner of every classroom object's hotspot.
+    private var availableTapDot: some View {
+        ZStack {
+            Circle()
+                .fill(NovaPalette.classroomSun)
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                }
+
+            Image(systemName: "hand.tap.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(NovaPalette.classroomInk)
+                .accessibilityHidden(true)
+        }
+        .frame(width: 26, height: 26)
+        .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 2, y: 1)
+        .accessibilityHidden(true)
+    }
+
+    /// Mission-board "New!" sticker. Uses the painted
+    /// `lesson_hint_note_45` asset when the bundle has it, falls
+    /// through to a SwiftUI sun-yellow note when it does not. A
+    /// fresh school-red thumbtack rides on top so the painted
+    /// asset still reads as pinned to the cork — the painted note
+    /// itself has no tack. Slight rotation gives it the
+    /// hand-pinned-on-the-board feel without ungated motion.
+    private var newMissionSticker: some View {
+        ZStack(alignment: .top) {
+            paintedNoteOrFallback
+                .frame(width: 46, height: 52)
+
+            Text("New!")
+                .font(NovaPalette.captionFont().weight(.black))
+                .foregroundStyle(NovaPalette.classroomInk)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 4)
+                .frame(width: 46, height: 52)
+
+            Circle()
+                .fill(NovaPalette.classroomSchoolRed)
+                .overlay {
+                    Circle()
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1)
+                }
+                .frame(width: 12, height: 12)
+                .offset(y: -5)
+        }
+        .frame(width: 46, height: 52)
+        .rotationEffect(.degrees(6))
+        .shadow(color: NovaPalette.classroomInk.opacity(0.22), radius: 3, y: 1.5)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var paintedNoteOrFallback: some View {
+        if UIImage(named: "lesson_hint_note_45") != nil {
+            Image("lesson_hint_note_45")
+                .resizable()
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        } else {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(NovaPalette.classroomSun)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
+                }
         }
     }
 

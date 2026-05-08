@@ -65,14 +65,14 @@ public struct CardHeroImage<Placeholder: View>: View {
             AsyncImage(url: resolvedURL) { phase in
                 switch phase {
                 case .empty:
-                    // Show placeholder beneath a small progress indicator
+                    // Show placeholder beneath a small classroom spinner
                     // so kids see immediate visual feedback while the
-                    // image fetches over LAN/wifi.
+                    // image fetches over LAN/wifi. `ClassroomSpinner` is
+                    // Reduce-Motion-aware and pulls from classroom tokens,
+                    // so the moment never falls back to system iOS spinner UI.
                     ZStack {
                         placeholder()
-                        ProgressView()
-                            .tint(.white)
-                            .scaleEffect(1.4)
+                        ClassroomSpinner(size: .medium, caption: "Loading picture")
                     }
                 case .success(let image):
                     image

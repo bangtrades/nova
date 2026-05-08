@@ -209,12 +209,16 @@ public struct EnhancedHomeView: View {
     }
 
     /// Group lessons by learning path once so the per-path sections don't
-    /// re-compute the grouping on every render.
+    /// re-compute the grouping on every render. Built with an explicit
+    /// accumulator so the grouping does not need a force unwrap on
+    /// `Lesson.pathId` — lessons without a `pathId` are simply skipped.
     private var lessonsByPath: [UUID: [Lesson]] {
-        Dictionary(
-            grouping: viewModel.allLessons.filter { $0.pathId != nil },
-            by: { $0.pathId! }
-        )
+        var result: [UUID: [Lesson]] = [:]
+        for lesson in viewModel.allLessons {
+            guard let pathId = lesson.pathId else { continue }
+            result[pathId, default: []].append(lesson)
+        }
+        return result
     }
 
     private func learningPathSection(_ path: LearningPath) -> some View {

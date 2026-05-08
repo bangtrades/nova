@@ -105,8 +105,7 @@ public struct KidsLoginView: View {
 
                     if viewModel.isLoading {
                         HStack(spacing: Spacing.sm) {
-                            ProgressView()
-                                .tint(NovaPalette.coral)
+                            ClassroomSpinner(size: .small, caption: "Signing in")
                             Text("Signing in...")
                                 .font(NovaPalette.bodyFont())
                                 .foregroundStyle(.secondary)

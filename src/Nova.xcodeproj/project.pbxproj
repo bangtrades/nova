@@ -146,6 +146,7 @@
 		DE51617100000016000000B1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000016000000C1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift */; };
 		DE51617100000017000000B1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000017000000C1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift */; };
 		DE51617100000018000000B1 /* Sources/Views/Common/ClassroomErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000018000000C1 /* Sources/Views/Common/ClassroomErrorBanner.swift */; };
+		DE51617100000019000000B1 /* Sources/Views/Common/ClassroomSpinner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000019000000C1 /* Sources/Views/Common/ClassroomSpinner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -173,6 +174,7 @@
 		DE51617100000016000000C1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonBookReaderShell.swift; sourceTree = "<group>"; };
 		DE51617100000017000000C1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/LessonBookPageSurface.swift; sourceTree = "<group>"; };
 		DE51617100000018000000C1 /* Sources/Views/Common/ClassroomErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ClassroomErrorBanner.swift; sourceTree = "<group>"; };
+		DE51617100000019000000C1 /* Sources/Views/Common/ClassroomSpinner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ClassroomSpinner.swift; sourceTree = "<group>"; };
 		00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/App/KidsAppState.swift; sourceTree = "<group>"; };
 		030C1CB67CF9644B2ED824F9 /* Sources/Views/Common/LoadingSkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/LoadingSkeletonView.swift; sourceTree = "<group>"; };
 		0E562C5A7212F44804AFE11A /* Sources/Views/Progress/ProgressChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Progress/ProgressChartView.swift; sourceTree = "<group>"; };
@@ -337,6 +339,7 @@
 				DE51617100000016000000C1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift */,
 				DE51617100000017000000C1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift */,
 				DE51617100000018000000C1 /* Sources/Views/Common/ClassroomErrorBanner.swift */,
+				DE51617100000019000000C1 /* Sources/Views/Common/ClassroomSpinner.swift */,
 				CA3D1EA02226951D31C0EA08 /* Sources/Services/VoicePreferenceStore.swift */,
 				CA3D1EA02226951D31C0EA0A /* Sources/Views/Settings/VoicePickerView.swift */,
 				CA3D1EA02226951D31C0EA0C /* Sources/Services/NavigationNarrator.swift */,
@@ -596,6 +599,7 @@
 				DE51617100000016000000B1 /* Sources/Views/Flipbook/LessonBookReaderShell.swift in Sources */,
 				DE51617100000017000000B1 /* Sources/Views/Flipbook/LessonBookPageSurface.swift in Sources */,
 				DE51617100000018000000B1 /* Sources/Views/Common/ClassroomErrorBanner.swift in Sources */,
+				DE51617100000019000000B1 /* Sources/Views/Common/ClassroomSpinner.swift in Sources */,
 				CA3D1EA02226951D31C0EA07 /* Sources/Services/VoicePreferenceStore.swift in Sources */,
 				CA3D1EA02226951D31C0EA09 /* Sources/Views/Settings/VoicePickerView.swift in Sources */,
 				CA3D1EA02226951D31C0EA0B /* Sources/Services/NavigationNarrator.swift in Sources */,
