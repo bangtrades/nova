@@ -140,8 +140,14 @@ public struct QuizCardView: View {
     }
 
     /// Question text rendered as a pinned/sticky prompt against the
-    /// classroom-board surface. Yellow sticky-note treatment so the question
-    /// reads as the kid's primary thing-to-do above the magnetic answer tiles.
+    /// classroom-board surface. Prefers the painted
+    /// `LessonArtSlot.quizQuestionStickyNote` asset (canonical:
+    /// `lesson_quiz_question_sticky_note_45`) so the question reads as
+    /// a hand-pinned note above the magnetic answer tiles; falls back
+    /// to the SwiftUI yellow sticky-note treatment when no painted
+    /// asset has shipped. Question text continues to render as a live
+    /// SwiftUI label on top of either backdrop so it stays readable
+    /// and accessible.
     @ViewBuilder
     private var question: some View {
         if let questionText = card.content.question {
@@ -150,10 +156,22 @@ public struct QuizCardView: View {
                 .foregroundStyle(NovaPalette.classroomInk)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.md)
-                .background(
-                    NovaPalette.classroomSun.opacity(0.32),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                )
+                .background(questionStickyNoteBackground)
+        }
+    }
+
+    @ViewBuilder
+    private var questionStickyNoteBackground: some View {
+        if let stickyAsset = LessonArtSlot.quizQuestionStickyNote.resolvedName {
+            Image(stickyAsset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(NovaPalette.classroomSun.opacity(0.32))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(NovaPalette.classroomSun.opacity(0.55), lineWidth: 2)

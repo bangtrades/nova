@@ -99,22 +99,34 @@ public struct ConceptCardView: View {
         .padding(.horizontal, Spacing.xs)
     }
 
-    /// Diagram / hero panel for the concept card. Paper-and-sky
-    /// gradient (no chalkboard tones) so the diagram reads as a
-    /// workbook illustration rather than a green-board scribble.
-    /// Falls back to a paper-toned placeholder with a lightbulb
-    /// glyph when the lesson has no painted hero image.
+    /// Diagram / hero panel for the concept card. Prefers the painted
+    /// `LessonArtSlot.conceptChalkDiagramBoard` asset (canonical:
+    /// `lesson_concept_chalk_diagram_board_45`; legacy:
+    /// `lesson_chalkpanel_45_landscape`) so the diagram reads as a
+    /// labeled workbook illustration; falls back to a paper-and-sky
+    /// gradient with a lightbulb glyph when no painted asset has
+    /// shipped. Either path keeps the lightbulb cue + "Concept"
+    /// caption visible above the bitmap so a four-year-old still
+    /// sees the workbook label without reading.
     private var heroPanel: some View {
         CardHeroImage(url: card.imageURL) {
             ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        NovaPalette.classroomPaper,
-                        NovaPalette.classroomSky.opacity(0.22),
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                if let boardAsset = LessonArtSlot.conceptChalkDiagramBoard.resolvedName {
+                    Image(boardAsset)
+                        .resizable()
+                        .scaledToFill()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                } else {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            NovaPalette.classroomPaper,
+                            NovaPalette.classroomSky.opacity(0.22),
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
 
                 VStack(spacing: Spacing.sm) {
                     Image(systemName: "lightbulb.circle.fill")

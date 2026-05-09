@@ -169,8 +169,13 @@ public struct ExperimentCardView: View {
         }
     }
 
-    /// Draggable manipulatives row at the bottom of the tabletop. Items hide
-    /// once placed, and bounce back on a wrong drop.
+    /// Draggable manipulatives row at the bottom of the tabletop.
+    /// Items hide once placed, and bounce back on a wrong drop. The
+    /// row sits on a painted material tray
+    /// (`LessonArtSlot.experimentMaterialTray`) when the asset has
+    /// shipped so the manipulatives read as classroom tabletop
+    /// supplies; falls back to a paper-tinted rounded rectangle with
+    /// an ink hairline when the asset is missing.
     private var dragItemsBlock: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Drag items:")
@@ -190,6 +195,27 @@ public struct ExperimentCardView: View {
                 Spacer()
             }
             .frame(height: 80)
+        }
+        .padding(Spacing.sm)
+        .background(materialTrayBackground)
+    }
+
+    @ViewBuilder
+    private var materialTrayBackground: some View {
+        if let trayAsset = LessonArtSlot.experimentMaterialTray.resolvedName {
+            Image(trayAsset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(NovaPalette.classroomPaper.opacity(0.30))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(NovaPalette.classroomInk.opacity(0.16), lineWidth: 1)
+                )
         }
     }
 

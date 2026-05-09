@@ -162,6 +162,15 @@ public struct VoiceCardView: View {
         }
     }
 
+    /// Microphone stage. The mic button is the primary action on a
+    /// voice card — for ages 4-5 it has to read as a tappable
+    /// microphone object, not a generic circular button. Prefers the
+    /// painted `LessonArtSlot.voiceMicrophoneIdle` /
+    /// `voiceMicrophoneListening` assets when they ship; falls back
+    /// to the SwiftUI ink/red circle + system glyph when not. The
+    /// painted listening-state pulse uses
+    /// `LessonArtSlot.voiceWaveRing` when available, with the
+    /// SwiftUI `TimelineView` ring as the fallback.
     @ViewBuilder private var micStage: some View {
         VStack(spacing: Spacing.md) {
             if phase == .listening, !reduceMotion {
@@ -171,18 +180,8 @@ public struct VoiceCardView: View {
             Button {
                 toggleMic()
             } label: {
-                Image(systemName: phase == .listening ? "mic.fill" : "mic")
-                    .font(.system(size: 44, weight: .semibold))
-                    .foregroundStyle(Color.white)
+                paintedOrSwiftUIMic
                     .frame(width: 120, height: 120)
-                    .background(
-                        Circle()
-                            .fill(phase == .listening ? NovaPalette.classroomSchoolRed : NovaPalette.classroomInk)
-                    )
-                    .overlay(
-                        Circle()
-                            .strokeBorder(NovaPalette.classroomInk, lineWidth: 3)
-                    )
             }
             .buttonStyle(.plain)
             .contentShape(Circle())
@@ -199,23 +198,71 @@ public struct VoiceCardView: View {
         }
     }
 
-    /// A calm pulsing ring around the mic while we're listening.
-    /// `TimelineView(.animation)` is the source-level reduce-motion gate —
-    /// the `if ... !reduceMotion` guard above prevents this view from even
-    /// instantiating under reduce-motion, so the timeline schedule is dropped
-    /// entirely rather than rendering a frozen ring.
-    private var listeningPulse: some View {
-        TimelineView(.animation) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            let phase = sin(t * .pi * 1.2) * 0.5 + 0.5 // 0…1
-            Circle()
-                .strokeBorder(NovaPalette.classroomSchoolRed, lineWidth: 3)
-                .frame(width: 140 + CGFloat(phase * 16),
-                       height: 140 + CGFloat(phase * 16))
-                .opacity(0.3 + phase * 0.3)
+    /// Painted microphone object when an asset has shipped for the
+    /// current state, SwiftUI fallback otherwise. The painted asset
+    /// owns the entire visual silhouette; the SwiftUI fallback keeps
+    /// the prior ink/red ring + system glyph so the kid still sees an
+    /// obvious mic before art lands.
+    @ViewBuilder
+    private var paintedOrSwiftUIMic: some View {
+        let stateSlot: LessonArtSlot = phase == .listening
+            ? .voiceMicrophoneListening
+            : .voiceMicrophoneIdle
+        if let micAsset = stateSlot.resolvedName {
+            Image(micAsset)
+                .resizable()
+                .scaledToFit()
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: phase == .listening ? "mic.fill" : "mic")
+                .font(.system(size: 44, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .frame(width: 120, height: 120)
+                .background(
+                    Circle()
+                        .fill(phase == .listening
+                              ? NovaPalette.classroomSchoolRed
+                              : NovaPalette.classroomInk)
+                )
+                .overlay(
+                    Circle()
+                        .strokeBorder(NovaPalette.classroomInk, lineWidth: 3)
+                )
         }
-        .frame(width: 160, height: 160)
-        .accessibilityHidden(true)
+    }
+
+    /// Pulsing ring around the mic while we're listening. Prefers
+    /// the painted `LessonArtSlot.voiceWaveRing` asset (rendered
+    /// statically — the painted ring already carries its own visual
+    /// rhythm) when available; falls back to the calm SwiftUI
+    /// `TimelineView(.animation)` ring otherwise.
+    /// `TimelineView` is the source-level reduce-motion gate — the
+    /// `if ... !reduceMotion` guard above prevents this view from
+    /// even instantiating under reduce-motion, so the timeline
+    /// schedule is dropped entirely rather than rendering a frozen
+    /// ring. The painted-asset branch is also gated by the same
+    /// caller-side guard, so reduce-motion users see neither path.
+    @ViewBuilder
+    private var listeningPulse: some View {
+        if let waveAsset = LessonArtSlot.voiceWaveRing.resolvedName {
+            Image(waveAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 160, height: 160)
+                .accessibilityHidden(true)
+        } else {
+            TimelineView(.animation) { context in
+                let t = context.date.timeIntervalSinceReferenceDate
+                let phase = sin(t * .pi * 1.2) * 0.5 + 0.5 // 0…1
+                Circle()
+                    .strokeBorder(NovaPalette.classroomSchoolRed, lineWidth: 3)
+                    .frame(width: 140 + CGFloat(phase * 16),
+                           height: 140 + CGFloat(phase * 16))
+                    .opacity(0.3 + phase * 0.3)
+            }
+            .frame(width: 160, height: 160)
+            .accessibilityHidden(true)
+        }
     }
 
     private enum BubbleTone { case neutral, celebration, retry }

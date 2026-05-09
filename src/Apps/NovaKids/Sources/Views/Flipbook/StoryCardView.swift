@@ -190,28 +190,39 @@ public struct StoryCardView: View {
 
     /// Inner hero illustration — the `CardHeroImage` async-loader plus
     /// a paper-toned fallback. Shared by both the asset-framed and
-    /// SwiftUI-matted paths above.
+    /// SwiftUI-matted paths above. The placeholder prefers the
+    /// painted `LessonArtSlot.storyBlankPicturePlaceholder` asset when
+    /// available so a missing hero reads as a workbook blank-page
+    /// invitation rather than a generic paper gradient.
     private var heroIllustration: some View {
         CardHeroImage(url: card.imageURL) {
             ZStack {
-                LinearGradient(
-                    colors: [
-                        NovaPalette.classroomSky.opacity(0.32),
-                        NovaPalette.classroomPaper,
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                VStack(spacing: Spacing.sm) {
-                    Image(systemName: "book.closed.fill")
-                        .font(.system(size: 44, weight: .semibold))
-                        .foregroundStyle(NovaPalette.classroomInk)
+                if let placeholderAsset = LessonArtSlot.storyBlankPicturePlaceholder.resolvedName {
+                    Image(placeholderAsset)
+                        .resizable()
+                        .scaledToFill()
+                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
+                } else {
+                    LinearGradient(
+                        colors: [
+                            NovaPalette.classroomSky.opacity(0.32),
+                            NovaPalette.classroomPaper,
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
 
-                    Text("Storybook")
-                        .font(NovaPalette.captionFont().weight(.bold))
-                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
+                    VStack(spacing: Spacing.sm) {
+                        Image(systemName: "book.closed.fill")
+                            .font(.system(size: 44, weight: .semibold))
+                            .foregroundStyle(NovaPalette.classroomInk)
+                            .accessibilityHidden(true)
+
+                        Text("Storybook")
+                            .font(NovaPalette.captionFont().weight(.bold))
+                            .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
+                    }
                 }
             }
         }
