@@ -96,20 +96,22 @@ public struct BadgeView: View {
 
     // MARK: - Subviews
 
-    /// The circular badge disc — gradient fill, ink stroke, icon centered.
+    /// The circular badge disc — painted disk asset when available
+    /// (`trophyBadgeDiskEarned` for earned, `trophyBadgeDiskLocked`
+    /// for locked), otherwise the legacy SwiftUI gradient + ink
+    /// stroke composition. The icon glyph and the lock indicator are
+    /// always rendered live in SwiftUI so badge identity (icon) and
+    /// state (locked padlock) survive even when the painted disc
+    /// hides surface detail.
     private var badgeCircle: some View {
         ZStack {
-            Circle()
-                .fill(fillGradient)
-
-            // Ink outline — 2pt matches `NovaCard` stroke weight so the
-            // badge feels part of the same comic-book world.
-            Circle()
-                .stroke(NovaPalette.ink, lineWidth: 2)
+            discBackdrop
 
             // Sun glow behind the icon for earned badges — radial bleed
-            // suggests the disc is warm/lit, not just a flat fill.
-            if earned {
+            // suggests the disc is warm/lit, not just a flat fill. Skipped
+            // when the painted earned disk supplies its own glow so the
+            // two highlights don't fight.
+            if earned && diskAssetName == nil {
                 Circle()
                     .fill(
                         RadialGradient(
@@ -130,7 +132,9 @@ public struct BadgeView: View {
                 .foregroundStyle(earned ? NovaPalette.ink : NovaPalette.ink.opacity(0.3))
 
             // Lock indicator for locked badges — small padlock tucked to
-            // the bottom-trailing so it doesn't cover the symbol.
+            // the bottom-trailing so it doesn't cover the symbol. Always
+            // rendered in SwiftUI so the locked state stays unambiguous
+            // even when the painted disk reads as a "gentle empty slot".
             if !earned {
                 Image(systemName: "lock.fill")
                     .font(.caption.weight(.bold))
@@ -140,6 +144,40 @@ public struct BadgeView: View {
                     .offset(x: 26, y: 26)
             }
         }
+    }
+
+    /// Painted disk asset when present, otherwise the SwiftUI gradient +
+    /// ink stroke fallback. Pulls from `ClassroomRewardArtSlot` so the
+    /// trophy room and the badge tile share one art contract.
+    @ViewBuilder
+    private var discBackdrop: some View {
+        if let asset = diskAssetName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .accessibilityHidden(true)
+        } else {
+            ZStack {
+                Circle()
+                    .fill(fillGradient)
+
+                // Ink outline — 2pt matches `NovaCard` stroke weight so
+                // the badge feels part of the same comic-book world.
+                Circle()
+                    .stroke(NovaPalette.ink, lineWidth: 2)
+            }
+        }
+    }
+
+    /// Resolved imageset name for the disk asset, if any. Earned uses
+    /// `trophyBadgeDiskEarned`; locked uses `trophyBadgeDiskLocked` so
+    /// the locked state can ship as a "gentle empty reward slot"
+    /// silhouette rather than a punitive faded disc.
+    private var diskAssetName: String? {
+        let slot: ClassroomRewardArtSlot = earned
+            ? .trophyBadgeDiskEarned
+            : .trophyBadgeDiskLocked
+        return slot.resolvedName
     }
 
     /// Status row beneath the name — earned date stamp OR locked progress bar.

@@ -232,14 +232,26 @@ public struct TrophyRoomView: View {
         }
     }
 
-    /// Wood-toned shelf panel that hosts a row/grid of trophy tiles. Mirrors
-    /// the bookshelf object on the classroom home so trophies feel like they
-    /// share furniture with the rest of the classroom.
+    /// Wood-toned shelf panel that hosts a row/grid of trophy tiles.
+    /// Mirrors the bookshelf object on the classroom home so trophies
+    /// feel like they share furniture with the rest of the classroom.
+    ///
+    /// Layering (bottom → top):
+    ///   1. `shelfPanelBackground` — `trophyCase` asset or wood-tinted
+    ///      SwiftUI rect.
+    ///   2. `shelfRowOverlay` — `trophyShelfRow` painted shelf row,
+    ///      anchored to the bottom edge so each trophy tile reads as
+    ///      sitting *on* a shelf rather than floating in the case.
+    ///   3. The trophy tiles themselves.
+    ///   4. SwiftUI fallback wood band + ink stroke when neither
+    ///      painted asset has shipped, so the panel still has crisp
+    ///      edges in the no-art build.
     @ViewBuilder
     private func shelfPanel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
             .padding(Spacing.md)
             .frame(maxWidth: .infinity)
+            .background(alignment: .bottom) { shelfRowOverlay }
             .background(shelfPanelBackground)
             .overlay(alignment: .bottom) {
                 if ClassroomRewardArtSlot.trophyShelfRow.hasAsset == false
@@ -258,6 +270,25 @@ public struct TrophyRoomView: View {
                 }
             }
             .shadow(color: NovaPalette.classroomInk.opacity(0.14), radius: 6, x: 0, y: 3)
+    }
+
+    /// Painted shelf-row overlay layered between the case background
+    /// and the trophy tile grid. Anchored to the bottom edge of the
+    /// panel so the row reads as a wall-mounted shelf the trophies
+    /// rest on. Renders nothing when the asset has not shipped — the
+    /// SwiftUI wood band in `shelfPanel` covers that case.
+    @ViewBuilder
+    private var shelfRowOverlay: some View {
+        if let asset = ClassroomRewardArtSlot.trophyShelfRow.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.bottom, Spacing.sm)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     /// Painted shelf-panel backdrop. Prefers the painted trophy-case
@@ -700,64 +731,87 @@ private struct BadgeDetailSheet: View {
 
     /// Hero block — ProgressRing wrapping the large badge disc, then the
     /// badge title/description, then earned-date or progress readout.
+    /// When the painted `trophyDetailCertificate` asset is in the
+    /// bundle, the `NovaCard` shell is replaced with a certificate
+    /// background so the detail sheet reads as a classroom certificate
+    /// awarded to the kid; SwiftUI text continues to render live on
+    /// top so badge titles, descriptions, and earned dates stay
+    /// readable, accessible, and localizable.
     private var heroBlock: some View {
-        NovaCard(accent: NovaPalette.sun) {
-            VStack(spacing: Spacing.md) {
-                ZStack {
-                    ProgressRing(
-                        progress: item.isEarned ? 1.0 : Double(item.progress),
-                        lineWidth: 10
+        Group {
+            if let certificateAsset = ClassroomRewardArtSlot.trophyDetailCertificate.resolvedName {
+                heroContent
+                    .padding(Spacing.lg)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        Image(certificateAsset)
+                            .resizable()
+                            .scaledToFill()
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
                     )
-                    .frame(width: 180, height: 180)
-
-                    heroBadgeDisc
-                        .frame(width: 140, height: 140)
+                    .shadow(color: NovaPalette.ink.opacity(0.18), radius: 8, x: 0, y: 4)
+            } else {
+                NovaCard(accent: NovaPalette.sun) {
+                    heroContent
                 }
-                .padding(.top, Spacing.sm)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(
-                    item.isEarned
-                        ? "Badge earned"
-                        : "Badge progress: \(Int(item.progress * 100)) percent"
-                )
-
-                Text(item.badge.title)
-                    .font(NovaPalette.displayFont(size: 34))
-                    .foregroundStyle(NovaPalette.ink)
-                    .multilineTextAlignment(.center)
-
-                Text(item.badge.description)
-                    .font(NovaPalette.bodyFont())
-                    .foregroundStyle(NovaPalette.ink.opacity(0.8))
-                    .multilineTextAlignment(.center)
-
-                earnedOrProgressLine
             }
-            .frame(maxWidth: .infinity)
         }
     }
 
-    /// The big badge disc shown inside the progress ring. Same visual
-    /// language as the grid tile's disc — sun → coral gradient for earned,
-    /// ink descent for locked — just scaled up.
+    /// Inner contents of the hero block. Lifted out of `heroBlock` so
+    /// the asset-backed and SwiftUI-card branches share the same
+    /// composition without duplication.
+    private var heroContent: some View {
+        VStack(spacing: Spacing.md) {
+            ZStack {
+                ProgressRing(
+                    progress: item.isEarned ? 1.0 : Double(item.progress),
+                    lineWidth: 10
+                )
+                .frame(width: 180, height: 180)
+
+                heroBadgeDisc
+                    .frame(width: 140, height: 140)
+            }
+            .padding(.top, Spacing.sm)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(
+                item.isEarned
+                    ? "Badge earned"
+                    : "Badge progress: \(Int(item.progress * 100)) percent"
+            )
+
+            Text(item.badge.title)
+                .font(NovaPalette.displayFont(size: 34))
+                .foregroundStyle(NovaPalette.ink)
+                .multilineTextAlignment(.center)
+
+            Text(item.badge.description)
+                .font(NovaPalette.bodyFont())
+                .foregroundStyle(NovaPalette.ink.opacity(0.8))
+                .multilineTextAlignment(.center)
+
+            earnedOrProgressLine
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The big badge disc shown inside the progress ring. Mirrors
+    /// `BadgeView.badgeCircle`'s contract — painted disk asset when
+    /// available (`trophyBadgeDiskEarned` / `trophyBadgeDiskLocked`),
+    /// otherwise the legacy SwiftUI gradient. The icon glyph always
+    /// renders live on top so the badge identity survives both
+    /// paths.
     private var heroBadgeDisc: some View {
         ZStack {
-            Circle()
-                .fill(
-                    item.isEarned
-                        ? LinearGradient(
-                            colors: [NovaPalette.sun, NovaPalette.coral],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        : LinearGradient(
-                            colors: [NovaPalette.ink.opacity(0.22), NovaPalette.ink.opacity(0.08)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                )
+            heroDiscBackdrop
 
-            if item.isEarned {
+            // Sun glow only when the painted earned asset isn't in
+            // place — the painted disk is expected to supply its own
+            // highlight.
+            if item.isEarned && heroDiskAssetName == nil {
                 Circle()
                     .fill(
                         RadialGradient(
@@ -771,9 +825,6 @@ private struct BadgeDetailSheet: View {
                     .allowsHitTesting(false)
             }
 
-            Circle()
-                .stroke(NovaPalette.ink, lineWidth: 2)
-
             Image(systemName: item.badge.icon)
                 .font(.system(size: 60, weight: .semibold))
                 .foregroundStyle(
@@ -782,6 +833,42 @@ private struct BadgeDetailSheet: View {
                         : NovaPalette.ink.opacity(0.35)
                 )
         }
+    }
+
+    @ViewBuilder
+    private var heroDiscBackdrop: some View {
+        if let asset = heroDiskAssetName {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .accessibilityHidden(true)
+        } else {
+            ZStack {
+                Circle()
+                    .fill(
+                        item.isEarned
+                            ? LinearGradient(
+                                colors: [NovaPalette.sun, NovaPalette.coral],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [NovaPalette.ink.opacity(0.22), NovaPalette.ink.opacity(0.08)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                    )
+                Circle()
+                    .stroke(NovaPalette.ink, lineWidth: 2)
+            }
+        }
+    }
+
+    private var heroDiskAssetName: String? {
+        let slot: ClassroomRewardArtSlot = item.isEarned
+            ? .trophyBadgeDiskEarned
+            : .trophyBadgeDiskLocked
+        return slot.resolvedName
     }
 
     /// Status line beneath the hero — either the earned date with calendar

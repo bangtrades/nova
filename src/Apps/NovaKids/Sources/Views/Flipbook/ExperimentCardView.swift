@@ -200,6 +200,28 @@ public struct ExperimentCardView: View {
         .background(materialTrayBackground)
     }
 
+    /// Background for the completion sticker. Prefers the painted
+    /// `LessonArtSlot.experimentSuccessCard` sticker so the moment
+    /// reads as a classroom reward; falls back to the prior paper
+    /// rounded-rectangle fill when the asset has not shipped. Live
+    /// text continues to render in SwiftUI on top, so the
+    /// completion message remains readable and accessible
+    /// regardless of which path renders.
+    @ViewBuilder
+    private var successCardBackground: some View {
+        if let asset = LessonArtSlot.experimentSuccessCard.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(NovaPalette.classroomPaper)
+        }
+    }
+
     @ViewBuilder
     private var materialTrayBackground: some View {
         if let trayAsset = LessonArtSlot.experimentMaterialTray.resolvedName {
@@ -222,6 +244,18 @@ public struct ExperimentCardView: View {
     /// Floating "All set!" celebration card + Next button shown on completion.
     /// Lives in an overlay so it floats above the tabletop without re-laying
     /// out the placed manipulatives.
+    ///
+    /// When `LessonArtSlot.experimentSuccessCard` has shipped, the
+    /// painted sticker / certificate is rendered as the card's
+    /// background so the moment reads as a tabletop reward sticker
+    /// rather than a generic alert. SwiftUI live text — the star
+    /// glyph, `completionMessage`, and "Amazing work!" caption —
+    /// continues to render on top of either the painted card or the
+    /// SwiftUI paper fallback. The existing `completionOpacity`
+    /// scale + opacity drive the entrance, and Reduce Motion is
+    /// gated upstream in `celebrateCompletion()` (see the
+    /// `withAnimation(reduceMotion ? nil : .default)` there); the
+    /// painted asset adds no new motion.
     @ViewBuilder
     private var completionOverlay: some View {
         if showConfetti {
@@ -244,10 +278,7 @@ public struct ExperimentCardView: View {
                         .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
                 }
                 .padding(Spacing.lg)
-                .background(
-                    NovaPalette.classroomPaper,
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
+                .background(successCardBackground)
                 .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 8, x: 0, y: 4)
                 .scaleEffect(completionOpacity)
                 .opacity(completionOpacity)
@@ -399,17 +430,25 @@ public struct ExperimentCardView: View {
     }
 }
 
-/// Draggable manipulative — reads as a classroom material tile sitting
-/// on the tabletop: sun-tinted paper fill, ink stroke, soft drop-shadow.
-/// Same sticker family as the trophy/Tap stickers on the classroom-home
-/// shell so the experiment row feels like an extension of that surface.
+/// Draggable manipulative — reads as a classroom material tile
+/// sitting on the tabletop. Prefers the painted
+/// `LessonArtSlot.experimentDragTile` asset as the silhouette fill
+/// when shipped; falls back to the SwiftUI sun-tinted paper fill
+/// when not. Either way, the ink stroke, drop shadow, item label,
+/// and glyph stay live in SwiftUI on top so the tile reads the
+/// same regardless of whether art has landed.
+///
+/// The painted layer is `accessibilityHidden(true)` and
+/// `allowsHitTesting(false)`, which preserves the existing `.draggable`
+/// gesture: the recognizer attaches to the outer view, not to the
+/// fill, so swapping the fill from a SwiftUI shape to a clipped
+/// `Image` does not change drag-and-drop behavior.
 private struct DraggableItemView: View {
     let item: ExperimentCardView.DragItemState
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(NovaPalette.classroomSun)
+            tileBackdrop
 
             VStack(spacing: 4) {
                 if let imageURL = item.imageURL {
@@ -439,10 +478,12 @@ private struct DraggableItemView: View {
         }
         .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 3, x: 0, y: 2)
         .draggable(item) {
+            // Drag-preview ghost — kept visually consistent with the
+            // source tile so the painted manipulative is recognizable
+            // mid-drag.
             VStack {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(NovaPalette.classroomSun)
+                    tileBackdrop
 
                     Text(item.label)
                         .font(NovaPalette.smallHeadingFont())
@@ -460,9 +501,36 @@ private struct DraggableItemView: View {
         .frame(height: 80)
         .accessibilityLabel("Drag item: \(item.label)")
     }
+
+    @ViewBuilder
+    private var tileBackdrop: some View {
+        if let asset = LessonArtSlot.experimentDragTile.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(NovaPalette.classroomSun)
+        }
+    }
 }
 
 /// Drop target zone view.
+///
+/// Layout layering (bottom → top):
+///   1. Painted `LessonArtSlot.experimentDropZone` backdrop, when the
+///      asset has shipped. Falls through to `EmptyView()` when missing
+///      so the rest of the SwiftUI cue stack reads identically.
+///   2. Live dashed chalk-outline targeting cue. Always rendered
+///      regardless of the painted backdrop so a four-year-old still
+///      sees the hover-to-drop affordance, and so the brighten-on-
+///      target feedback survives the painted asset.
+///   3. Filled-item leaf treatment (when a tile has landed) or the
+///      empty `arrow.down.circle` + label cue (when the zone is
+///      waiting).
 private struct DropTargetView: View {
     let target: ExperimentCardView.DropTargetState
     let dragItems: [ExperimentCardView.DragItemState]
@@ -473,9 +541,22 @@ private struct DropTargetView: View {
 
     var body: some View {
         ZStack {
+            // Painted tabletop drop-zone art — sits beneath the live
+            // SwiftUI targeting outline + the placed/empty cues.
+            // Renders only when the lesson art has shipped; falls
+            // through to EmptyView so the dashed outline + cue stack
+            // continues to read as it always did. The painted layer
+            // is decorative — `.allowsHitTesting(false)` and
+            // `.accessibilityHidden(true)` keep it out of the drop
+            // gesture path and the VoiceOver tree.
+            paintedDropZoneBackdrop
+
             // Base zone — dashed chalk outline that brightens when a tile
             // is hovering, drawn in classroom palette so it matches the
             // tabletop instead of the previous comic-book novaBlue/novaGreen.
+            // Rendered above the painted backdrop on purpose: the
+            // targeting cue is load-bearing for drag-and-drop UX and
+            // must always be visible.
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(
                     isTargeted ? NovaPalette.classroomLeaf : NovaPalette.classroomSky,
@@ -535,6 +616,18 @@ private struct DropTargetView: View {
             self.isTargeted = isTargeted
         }
         .accessibilityLabel("Drop zone: \(target.label)")
+    }
+
+    @ViewBuilder
+    private var paintedDropZoneBackdrop: some View {
+        if let asset = LessonArtSlot.experimentDropZone.resolvedName {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }
 
