@@ -26,6 +26,71 @@ public enum Spacing {
     public static let xxl: CGFloat = 48
 }
 
+/// Named padding for live SwiftUI content rendered over painted lesson
+/// and reward art. These values reserve room for generated borders,
+/// curled corners, ribbons, tabs, and shelf trim while keeping text
+/// authoritative and readable.
+public enum PaintedArtContentInsets {
+    public static let workbookChromeMinimum: CGFloat = Spacing.lg
+    public static let workbookChromeCompactMinimum: CGFloat = Spacing.md + Spacing.xs
+
+    public static let storybookPageText = EdgeInsets(
+        top: Spacing.lg,
+        leading: Spacing.lg,
+        bottom: Spacing.lg,
+        trailing: Spacing.lg
+    )
+
+    public static let workbookPageText = EdgeInsets(
+        top: Spacing.md,
+        leading: Spacing.lg,
+        bottom: Spacing.md,
+        trailing: Spacing.lg
+    )
+
+    public static let stickyNoteText = EdgeInsets(
+        top: Spacing.lg,
+        leading: Spacing.lg,
+        bottom: Spacing.lg,
+        trailing: Spacing.lg
+    )
+
+    public static let speechBubbleText = EdgeInsets(
+        top: Spacing.lg,
+        leading: Spacing.lg,
+        bottom: Spacing.lg,
+        trailing: Spacing.lg
+    )
+
+    public static let paintedPanelContent = EdgeInsets(
+        top: Spacing.lg,
+        leading: Spacing.lg,
+        bottom: Spacing.lg,
+        trailing: Spacing.lg
+    )
+
+    public static let materialTrayContent = EdgeInsets(
+        top: Spacing.md,
+        leading: Spacing.md,
+        bottom: Spacing.md,
+        trailing: Spacing.md
+    )
+
+    public static let rewardCertificateText = EdgeInsets(
+        top: Spacing.xl,
+        leading: Spacing.xl,
+        bottom: Spacing.xl,
+        trailing: Spacing.xl
+    )
+
+    public static let materialButtonText = EdgeInsets(
+        top: Spacing.md,
+        leading: 40,
+        bottom: Spacing.md,
+        trailing: 40
+    )
+}
+
 /// Nova Kids design system — color palette, typography, and helpers.
 ///
 /// All colors are adaptive (Light + Dark Mode). Typography uses Dynamic Type

@@ -138,7 +138,7 @@ public struct ConceptCardView: View {
                         .font(NovaPalette.captionFont().weight(.bold))
                         .foregroundStyle(NovaPalette.classroomInk.opacity(0.75))
                 }
-                .padding(Spacing.lg)
+                .padding(PaintedArtContentInsets.paintedPanelContent)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 180, maxHeight: 260)

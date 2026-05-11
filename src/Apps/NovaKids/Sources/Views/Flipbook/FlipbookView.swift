@@ -593,7 +593,7 @@ public struct FlipbookView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, Spacing.lg)
-        .frame(maxWidth: .infinity, minHeight: 52)
+        .frame(maxWidth: .infinity, minHeight: 64)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(fill)
@@ -602,6 +602,7 @@ public struct FlipbookView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(NovaPalette.classroomInk.opacity(0.7), lineWidth: 2)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 4, x: 0, y: 2)
     }
 

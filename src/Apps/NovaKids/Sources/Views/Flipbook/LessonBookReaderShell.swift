@@ -323,7 +323,9 @@ private struct WorkbookPageInsets {
     /// cover rim + yellow side tabs.
     let trailingFraction: CGFloat
     /// Floor (in points) so iPad Mini-class widths still get
-    /// readable margins on the inner page area.
+    /// readable margins on the inner page area. Kept in
+    /// `PaintedArtContentInsets` so workbook chrome reserves the same
+    /// minimum live-text safety margin as the other painted lesson art.
     let minPadding: CGFloat
 
     func top(in size: CGSize) -> CGFloat {
@@ -350,7 +352,7 @@ private struct WorkbookPageInsets {
         bottomFraction:   0.16,
         leadingFraction:  0.10,
         trailingFraction: 0.10,
-        minPadding:       20
+        minPadding:       PaintedArtContentInsets.workbookChromeMinimum
     )
 
     /// Same art, slightly tighter horizontal margins for portrait
@@ -363,7 +365,7 @@ private struct WorkbookPageInsets {
         bottomFraction:   0.16,
         leadingFraction:  0.08,
         trailingFraction: 0.08,
-        minPadding:       18
+        minPadding:       PaintedArtContentInsets.workbookChromeCompactMinimum
     )
 }
 

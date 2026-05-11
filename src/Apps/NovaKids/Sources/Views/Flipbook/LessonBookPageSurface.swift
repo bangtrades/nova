@@ -44,7 +44,7 @@ public struct LessonBookPageSurface<Content: View>: View {
 
     public var body: some View {
         content
-            .padding(contentPadding)
+            .padding(contentInsets)
             .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading)
             .background(pageBackground)
             .overlay(alignment: .leading) {
@@ -107,10 +107,12 @@ public struct LessonBookPageSurface<Content: View>: View {
         }
     }
 
-    private var contentPadding: CGFloat {
+    private var contentInsets: EdgeInsets {
         switch mood {
-        case .storybook: return Spacing.lg
-        case .workbook: return Spacing.md
+        case .storybook:
+            return PaintedArtContentInsets.storybookPageText
+        case .workbook:
+            return PaintedArtContentInsets.workbookPageText
         }
     }
 

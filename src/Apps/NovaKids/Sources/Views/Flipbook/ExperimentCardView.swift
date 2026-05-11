@@ -144,7 +144,7 @@ public struct ExperimentCardView: View {
             }
             .frame(height: 100)
         }
-        .padding(Spacing.md)
+        .padding(PaintedArtContentInsets.paintedPanelContent)
         .background(experimentTableBackground)
         .overlay {
             if LessonArtSlot.experimentTabletopLandscape.hasAsset == false {
@@ -196,7 +196,7 @@ public struct ExperimentCardView: View {
             }
             .frame(height: 80)
         }
-        .padding(Spacing.sm)
+        .padding(PaintedArtContentInsets.materialTrayContent)
         .background(materialTrayBackground)
     }
 
@@ -277,7 +277,7 @@ public struct ExperimentCardView: View {
                         .font(NovaPalette.bodyFont())
                         .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
                 }
-                .padding(Spacing.lg)
+                .padding(PaintedArtContentInsets.rewardCertificateText)
                 .background(successCardBackground)
                 .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 8, x: 0, y: 4)
                 .scaleEffect(completionOpacity)
@@ -641,7 +641,9 @@ private struct ShakeModifier: ViewModifier {
         content
             .offset(x: offset)
             .onAppear {
-                setupTimer()
+                if shakeAnimation {
+                    setupTimer()
+                }
             }
             .onDisappear {
                 subscription?.cancel()
@@ -660,6 +662,12 @@ private struct ShakeModifier: ViewModifier {
 
     private func setupTimer() {
         subscription?.cancel()
+        guard shakeAnimation else {
+            subscription = nil
+            offset = 0
+            return
+        }
+
         subscription = Timer.publish(every: 0.05, on: .main, in: .common)
             .autoconnect()
             .sink { _ in

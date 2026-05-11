@@ -155,7 +155,7 @@ public struct QuizCardView: View {
                 .font(NovaPalette.headingFont())
                 .foregroundStyle(NovaPalette.classroomInk)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Spacing.md)
+                .padding(PaintedArtContentInsets.stickyNoteText)
                 .background(questionStickyNoteBackground)
         }
     }
@@ -204,7 +204,7 @@ public struct QuizCardView: View {
                     )
                 }
             }
-            .padding(Spacing.md)
+            .padding(PaintedArtContentInsets.paintedPanelContent)
             .background(answerTrayBackground)
             .overlay {
                 if LessonArtSlot.quizAnswerTilesTray.hasAsset == false {
@@ -292,7 +292,7 @@ public struct QuizCardView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(Spacing.md)
+        .padding(PaintedArtContentInsets.stickyNoteText)
         .background(hintNoteBackground)
         .accessibilityLabel("Hint: \(text)")
     }

@@ -136,8 +136,7 @@ public struct LessonCompleteCelebration: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("You earned the \(trophyName) trophy")
                 }
-                .padding(.horizontal, Spacing.lg)
-                .padding(.vertical, Spacing.lg)
+                .padding(PaintedArtContentInsets.rewardCertificateText)
                 .frame(maxWidth: 480)
                 .background(certificateBackground)
                 .overlay {
@@ -188,8 +187,7 @@ public struct LessonCompleteCelebration: View {
                             .accessibilityHidden(true)
                     }
                     .foregroundStyle(NovaPalette.classroomInk)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 16)
+                    .padding(PaintedArtContentInsets.materialButtonText)
                     .background(continueButtonBackground)
                     .shadow(color: NovaPalette.classroomInk.opacity(0.35), radius: 12, y: 4)
                 }

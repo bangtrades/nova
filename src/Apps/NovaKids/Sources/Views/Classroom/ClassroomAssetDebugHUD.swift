@@ -27,9 +27,10 @@ import UIKit
 ///
 /// ## Non-goals
 ///
-/// - The HUD does **not** intercept taps. `allowsHitTesting(false)` is
-///   set on every visual it draws so the real `ClassroomHotspotButton`
-///   underneath still receives touches.
+/// - The HUD is compiled as a no-op in Release. In Debug builds, the
+///   classroom rows remain non-production QA tooling and the art-slot
+///   sections can receive scroll gestures when the asset tables exceed
+///   the viewport.
 /// - The HUD does **not** alter accessibility for a real user. The
 ///   whole panel is `accessibilityHidden(true)`.
 /// - The HUD does **not** ship enabled. There is no in-app toggle; the
@@ -69,7 +70,11 @@ public struct ClassroomAssetDebugHUD: View {
     /// not a `@State` or `@AppStorage` — this is a developer toggle,
     /// not a user preference, and SwiftUI should never observe it.
     public static var isEnabled: Bool {
+        #if DEBUG
         ProcessInfo.processInfo.environment["NOVA_CLASSROOM_ASSET_DEBUG"] == "1"
+        #else
+        false
+        #endif
     }
 
     public var body: some View {
@@ -91,35 +96,55 @@ public struct ClassroomAssetDebugHUD: View {
             isPortrait: isPortrait
         )
 
-        return VStack(alignment: .leading, spacing: 4) {
-            row(label: "render", value: renderPath.rawValue, color: renderPathColor)
-            row(
-                label: "ageBand",
-                value: ageBandString,
-                color: ClassroomAgeBand.isDeveloperOverrideActive ? .orange : .white
-            )
-            row(label: "orientation", value: isPortrait ? "portrait" : "landscape")
-            row(label: "asset", value: assetName, monospaced: true)
-            row(
-                label: "UIImage(named:)",
-                value: resolvedImage == nil ? "nil" : "ok",
-                color: resolvedImage == nil ? .red : .green
-            )
-            row(
-                label: "size",
-                value: imageSizeString(resolvedImage),
-                monospaced: true
-            )
-            row(
-                label: "production",
-                value: isProductionReady ? "pass" : "fail",
-                color: isProductionReady ? .green : .yellow
-            )
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    row(label: "render", value: renderPath.rawValue, color: renderPathColor)
+                    row(
+                        label: "ageBand",
+                        value: ageBandString,
+                        color: ClassroomAgeBand.isDeveloperOverrideActive ? .orange : .white
+                    )
+                    row(label: "orientation", value: isPortrait ? "portrait" : "landscape")
+                    row(label: "asset", value: assetName, monospaced: true)
+                    row(
+                        label: "UIImage(named:)",
+                        value: resolvedImage == nil ? "nil" : "ok",
+                        color: resolvedImage == nil ? .red : .green
+                    )
+                    row(
+                        label: "size",
+                        value: imageSizeString(resolvedImage),
+                        monospaced: true
+                    )
+                    row(
+                        label: "production",
+                        value: isProductionReady ? "pass" : "fail",
+                        color: isProductionReady ? .green : .yellow
+                    )
+                }
+
+                Divider()
+                    .overlay(Color.white.opacity(0.2))
+
+                LessonArtSlotReadinessPanel()
+
+                Divider()
+                    .overlay(Color.white.opacity(0.2))
+
+                RewardArtSlotReadinessPanel()
+            }
         }
+        .scrollIndicators(.visible)
         .font(.system(size: 11, weight: .semibold, design: .monospaced))
         .foregroundStyle(Color.white)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .frame(
+            maxWidth: min(max(size.width - 24, 320), 1080),
+            maxHeight: min(max(size.height - 24, 320), 720),
+            alignment: .topLeading
+        )
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.black.opacity(0.78))
@@ -131,7 +156,6 @@ public struct ClassroomAssetDebugHUD: View {
         .padding(.leading, 12)
         .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
@@ -181,6 +205,180 @@ public struct ClassroomAssetDebugHUD: View {
                     view.font(.system(size: 11, weight: .semibold, design: .monospaced))
                 }
         }
+    }
+}
+
+private struct LessonArtSlotReadinessPanel: View {
+    private var resolvedSlots: Int {
+        LessonArtSlot.allCases.filter { $0.resolvedName != nil }.count
+    }
+
+    private var missingSlots: Int {
+        LessonArtSlot.allCases.count - resolvedSlots
+    }
+
+    private var columns: [GridItem] {
+        [
+            GridItem(.adaptive(minimum: 255, maximum: 360), spacing: 6, alignment: .topLeading)
+        ]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text("lesson art slots")
+                    .foregroundStyle(Color.white.opacity(0.9))
+                Text("\(resolvedSlots) ok")
+                    .foregroundStyle(.green)
+                Text("\(missingSlots) missing")
+                    .foregroundStyle(missingSlots == 0 ? .green : .red)
+            }
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
+                ForEach(LessonArtSlot.allCases, id: \.self) { slot in
+                    LessonArtSlotReadinessRow(slot: slot)
+                }
+            }
+        }
+    }
+}
+
+private struct LessonArtSlotReadinessRow: View {
+    let slot: LessonArtSlot
+
+    private var resolvedName: String? {
+        slot.resolvedName
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(resolvedName == nil ? "MISS" : "OK")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(resolvedName == nil ? .white : .black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(statusColor, in: Capsule())
+
+                Text(slot.rawValue)
+                    .foregroundStyle(Color.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            Text("candidates: \(slot.candidates.joined(separator: ", "))")
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(0.62))
+                .lineLimit(2)
+                .truncationMode(.middle)
+
+            Text("resolved: \(resolvedName ?? "missing")")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundStyle(resolvedName == nil ? .red : .green)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(statusColor.opacity(resolvedName == nil ? 0.22 : 0.14))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(statusColor.opacity(resolvedName == nil ? 0.8 : 0.35), lineWidth: 1)
+        )
+    }
+
+    private var statusColor: Color {
+        resolvedName == nil ? .red : .green
+    }
+}
+
+private struct RewardArtSlotReadinessPanel: View {
+    private var resolvedSlots: Int {
+        ClassroomRewardArtSlot.allCases.filter { $0.resolvedName != nil }.count
+    }
+
+    private var missingSlots: Int {
+        ClassroomRewardArtSlot.allCases.count - resolvedSlots
+    }
+
+    private var columns: [GridItem] {
+        [
+            GridItem(.adaptive(minimum: 255, maximum: 360), spacing: 6, alignment: .topLeading)
+        ]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text("reward art slots")
+                    .foregroundStyle(Color.white.opacity(0.9))
+                Text("\(resolvedSlots) ok")
+                    .foregroundStyle(.green)
+                Text("\(missingSlots) missing")
+                    .foregroundStyle(missingSlots == 0 ? .green : .red)
+            }
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
+                ForEach(ClassroomRewardArtSlot.allCases, id: \.self) { slot in
+                    RewardArtSlotReadinessRow(slot: slot)
+                }
+            }
+        }
+    }
+}
+
+private struct RewardArtSlotReadinessRow: View {
+    let slot: ClassroomRewardArtSlot
+
+    private var resolvedName: String? {
+        slot.resolvedName
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(resolvedName == nil ? "MISS" : "OK")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(resolvedName == nil ? .white : .black)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(statusColor, in: Capsule())
+
+                Text(slot.rawValue)
+                    .foregroundStyle(Color.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            Text("candidates: \(slot.candidates.joined(separator: ", "))")
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(0.62))
+                .lineLimit(2)
+                .truncationMode(.middle)
+
+            Text("resolved: \(resolvedName ?? "missing")")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundStyle(resolvedName == nil ? .red : .green)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(statusColor.opacity(resolvedName == nil ? 0.22 : 0.14))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(statusColor.opacity(resolvedName == nil ? 0.8 : 0.35), lineWidth: 1)
+        )
+    }
+
+    private var statusColor: Color {
+        resolvedName == nil ? .red : .green
     }
 }
 

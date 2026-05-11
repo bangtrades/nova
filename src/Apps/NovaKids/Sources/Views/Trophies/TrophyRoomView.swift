@@ -741,7 +741,7 @@ private struct BadgeDetailSheet: View {
         Group {
             if let certificateAsset = ClassroomRewardArtSlot.trophyDetailCertificate.resolvedName {
                 heroContent
-                    .padding(Spacing.lg)
+                    .padding(PaintedArtContentInsets.rewardCertificateText)
                     .frame(maxWidth: .infinity)
                     .background(
                         Image(certificateAsset)

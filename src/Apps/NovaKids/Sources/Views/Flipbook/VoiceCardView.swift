@@ -116,7 +116,7 @@ public struct VoiceCardView: View {
                     .minimumScaleFactor(0.85)
                     .lineLimit(5)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(Spacing.md)
+                    .padding(PaintedArtContentInsets.speechBubbleText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(promptBubbleBackground)
                     .accessibilityAddTraits(.isHeader)

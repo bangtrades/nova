@@ -64,7 +64,11 @@ public struct ClassroomHotspotDebugOverlay: View {
     /// observe it as state — it's a developer toggle, not a user
     /// preference.
     public static var isEnabled: Bool {
+        #if DEBUG
         ProcessInfo.processInfo.environment["NOVA_CLASSROOM_HOTSPOTS_DEBUG"] == "1"
+        #else
+        false
+        #endif
     }
 
     public var body: some View {

@@ -307,6 +307,18 @@ public enum LessonArtSlot: String, CaseIterable {
     /// or `nil` if none of the candidates resolve. Call sites should
     /// fall back to a SwiftUI material when this returns `nil`.
     public var resolvedName: String? {
+        Self.resolvedNameCache[self]
+    }
+
+    private static let resolvedNameCache: [LessonArtSlot: String] = {
+        Dictionary(
+            uniqueKeysWithValues: allCases.compactMap { slot in
+                slot.firstResolvedCandidate.map { (slot, $0) }
+            }
+        )
+    }()
+
+    private var firstResolvedCandidate: String? {
         for name in candidates where UIImage(named: name) != nil {
             return name
         }

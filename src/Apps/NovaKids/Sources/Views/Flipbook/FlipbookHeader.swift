@@ -59,6 +59,8 @@ public struct FlipbookHeader: View {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(NovaPalette.classroomInk.opacity(0.75), lineWidth: 2)
                     )
+                    .frame(minWidth: 64, minHeight: 64)
+                    .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .accessibilityLabel("Back to lessons")
 
