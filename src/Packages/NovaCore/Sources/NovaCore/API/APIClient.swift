@@ -13,8 +13,10 @@ public class APIClient {
     /// JSON encoder with snake_case strategy.
     private let encoder = JSONEncoder()
 
-    /// JSON decoder with snake_case strategy.
-    private let decoder = JSONDecoder()
+    /// JSON decoder configured for the Nova backend wire format.
+    /// Built via `APIClient.makeJSONDecoder()` so the exact same
+    /// configuration is reachable from contract tests.
+    private let decoder: JSONDecoder
 
     /// URLSession for network requests.
     private let session: URLSession
@@ -33,17 +35,41 @@ public class APIClient {
         self.tokenProvider = tokenProvider
         self.session = session
 
-        // Configure JSON encoder/decoder for snake_case
+        // Configure JSON encoder for snake_case.
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.dateEncodingStrategy = .iso8601
+
+        // Decoder is built by the shared factory so the same configuration
+        // is testable in isolation — see `makeJSONDecoder()`.
+        self.decoder = APIClient.makeJSONDecoder()
+    }
+
+    /// Builds the JSONDecoder used for **every** Nova backend response.
+    ///
+    /// Exposed as a `static` factory — rather than configured inline in
+    /// `init` — so contract tests can decode recorded backend payloads
+    /// through the *exact* same configuration the live client uses:
+    /// `.convertFromSnakeCase` key strategy plus the fractional-seconds-
+    /// tolerant date strategy below.
+    ///
+    /// A test that built its own `JSONDecoder()` would not be testing the
+    /// real contract. That is precisely the trap the pre-existing
+    /// `ModelTests` fell into — it configured a strict `.iso8601` date
+    /// strategy and round-tripped through its own encoder, so it never
+    /// exercised a real Prisma payload and never caught the fractional-
+    /// seconds drift (`"2026-04-24T02:26:24.746Z"`) that broke decoding
+    /// on a real device. `ContractTests` calls this factory instead.
+    ///
+    /// ### Date strategy
+    /// The backend (Prisma `DateTime`) serializes timestamps with
+    /// millisecond precision. Swift's built-in `.iso8601` strategy is
+    /// strict and rejects fractional seconds. The custom strategy here
+    /// accepts both shapes: it tries the fractional-seconds formatter
+    /// first, falls back to plain ISO 8601, then throws a descriptive
+    /// error naming the offending string.
+    public static func makeJSONDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        // S13-12 — Custom date decoder. Backend returns ISO 8601 strings with
-        // fractional seconds ("2026-04-24T02:26:24.746Z") because Prisma
-        // serializes DateTime that way. Swift's `.iso8601` strategy is strict
-        // and rejects fractional seconds — every Lesson + LearningPath
-        // decode failed at `createdAt`/`publishedAt`/`updatedAt`, the iPad
-        // fell back to mock content. Custom decoder accepts both shapes:
-        // first try with fractional seconds, then without, then throw.
         decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
             let raw = try container.decode(String.self)
@@ -58,6 +84,7 @@ public class APIClient {
                 debugDescription: "Expected ISO 8601 date (with or without fractional seconds), got: \(raw)"
             )
         }
+        return decoder
     }
 
     /// ISO 8601 formatter that accepts fractional seconds. Lazily-built and
