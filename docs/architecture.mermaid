@@ -1,21 +1,24 @@
 graph TB
-    subgraph Kids["📱 SPARKY KIDS (iPad)"]
-        KHome["Home Grid<br/>(Pinterest Layout)"]
-        KFlip["Flipbook View<br/>(Swipe Cards)"]
-        KSparky["Sparky AI Buddy<br/>(Voice Chat)"]
-        KTrophy["Trophy Room<br/>(Badges & Streaks)"]
-        KVoice["Voice Engine<br/>(AVSpeech + SFSpeech)"]
+    subgraph Kids["📱 NOVA KIDS (iPad)"]
+        KHome["Classroom Home<br/>(V2 2.5D Scene)"]
+        KFlip["Flipbook View<br/>(Chalkboard/Workbook Cards)"]
+        KDashy["Dashy AI Buddy<br/>(Voice Chat + Guide Layer)"]
+        KTrophy["Trophy Room<br/>(Shelf Rewards)"]
+        KVoice["Voice Engine<br/>(OpenAI TTS proxy + AVSpeech + SFSpeech)"]
+        KNarr["Navigation Narrator<br/>(per-screen voice-first nav)"]
         KCache["Offline Cache<br/>(Core Data + Assets)"]
 
         KHome --> KFlip
-        KHome --> KSparky
+        KHome --> KDashy
         KHome --> KTrophy
         KFlip --> KVoice
-        KSparky --> KVoice
+        KDashy --> KVoice
+        KNarr --> KVoice
+        KHome --> KNarr
         KCache -.-> KHome
     end
 
-    subgraph Companion["📱 SPARKY COMPANION (iPhone + iPad)"]
+    subgraph Companion["📱 NOVA COMPANION (iPhone + iPad)"]
         CDash["Dashboard<br/>(Activity + Stats)"]
         CStudio["Content Studio<br/>(URL → AI → Cards)"]
         CEditor["Card Editor<br/>(WYSIWYG)"]
@@ -29,10 +32,10 @@ graph TB
     end
 
     subgraph Shared["📦 SHARED SWIFT PACKAGES"]
-        SparkCore["SparkCore<br/>(Models, API Client, Sync)"]
-        SparkAuth["SparkAuth<br/>(Apple SSO, JWT, OAuth)"]
-        SparkVoice["SparkVoice<br/>(TTS + Recognition)"]
-        SparkStorage["SparkStorage<br/>(Core Data, Asset Cache)"]
+        NovaCore["NovaCore<br/>(Models, API Client, Sync)"]
+        NovaAuth["NovaAuth<br/>(Apple SSO, JWT, OAuth)"]
+        NovaVoice["NovaVoice<br/>(TTS + Recognition + Remote TTS Client)"]
+        NovaStorage["NovaStorage<br/>(Core Data, AES-256-GCM, Asset Cache)"]
     end
 
     subgraph Backend["⚙️ BACKEND (Node.js / Fastify)"]
@@ -47,7 +50,7 @@ graph TB
     subgraph LLM["🤖 LLM PROVIDER LAYER"]
         Router["Provider Router"]
         OAuth["OpenAI OAuth<br/>(User's Account)"]
-        Proxy["Sparky Proxy<br/>(Our API Key)"]
+        Proxy["Nova Proxy<br/>(Our API Key)"]
         Future["Future Providers<br/>(Gemini, etc.)"]
 
         Router --> OAuth
@@ -102,9 +105,9 @@ graph TB
     classDef pipeline fill:#ec4899,stroke:#be185d,color:#fff
     classDef cards fill:#f97316,stroke:#c2410c,color:#fff
 
-    class KHome,KFlip,KSparky,KTrophy,KVoice,KCache kids
+    class KHome,KFlip,KDashy,KTrophy,KVoice,KNarr,KCache kids
     class CDash,CStudio,CEditor,CCurriculum,CProgress,CSettings companion
-    class SparkCore,SparkAuth,SparkVoice,SparkStorage shared
+    class NovaCore,NovaAuth,NovaVoice,NovaStorage shared
     class API,Auth,DB,R2,Billing,Sync backend
     class Router,OAuth,Proxy,Future llm
     class Scrape,Analyze,CardGen,TTS,ImgGen pipeline

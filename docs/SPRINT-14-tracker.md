@@ -1,5 +1,21 @@
 # Sprint 14 — "Playable" — Progress Tracker
 
+> [!warning] CANCELLED — superseded by Nova V2 "Classroom"
+> **Status: CANCELLED at ~4% (2 of 55 pts).** S14 "Playable" was an incremental polish sprint (voice-first navigation, mascot presence, tap reactions, hero tiles, background layering). It was overtaken by the **Nova V2 "Classroom" redesign** — the full surface re-architecture S14's own scope notes deferred to "S16+" — which was pulled forward immediately and is now the live track on `main`. See [`SPRINT-V2-classroom-tracker.md`](./SPRINT-V2-classroom-tracker.md).
+>
+> **What shipped before cancellation, and survives in V2:**
+> - **S14-VF VoiceFirst epic** — `NavigationNarrator` service + `.narrate(_:)` modifier (commits `d83a641`, `c4e5579`). V2 explicitly keeps `NavigationNarrator` and `VoiceManager`; the classroom rerouted home narration through `ClassroomDashyGuideLayer` + `.narrate("classroomBookshelf")`. The service is load-bearing in V2; only the `.narrate("home")` call site on the now-orphaned `EnhancedHomeView` is dead.
+>
+> **What was superseded (V2 does the same job its own way):**
+> - **MP — Mascot Presence** → V2's `ClassroomDashyGuideLayer` (Dashy persistent on every classroom surface).
+> - **TR — Tap Reaction Stack** → V2's `ClassroomObjectButton` bounce/haptic + V2-S4-05 sound/reaction pass.
+> - **HT — Hero Tile Upgrade / BL — Background Layering** → V2's illustrated classroom scenes + the v2-beta art catalog.
+> - **VOX-FU touch-test follow-ups** — the 4 carry-in items (backend `PUBLIC_BASE_URL`, `devBypassLogin()` real JWT, empty-body POST exemption, Oracle publish toggle) were **not done** and did not migrate cleanly. They are real debt — re-logged in the V2 tracker's [parallel dev lane](./SPRINT-V2-classroom-tracker.md#parallel-dev-lane) / carry-debt so they aren't lost.
+>
+> The original S14 plan is preserved below for history. Do not work from it — work from the V2 classroom tracker.
+
+---
+
 **Sprint dates:** Apr 26 – May 10, 2026
 **Goal:** Kid-test review #1 surfaced two foundational gaps — (a) the navigation chrome doesn't speak (a 4.5-year-old can't read his way into a lesson), and (b) the visual surface reads "classroom" not "playground." S14 closes both: every Tier 1 screen narrates itself in the kid's chosen voice, Dashy is on screen everywhere as a persistent guide, every tap target reacts with the 3-stack (bounce + sound + haptic + particle), path/lesson tiles become full-bleed illustrated entries, and the flat backgrounds become parallax illustrated layers. Sprint close: bang's kid picks the iPad up, the app talks to him, and he can navigate end-to-end without an adult reading anything aloud. **S14 explicitly slips TestFlight to S15** — a beta of a clunky app produces no useful signal; the calendar moves but the launch quality goes up.
 **Velocity target:** 55 pts (heavy iOS UX + modest backend; carry-in slips from S13 absorbed Week 1).
