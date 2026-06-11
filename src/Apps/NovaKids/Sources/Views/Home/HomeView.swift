@@ -2,7 +2,12 @@ import SwiftUI
 import NovaCore
 import NovaClassroom
 
-private let classroomV2Enabled = true
+// V2-S1-06: runtime-resolved (was a hard-coded `true` with no rollback
+// path). Default unchanged — classroom IS the Kids Home. Escape hatches:
+// launch env `NOVA_CLASSROOM_V2=0`, or `defaults write <bundle id>
+// nova.classroomV2Enabled.v1 -bool NO`. Read once per launch; the
+// legacy grid (`classicHome` below) is the flag-off route.
+private let classroomV2Enabled = ClassroomFeatureFlags.classroomV2Enabled()
 
 /// Home screen for authenticated users.
 ///

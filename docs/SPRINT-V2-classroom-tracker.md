@@ -42,7 +42,7 @@ Landed Apr 29 – May 4 (vault slices `2026-04-29--*`, `2026-05-04--*`; commits 
 | V2-S1-03 | Classroom background shell | 8 | ✅ | `ClassroomSceneView` + `ClassroomBackgroundView`, placeholder shape-art, stable hit zones portrait + landscape. |
 | V2-S1-04 | Object button primitive | 5 | ✅ | `ClassroomObjectButton` — 88×88pt hit zones, bounce/haptic, VoiceOver labels, reduce-motion. |
 | V2-S1-05 | Dashy guide layer v1 | 5 | ✅ | `ClassroomDashyGuideLayer` — reuses existing Dashy + speech bubble; tap-to-repeat narration. |
-| V2-S1-06 | Feature flag + route integration | 5 | 🟡 | Flag exists but is a hard-coded `classroomV2Enabled = true` literal in `HomeView.swift:4`. **No runtime fallback path to the legacy grid Home is wired** — see [Risk register](#risk-register). |
+| V2-S1-06 | Feature flag + route integration | 5 | ✅ | **Jun 10:** runtime-resolved via `ClassroomFeatureFlags` (NovaClassroom pkg, 7 tests) — env `NOVA_CLASSROOM_V2` > persisted `nova.classroomV2Enabled.v1` > default `true`. Legacy grid reachable without recompile. Run: `sprint-runs/classroom-v2-runtime-flag-2026-06-10.md`. |
 | V2-S1-07 | Image prompt validation pass | 3 | 🟡 | First `Assets.xcassets` created with solid-cream placeholder imagesets marked "do not ship." Art direction not finalized in-app. |
 | V2-S1-08 | Sprint QA + kid-readability check | 4 | 🟡 | `xcodebuild … BUILD SUCCEEDED` only. No simulator screenshot / VoiceOver hardware pass recorded. |
 
@@ -162,7 +162,7 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 | ~~S14-VOX-02 — `devBypassLogin()` mints a real JWT~~ → **resolved Jun 10** | S14 VOX-FU carry-in | New backend `POST /auth/dev-bypass` (prod-gated 404) + iOS `devBypassLogin()` stores the real pair via `updateTokens`. **VOX-FU debt fully retired.** See `sprint-runs/S14-VOX-02-dev-bypass-jwt-2026-06-10.md`. |
 | NovaCompanion scheme does not build | pre-existing (discovered Jun 10) | `CompanionPalette.swift` references `NovaPalette`, which is compiled only into the NovaKids target — broken since the initial commit, masked because nobody builds the Companion scheme. Needs either a shared design-tokens package or Companion-local tokens. |
 | iOS `/auth/signin` ↔ backend `/auth/apple` mismatch | pre-existing (noted Jun 10) | iOS `Endpoint.signIn` posts `/auth/signin` with snake_case `SignInResponse`; backend serves `/auth/apple` with camelCase. Apple SSO can't work end-to-end as wired. Surface before exercising real sign-in. |
-| `classroomV2Enabled` hard-coded `true` | V2-S1-06 | No tested rollback to legacy Home. |
+| ~~`classroomV2Enabled` hard-coded `true`~~ → **resolved Jun 10** | V2-S1-06 | Runtime flag wired (env + defaults key), resolver unit-tested. Legacy-Home device walkthrough folds into V2-S4-F4. |
 | ~~Performance recommendations unapplied~~ → **resolved Jun 10** | V2-S4-06 | Formatter caching + off-main ImageIO downsampling applied; art-slot caching was already in place. See `sprint-runs/V2-S4-06-performance-2026-06-10.md`. |
 | `architecture.mermaid` was stale | pre-existing | Fixed May 22 alongside this tracker. |
 
@@ -173,7 +173,7 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Art generation overruns; program stalls art-gated | Medium | High | Parallel dev lane keeps non-art work moving; decision §"art pipeline" offers a shape-art fallback. |
-| `classroomV2Enabled` hard-`true` with no rollback | Medium | Medium | Wire a real runtime flag + keep legacy Home reachable until V2-S4-08 release decision. |
+| ~~`classroomV2Enabled` hard-`true` with no rollback~~ — **mitigated Jun 10** | Low | Low | Runtime flag wired (`ClassroomFeatureFlags`); legacy Home reachable via env/defaults until the V2-S4-08 release decision. |
 | Kid test 1 was skipped — object-nav comprehension unvalidated | High (already happened) | Medium | Fold a comprehension check into kid test 2, or run a quick standalone session now. |
 | No tests on the new classroom surface | High | Medium | Scene-model + contract tests in the parallel lane. |
 | Backend still not deployed | High | High | S8 Infrastructure — true TestFlight blocker, art-independent, should start now. |
