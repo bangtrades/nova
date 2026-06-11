@@ -196,6 +196,17 @@ Four file-disjoint agent slices ran in parallel while the art catalog was genera
 
 **Status:** all four delivered to the working tree, **uncommitted** — review checkpoint. Agent `BUILD SUCCEEDED` / 35-tests-pass claims are **unverified** (no Xcode in the sandbox); Mac-side build + `swift test` is the gate before commit. **Process change:** future agent slice briefs must include the slice-report instruction (see the run summary's "Slice-report protocol" section) so slices self-document instead of evaporating into chat recaps.
 
+### Simulator boot smoke (Jun 11)
+
+Partial down-payment on V2-S4-F4's simulator half, run after the 12-slice
+Jun 10–11 batch: local backend up (health: connected), NovaKids built,
+installed, and launched on the iPad Pro 11-inch simulator. **App boots
+clean and renders the COPPA parental gate** with kid-safe copy — correct
+first-launch behavior. Driving past the gate (dev-bypass login → classroom
+Home) needs interactive UI automation; folds into the full F4 device pass.
+Screenshot captured during the run; machine returned to as-found state
+(backend stopped, simulator shut down).
+
 ### VOX-FU backend trio (Jun 10)
 
 Single backend-only slice ("Slice D"), lead-executed. Full report:
