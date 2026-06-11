@@ -1,4 +1,4 @@
-import { getPrismaClient } from './client';
+import { getPrismaClient, toJsonColumn } from './client';
 
 async function seed(): Promise<void> {
   const prisma = getPrismaClient();
@@ -103,10 +103,10 @@ async function seed(): Promise<void> {
       lessonId: lesson1.id,
       type: 'story',
       sortOrder: 1,
-      content: {
+      content: toJsonColumn({
         text: 'Once upon a time, there was a magical box called a computer.',
         imageUrl: 'https://assets.nova-app.com/story-1.png',
-      },
+      }),
       voiceScript: 'Once upon a time, there was a magical box called a computer.',
     },
   });
@@ -116,10 +116,10 @@ async function seed(): Promise<void> {
       lessonId: lesson1.id,
       type: 'concept',
       sortOrder: 2,
-      content: {
+      content: toJsonColumn({
         title: 'Computers are smart helpers',
         description: 'They can remember things, do math, and show us pictures!',
-      },
+      }),
       voiceScript: 'Computers are smart helpers. They can remember things, do math, and show us pictures!',
     },
   });
@@ -129,10 +129,10 @@ async function seed(): Promise<void> {
       lessonId: lesson1.id,
       type: 'story',
       sortOrder: 3,
-      content: {
+      content: toJsonColumn({
         text: 'Your iPad is a computer too! It helps you play games and watch videos.',
         imageUrl: 'https://assets.nova-app.com/story-2.png',
-      },
+      }),
       voiceScript: 'Your iPad is a computer too! It helps you play games and watch videos.',
     },
   });
@@ -142,15 +142,15 @@ async function seed(): Promise<void> {
       lessonId: lesson1.id,
       type: 'interactive',
       sortOrder: 4,
-      content: {
+      content: toJsonColumn({
         question: 'What does a computer help us do?',
         options: ['Play', 'Learn', 'Draw', 'All of the above!'],
         correctAnswer: 3,
-      },
-      interactionConfig: {
+      }),
+      interactionConfig: toJsonColumn({
         type: 'multipleChoice',
         allowRetry: true,
-      },
+      }),
     },
   });
 
@@ -159,10 +159,10 @@ async function seed(): Promise<void> {
       lessonId: lesson1.id,
       type: 'story',
       sortOrder: 5,
-      content: {
+      content: toJsonColumn({
         text: 'Now you know what a computer is! Great job, explorer!',
         imageUrl: 'https://assets.nova-app.com/celebration.png',
-      },
+      }),
       voiceScript: 'Now you know what a computer is! Great job, explorer!',
     },
   });
@@ -187,10 +187,10 @@ async function seed(): Promise<void> {
       lessonId: lesson2.id,
       type: 'story',
       sortOrder: 1,
-      content: {
+      content: toJsonColumn({
         text: 'Computers have special powers called "programs" inside them.',
         imageUrl: 'https://assets.nova-app.com/magic-1.png',
-      },
+      }),
       voiceScript: 'Computers have special powers called programs inside them.',
     },
   });
@@ -200,10 +200,10 @@ async function seed(): Promise<void> {
       lessonId: lesson2.id,
       type: 'concept',
       sortOrder: 2,
-      content: {
+      content: toJsonColumn({
         title: 'Programs are like recipes',
         description: 'They tell the computer exactly what to do, step by step!',
-      },
+      }),
       voiceScript: 'Programs are like recipes. They tell the computer exactly what to do, step by step!',
     },
   });
@@ -213,10 +213,10 @@ async function seed(): Promise<void> {
       lessonId: lesson2.id,
       type: 'story',
       sortOrder: 3,
-      content: {
+      content: toJsonColumn({
         text: 'When you tap a button, you are telling the computer to follow a program!',
         imageUrl: 'https://assets.nova-app.com/magic-2.png',
-      },
+      }),
       voiceScript: 'When you tap a button, you are telling the computer to follow a program!',
     },
   });
@@ -226,15 +226,15 @@ async function seed(): Promise<void> {
       lessonId: lesson2.id,
       type: 'interactive',
       sortOrder: 4,
-      content: {
+      content: toJsonColumn({
         question: 'What do programs tell computers to do?',
         options: ['Sleep', 'Sing', 'What to do step by step', 'Nothing'],
         correctAnswer: 2,
-      },
-      interactionConfig: {
+      }),
+      interactionConfig: toJsonColumn({
         type: 'multipleChoice',
         allowRetry: true,
-      },
+      }),
     },
   });
 
@@ -243,10 +243,10 @@ async function seed(): Promise<void> {
       lessonId: lesson2.id,
       type: 'story',
       sortOrder: 5,
-      content: {
+      content: toJsonColumn({
         text: 'You are becoming a computer expert!',
         imageUrl: 'https://assets.nova-app.com/celebration-2.png',
-      },
+      }),
       voiceScript: 'You are becoming a computer expert!',
     },
   });
@@ -257,10 +257,10 @@ async function seed(): Promise<void> {
       title: 'First Lesson',
       description: 'Completed your first lesson!',
       icon: '🌟',
-      criteria: {
+      criteria: toJsonColumn({
         type: 'lesson_completion',
         count: 1,
-      },
+      }),
     },
   });
 
@@ -269,10 +269,10 @@ async function seed(): Promise<void> {
       title: 'Explorer',
       description: 'Completed 5 lessons!',
       icon: '🗺️',
-      criteria: {
+      criteria: toJsonColumn({
         type: 'lesson_completion',
         count: 5,
-      },
+      }),
     },
   });
 
@@ -281,10 +281,10 @@ async function seed(): Promise<void> {
       title: 'Curious Mind',
       description: 'Answered 10 questions correctly!',
       icon: '🧠',
-      criteria: {
+      criteria: toJsonColumn({
         type: 'correct_answers',
         count: 10,
-      },
+      }),
     },
   });
 
@@ -317,10 +317,10 @@ async function seed(): Promise<void> {
         cardId: cards[i]!.id,
         action: 'view',
         durationMs: Math.random() * 5000 + 2000,
-        result: {
+        result: toJsonColumn({
           completed: true,
           timestamp: new Date(),
-        },
+        }),
       },
     });
   }

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { getPrismaClient } from '@db/client';
+import { getPrismaClient, fromJsonColumn } from '@db/client';
 import { validateParams } from '@middleware/validate';
 
 const badgeParamsSchema = z.object({
@@ -209,7 +209,7 @@ export async function badgeRoutes(fastify: FastifyInstance): Promise<void> {
             continue; // Already earned
           }
 
-          const criteria = badge.criteria as Record<string, unknown>;
+          const criteria = fromJsonColumn<Record<string, unknown>>(badge.criteria);
           let shouldAward = false;
 
           if (criteria.type === 'lesson_completion') {

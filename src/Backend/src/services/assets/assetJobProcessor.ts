@@ -6,7 +6,7 @@
  * Updates asset jobs and card records in the database.
  */
 
-import { getPrismaClient } from '@db/client';
+import { getPrismaClient, toJsonColumn, fromJsonColumn } from '@db/client';
 import { getConfig } from '@config';
 import { generateTTSAudio } from './ttsGenerator';
 import { generateImage, buildImagePrompt, downloadImage } from './imageGenerator';
@@ -189,7 +189,7 @@ export async function processAssetJob(
     jobId,
     job.lessonId,
     job.type,
-    job.input as Record<string, unknown>,
+    fromJsonColumn<Record<string, unknown>>(job.input),
     apiKey,
     userId
   );
@@ -244,10 +244,10 @@ export async function processLessonAssets(
         data: {
           lessonId,
           type: 'tts',
-          input: {
+          input: toJsonColumn({
             text: card.voiceScript,
             voice: 'nova',
-          },
+          }),
           status: 'queued',
         },
       });
@@ -262,7 +262,7 @@ export async function processLessonAssets(
     }
 
     // Create image job if card needs illustration and doesn't have one
-    const cardContent = card.content as Record<string, unknown> | null;
+    const cardContent = fromJsonColumn<Record<string, unknown> | null>(card.content);
     if (cardContent && !card.imageUrl) {
       const atom = atoms[atomCursor];
       const concept = buildCardConcept(cardContent, card.type, subject, atom);
@@ -272,11 +272,11 @@ export async function processLessonAssets(
         data: {
           lessonId,
           type: 'image',
-          input: {
+          input: toJsonColumn({
             concept,
             cardType: card.type,
             subject,
-          },
+          }),
           status: 'queued',
         },
       });
@@ -376,7 +376,7 @@ export async function getAssetJobStatus(lessonId: string): Promise<AssetJobStatu
     completed: jobs.filter((j: any) => j.status === 'completed').length,
     failed: jobs.filter((j: any) => j.status === 'failed').length,
     pending: jobs.filter((j: any) => j.status === 'queued' || j.status === 'processing').length,
-    jobs,
+    jobs: jobs.map((j) => ({ ...j, outputUrl: j.outputUrl ?? undefined })),
   };
 
   return status;

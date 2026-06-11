@@ -17,7 +17,7 @@
  * to the deployment sprint — per the Sprint 9 plan.
  */
 
-import { getPrismaClient } from '@db/client';
+import { getPrismaClient, toJsonColumn } from '@db/client';
 import { scrapeUrl } from './scraper';
 import { analyzeContent } from './contentAnalyzer';
 import { decomposeConcepts, type ConceptDecomposition } from './conceptDecomposer';
@@ -283,7 +283,7 @@ export async function runPipeline(
     await prisma.urlIngest.update({
       where: { id: ingestId },
       data: {
-        aiAnalysis: analysis as Prisma.InputJsonValue,
+        aiAnalysis: toJsonColumn(analysis),
         status: 'analyzing',
       },
     });
@@ -571,12 +571,12 @@ export async function runPipeline(
         description: analysis.summary,
         sourceUrl: ingest.url,
         difficulty: analysis.suggestedStage,
-        aiAnalysis: aiMeta as Prisma.InputJsonValue,
+        aiAnalysis: toJsonColumn(aiMeta),
         status: 'draft',
         cards: {
           create: cards.map((card) => ({
             type: card.type,
-            content: card.content as Prisma.InputJsonValue,
+            content: toJsonColumn(card.content),
             voiceScript: card.voiceScript,
             sortOrder: card.sortOrder,
           })),

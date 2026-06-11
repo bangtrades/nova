@@ -9,7 +9,7 @@
  * - voice_interactions: Earned after N voice interactions
  */
 
-import { getPrismaClient } from '@db/client';
+import { getPrismaClient, fromJsonColumn } from '@db/client';
 // Badge type inferred from Prisma schema
 
 export interface EvaluatedBadge {
@@ -72,7 +72,7 @@ export async function evaluateBadges(childId: string): Promise<EvaluatedBadge[]>
     }
 
     // Check if badge criteria are met
-    const criteria = badge.criteria as BadgeCriteria | null;
+    const criteria = fromJsonColumn<BadgeCriteria | null>(badge.criteria);
     if (!criteria) {
       continue;
     }

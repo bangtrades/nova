@@ -144,7 +144,7 @@ Work that is **art-independent** and can proceed in full while the art catalog i
 - **Scene-model + object-derivation unit tests** (V2-S1-02 / V2-S2-02 debt). The plan asked for them; they were skipped.
 - **`classroomCardStage` dead-code removal.**
 - **iOS↔backend contract test** (audit rec #4) — one test file decoding recorded real backend responses into iOS models. Would have caught 5 of the last ~15 production-reaching bugs.
-- **Backend `tsc` baseline burndown** — 33 errors (down from 51); finish it to zero.
+- ~~**Backend `tsc` baseline burndown**~~ — **done Jun 10: 0 errors** (was 33). New invariant: tsc stays clean. See `sprint-runs/tsc-burndown-2026-06-10.md`.
 - **Backend deployment prep** (audit rec #8) — S8 "Infrastructure" never ran; TestFlight is structurally impossible without a deployed backend. This is the true critical-path blocker and needs no art.
 
 V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 items genuinely blocked on art.

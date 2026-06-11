@@ -15,6 +15,29 @@ const JSON_STRING_FIELDS: Record<string, string[]> = {
   parentGuidance: ['topicFocus', 'topicAvoid', 'contentBoundaries'], // S10-04: parent controls
 };
 
+// ---------------------------------------------------------------------
+// Typed boundary for JSON_STRING_FIELDS columns.
+//
+// The $use middleware below transparently JSON.stringifies these fields
+// on write and JSON.parses them on read — so the *runtime* contract is
+// "pass and receive plain objects", while the *generated client types*
+// still say `string` (the columns are TEXT for SQLite compat). These
+// two helpers are the single sanctioned cast across that gap; using
+// them instead of ad-hoc `as` keeps every crossing greppable and lets
+// a future native-Json migration delete them in one sweep.
+// ---------------------------------------------------------------------
+
+/** Write-side: object in, `string`-typed out (middleware stringifies). */
+export function toJsonColumn(value: unknown): string {
+  return value as unknown as string;
+}
+
+/** Read-side: a JSON_STRING_FIELDS value post-middleware is already a
+ *  parsed object despite its `string` static type. */
+export function fromJsonColumn<T>(value: unknown): T {
+  return value as unknown as T;
+}
+
 let prismaClient: PrismaClient | null = null;
 
 export function getPrismaClient(): PrismaClient {

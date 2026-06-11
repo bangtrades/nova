@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { getPrismaClient } from '@db/client';
+import { getPrismaClient, toJsonColumn } from '@db/client';
 import { validateBody, validateParams, validateQuery } from '@middleware/validate';
 
 const createCardSchema = z.object({
@@ -186,11 +186,11 @@ export async function cardRoutes(fastify: FastifyInstance): Promise<void> {
           data: {
             lessonId,
             type,
-            content: content as Prisma.InputJsonValue,
+            content: toJsonColumn(content),
             voiceScript: voiceScript || null,
             imageUrl: imageUrl || null,
             audioUrl: audioUrl || null,
-            interactionConfig: (interactionConfig as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+            interactionConfig: interactionConfig ? toJsonColumn(interactionConfig) : null,
             sortOrder,
           },
           select: {
@@ -266,11 +266,11 @@ export async function cardRoutes(fastify: FastifyInstance): Promise<void> {
 
         const updateData: Prisma.CardUpdateInput = {};
         if (type) updateData.type = type;
-        if (content) updateData.content = content as Prisma.InputJsonValue;
+        if (content) updateData.content = toJsonColumn(content);
         if (voiceScript) updateData.voiceScript = voiceScript;
         if (imageUrl) updateData.imageUrl = imageUrl;
         if (audioUrl) updateData.audioUrl = audioUrl;
-        if (interactionConfig) updateData.interactionConfig = interactionConfig as Prisma.InputJsonValue;
+        if (interactionConfig) updateData.interactionConfig = toJsonColumn(interactionConfig);
 
         const updated = await prisma.card.update({
           where: { id },

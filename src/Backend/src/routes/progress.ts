@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { getPrismaClient } from '@db/client';
+import { getPrismaClient, toJsonColumn } from '@db/client';
 import { validateBody, validateParams, validateQuery } from '@middleware/validate';
 import { evaluateBadges } from '@services/pipeline/badgeCriteriaEngine';
 import { recordQuizResultsBatch, type QuizResultEvent } from '@services/mastery/masteryTracker';
@@ -100,7 +99,7 @@ export async function progressRoutes(fastify: FastifyInstance): Promise<void> {
                 action: interaction.action,
                 durationMs: interaction.durationMs,
                 voiceTranscript: interaction.voiceTranscript || null,
-                result: (interaction.result as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+                result: interaction.result ? toJsonColumn(interaction.result) : null,
               },
             })
           )

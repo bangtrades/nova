@@ -249,7 +249,9 @@ export async function seedKnowledgeGraph(): Promise<{ created: number; updated: 
 }
 
 // CLI entrypoint: `tsx src/db/seedKnowledgeGraph.ts`
-if (import.meta.url === `file://${process.argv[1]}`) {
+// (process.argv check instead of import.meta — tsconfig targets CJS, where
+// import.meta is a compile error; behavior under tsx is identical.)
+if (process.argv[1]?.endsWith('seedKnowledgeGraph.ts')) {
   seedKnowledgeGraph()
     .then(({ created, updated }) => {
       // eslint-disable-next-line no-console
