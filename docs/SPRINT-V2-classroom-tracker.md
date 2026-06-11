@@ -38,7 +38,7 @@ Landed Apr 29 – May 4 (vault slices `2026-04-29--*`, `2026-05-04--*`; commits 
 | ID | Story | Pts | Status | Notes |
 |---|---|---:|:---:|---|
 | V2-S1-01 | Classroom design tokens | 5 | ✅ | `NovaPalette.classroom*` semantic colors + accessors. Slices `classroom-token-layer` / `-adoption`. |
-| V2-S1-02 | Classroom scene model | 5 | 🟡 | `ClassroomSceneModel` / `ClassroomObject` / destination enum shipped. **Unit tests for object derivation NOT written** — carry-debt (see [Carry-debt](#carry-debt)). |
+| V2-S1-02 | Classroom scene model | 5 | ✅ | `ClassroomSceneModel` shipped + **35 unit tests**. May 22: model extracted into the `NovaClassroom` SPM package, tests run as `NovaClassroomTests` on the build graph (symlink package retired). Pending one Xcode wiring step on bang's Mac. |
 | V2-S1-03 | Classroom background shell | 8 | ✅ | `ClassroomSceneView` + `ClassroomBackgroundView`, placeholder shape-art, stable hit zones portrait + landscape. |
 | V2-S1-04 | Object button primitive | 5 | ✅ | `ClassroomObjectButton` — 88×88pt hit zones, bounce/haptic, VoiceOver labels, reduce-motion. |
 | V2-S1-05 | Dashy guide layer v1 | 5 | ✅ | `ClassroomDashyGuideLayer` — reuses existing Dashy + speech bubble; tap-to-repeat narration. |
@@ -55,7 +55,7 @@ Landed May 4 – May 7 (vault slices `bookshelf-*`, `mission-board-*`, `home-dat
 | ID | Story | Pts | Status | Notes |
 |---|---|---:|:---:|---|
 | V2-S2-01 | Home data adapter | 5 | ✅ | `HomeViewModel` / `LessonsViewModel` data mapped into `ClassroomSceneModel`. |
-| V2-S2-02 | Generated lesson object derivation | 5 | 🟡 | Object-kind derivation from title/path/card-type/completion shipped. Per-card-type test coverage **not** written. |
+| V2-S2-02 | Generated lesson object derivation | 5 | ✅ | Object-kind derivation shipped + tested (35 tests, shared with V2-S1-02, now in the `NovaClassroom` package). |
 | V2-S2-03 | Classroom Home v1 | 8 | ✅ | Flag-on Home renders the classroom with real user data. `HomeView` → `ClassroomSceneView` is the live route. |
 | V2-S2-04 | Bookshelf lesson library | 8 | ✅ | `ClassroomLessonLibraryView` — path sections, completion/new badges, accessible labels, empty state. |
 | V2-S2-05 | Bulletin board new-lesson state | 5 | ✅ | `mission-board-visual` — glowing new-lesson objects, Dashy points to newest. |
@@ -105,10 +105,10 @@ The two May 11 audit slices (`v2-beta-kid-flow-and-art-import-risk-audit`, `v2-c
 
 | ID | Story | Pts | Status | Notes |
 |---|---|---:|:---:|---|
-| V2-S4-F1 | Kid-flow hit-target audit | 3 | ⬜ | Verify every primary classroom object meets the 88×88pt target; fix any that regressed. |
-| V2-S4-F2 | Kid-safe fallback / error copy | 2 | ⬜ | Replace any remaining text-heavy or adult-toned error/empty copy with kid-safe, voiced lines. |
-| V2-S4-F3 | Experiment-card affordance clarity | 3 | ⬜ | Make drag/drop affordances obvious without reading — the experiment card was flagged as the least kid-legible surface. |
-| V2-S4-F4 | Post-art iPad verification pass | 2 | ⬜ | After art lands: full device walkthrough, both orientations, reduce-motion, VoiceOver. Gated on V2-S4-02. |
+| V2-S4-F1 | Kid-flow hit-target audit | 3 | ✅ | Audit-only slice (May 22 batch) — every primary classroom-home object already met the 88×88pt floor, reduce-motion gated. Zero code change. Run summary: `sprint-runs/V2-S4-fixpack-2026-05-22.md`. |
+| V2-S4-F2 | Kid-safe fallback / error copy | 2 | 🟡 | Bookshelf empty state done (May 22 batch) — kid-safe copy + voiced `classroomBookshelfEmpty` line. **Gap:** error states + `homeEmpty`/`lessonsEmpty`/`trophyRoomEmpty` registry cases not yet reviewed → follow-up slice. Uncommitted. |
+| V2-S4-F3 | Experiment-card affordance clarity | 3 | ✅ | Done (May 22 batch) — finger-tap badge, lift shadow, breathing pulse on draggables; underglow + thicker stroke + bobbing filled-arrow on drop targets; every motion cue has a static reduce-motion fallback. +113 LOC. Uncommitted, pending Mac build verify. |
+| V2-S4-F4 | Post-art iPad verification pass | 2 | ⬜ | After art lands: full device walkthrough, both orientations, reduce-motion, VoiceOver. Gated on V2-S4-02. Fold in an F1 hit-target spot-check. |
 
 ---
 
@@ -155,7 +155,8 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 
 | Item | Origin | Notes |
 |---|---|---|
-| Scene-model object-derivation unit tests | V2-S1-02 / V2-S2-02 | Plan required them; never written. iOS test coverage overall is 4 files / ~29 cases. |
+| ~~Scene-model test packaging decision~~ → **resolved May 22** | V2-S1-02 / V2-S2-02 | Decision taken: extract. `ClassroomSceneModel` moved into a new `NovaClassroom` SPM package (`src/Packages/NovaClassroom/`); the symlink package deleted; the 35 tests now run as `NovaClassroomTests` on the build graph. Remaining: one Xcode step on bang's Mac to wire NovaClassroom as a NovaKids target dependency (see Delivery Notes). |
+| F2 error states + remaining `*Empty` registry cases | V2-S4-F2 (May 22 batch) | F2 covered the bookshelf empty state only. Error states + `homeEmpty`/`lessonsEmpty`/`trophyRoomEmpty` unreviewed → follow-up slice. |
 | `classroomCardStage` dead code | V2-S3 rework | Superseded by `LessonBookReaderShell`; not removed. |
 | `EnhancedHomeView` orphaned | V2-S2 (live Home moved to `ClassroomSceneView`) | Referenced only in a `#Preview`. The S14-VF `.narrate("home")` call site sits on it, dead. |
 | `classroomV2Enabled` hard-coded `true` | V2-S1-06 | No tested rollback to legacy Home. |
@@ -178,7 +179,30 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 
 ## Delivery Notes
 
-*V2-S1, V2-S2, V2-S3 landed before this tracker existed — their delivery record is the 69 vault slices in `cortana-vault/projects/novai/slices/` (Apr 29 – May 11) and commits `2f58ba9`→`5f4f5f5`. V2-S4 delivery notes will be filled in here as stories close, following the SPRINT-10/11/12/13 idiom.*
+*V2-S1, V2-S2, V2-S3 landed before this tracker existed — their delivery record is the 69 vault slices in `cortana-vault/projects/novai/slices/` (Apr 29 – May 11) and commits `2f58ba9`→`5f4f5f5`. V2-S4 delivery notes are filled in here as stories close, following the SPRINT-10/11/12/13 idiom.*
+
+### V2-S4 fix-pack + scene-model tests — 4-agent parallel batch (May 22)
+
+Four file-disjoint agent slices ran in parallel while the art catalog was generated. Full reconciliation: [`sprint-runs/V2-S4-fixpack-2026-05-22.md`](./sprint-runs/V2-S4-fixpack-2026-05-22.md).
+
+- **V2-S4-F1** ✅ — hit-target audit, zero-change (surface already passed).
+- **V2-S4-F2** 🟡 — bookshelf empty-state kid-safe copy + voiced line. In-scope; error states deferred to a follow-up slice.
+- **V2-S4-F3** ✅ — experiment-card drag/drop affordances (badge / shadow / pulse / underglow), all motion cues reduce-motion-gated. +113 LOC. Cleanest slice of the batch.
+- **V2-S1-02 / V2-S2-02** 🟡 — 35 `ClassroomSceneModel` unit tests delivered, but via a symlinked SPM package off the app build graph — **drift; needs a packaging decision** (recommend extracting `ClassroomSceneModel` into a real SPM package).
+
+**Status:** all four delivered to the working tree, **uncommitted** — review checkpoint. Agent `BUILD SUCCEEDED` / 35-tests-pass claims are **unverified** (no Xcode in the sandbox); Mac-side build + `swift test` is the gate before commit. **Process change:** future agent slice briefs must include the slice-report instruction (see the run summary's "Slice-report protocol" section) so slices self-document instead of evaporating into chat recaps.
+
+### ClassroomSceneModel extracted into the NovaClassroom package (May 22)
+
+Resolving the Slice-4 drift. `ClassroomSceneModel.swift` (505 LOC, pure model logic, imports only CoreGraphics/Foundation/NovaCore) was misfiled under `Apps/NovaKids/Sources/Views/Classroom/` and only testable via Agent 4's symlink workaround. Done in the sandbox:
+
+- New SPM package `src/Packages/NovaClassroom/` — `Package.swift` (depends on NovaCore), `Sources/NovaClassroom/ClassroomSceneModel.swift` (`git mv`'d, history preserved), `Tests/NovaClassroomTests/ClassroomSceneModelTests.swift` (the 35 tests, de-symlinked — import flipped `ClassroomSceneSubject` → `NovaClassroom`).
+- Symlink package `NovaKidsClassroomTests/` deleted.
+- `import NovaClassroom` added to the 6 app files that reference the model (HomeView + 5 Classroom views).
+- `NovaClassroom` registered in `Nova.xcworkspace`.
+- The model is already heavily `public` (Agent 4's standalone package proved it compiles against NovaCore alone) — no access-modifier sweep needed.
+
+**Mac step required — one Xcode operation, can't be done safely from the sandbox.** After pulling: (1) the NovaKids project navigator shows `ClassroomSceneModel.swift` as a red/missing reference (moved on disk) — remove that dangling reference (right-click → Delete → Remove Reference). (2) NovaKids target → General → "Frameworks, Libraries, and Embedded Content" → `+` → add the `NovaClassroom` library product. (3) Build. Xcode writes the correct `XCSwiftPackageProductDependency` entries — far safer than hand-editing pbxproj. Then `swift test --package-path src/Packages/NovaClassroom` confirms the 35 tests.
 
 ---
 
