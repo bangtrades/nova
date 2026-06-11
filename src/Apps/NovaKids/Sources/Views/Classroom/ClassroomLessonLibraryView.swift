@@ -101,7 +101,8 @@ public struct ClassroomLessonLibraryView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, Spacing.md)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("The bookshelf is empty. The shelf is waiting. New lesson books will appear after a grown-up adds them.")
+        .accessibilityLabel("Looks like the bookshelf is empty! Ask a grown-up to add a lesson book.")
+        .narrate("classroomBookshelfEmpty")
     }
 
     private var shelfSections: [LessonShelfSection] {
@@ -206,13 +207,13 @@ public struct ClassroomLessonLibraryView: View {
 
     private var emptyShelfPrompt: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("The shelf is waiting.")
+            Text("The shelf is empty!")
                 .font(NovaPalette.headingFont())
                 .foregroundStyle(NovaPalette.classroomInk)
                 .lineLimit(2)
                 .minimumScaleFactor(0.82)
 
-            Text("New lesson books will appear after a grown-up adds them.")
+            Text("Ask a grown-up to add a lesson book.")
                 .font(NovaPalette.bodyFont())
                 .foregroundStyle(NovaPalette.classroomInk.opacity(0.74))
                 .lineLimit(3)

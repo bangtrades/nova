@@ -445,6 +445,8 @@ public struct ExperimentCardView: View {
 /// `Image` does not change drag-and-drop behavior.
 private struct DraggableItemView: View {
     let item: ExperimentCardView.DragItemState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
 
     var body: some View {
         ZStack {
@@ -471,12 +473,57 @@ private struct DraggableItemView: View {
                     .lineLimit(1)
             }
             .padding(8)
+
+            // V2-S4-F3: "pick me up" badge — finger-tap glyph pinned
+            // to the tile's top-right corner. Static (no motion),
+            // so it doubles as the reduce-motion fallback for the
+            // pulse below: a non-reader sees the finger and knows
+            // the tile is liftable even with all animation off.
+            VStack {
+                HStack {
+                    Spacer()
+                    Image(systemName: "hand.point.up.left.fill")
+                        .font(.caption2)
+                        .foregroundStyle(NovaPalette.classroomInk.opacity(0.7))
+                        .padding(4)
+                        .background(
+                            Circle()
+                                .fill(NovaPalette.classroomPaper.opacity(0.9))
+                                .overlay(
+                                    Circle()
+                                        .stroke(NovaPalette.classroomInk.opacity(0.35), lineWidth: 0.75)
+                                )
+                        )
+                        .accessibilityHidden(true)
+                        .padding(4)
+                }
+                Spacer()
+            }
         }
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(NovaPalette.classroomInk, lineWidth: 1.5)
         }
-        .shadow(color: NovaPalette.classroomInk.opacity(0.18), radius: 3, x: 0, y: 2)
+        // V2-S4-F3: deeper lift shadow than the prior 18%/r3 — the
+        // tile reads as floating above the material tray, reinforcing
+        // "this is pick-up-able". Static, so reduce-motion keeps it.
+        .shadow(color: NovaPalette.classroomInk.opacity(0.28), radius: 5, x: 0, y: 3)
+        // V2-S4-F3: gentle breathing pulse on idle tiles cues "pick
+        // me up" without words. The scale delta is small (1.0 → 1.03)
+        // so it doesn't fight the bounce-back scale driven externally
+        // via `bouncingItemId`. Gated behind reduce-motion — the
+        // static finger-tap badge above is the non-motion fallback,
+        // and the deeper lift shadow stays regardless.
+        .scaleEffect(pulse && reduceMotion == false ? 1.03 : 1.0)
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
+            value: pulse
+        )
+        .onAppear {
+            if reduceMotion == false {
+                pulse = true
+            }
+        }
         .draggable(item) {
             // Drag-preview ghost — kept visually consistent with the
             // source tile so the painted manipulative is recognizable
@@ -537,7 +584,11 @@ private struct DropTargetView: View {
     let onDrop: (ExperimentCardView.DragItemState, ExperimentCardView.DropTargetState) -> Void
 
     @State private var isTargeted = false
+    @State private var idlePulse = false
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var isEmpty: Bool { target.filledWith == nil }
 
     var body: some View {
         ZStack {
@@ -551,17 +602,37 @@ private struct DropTargetView: View {
             // gesture path and the VoiceOver tree.
             paintedDropZoneBackdrop
 
+            // V2-S4-F3: "put it here" underglow. Soft sky-tinted fill
+            // on empty zones that breathes opacity (0.10 → 0.22) under
+            // motion, brightens to a solid leaf-tinted fill while a
+            // tile is hovering, and clears once the zone has been
+            // filled. Reduce-motion path collapses the breathing to a
+            // static medium-opacity fill so a non-reader still sees a
+            // colored landing pad without animation.
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(underglowColor)
+                .animation(
+                    reduceMotion ? nil : .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
+                    value: idlePulse
+                )
+                .animation(.easeInOut(duration: 0.15), value: isTargeted)
+
             // Base zone — dashed chalk outline that brightens when a tile
             // is hovering, drawn in classroom palette so it matches the
             // tabletop instead of the previous comic-book novaBlue/novaGreen.
             // Rendered above the painted backdrop on purpose: the
             // targeting cue is load-bearing for drag-and-drop UX and
             // must always be visible.
+            // V2-S4-F3: when a tile is in flight over this zone, the
+            // stroke thickens (2 → 3.5pt) on top of the color swap so
+            // the targeting cue reads at a glance even with the kid's
+            // hand obscuring half the card.
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(
                     isTargeted ? NovaPalette.classroomLeaf : NovaPalette.classroomSky,
-                    style: StrokeStyle(lineWidth: 2, dash: [8])
+                    style: StrokeStyle(lineWidth: isTargeted ? 3.5 : 2, dash: [8])
                 )
+                .animation(.easeInOut(duration: 0.15), value: isTargeted)
 
             if let filledItemId = target.filledWith,
                let filledItem = dragItems.first(where: { $0.id == filledItemId }) {
@@ -591,9 +662,20 @@ private struct DropTargetView: View {
                 }
             } else {
                 VStack(spacing: 8) {
-                    Image(systemName: "arrow.down.circle")
+                    // V2-S4-F3: swap to the filled variant + bob the
+                    // glyph 4pt downward to reinforce "drop here".
+                    // Reduce-motion path holds the arrow still — the
+                    // filled-circle glyph itself is the static cue,
+                    // unambiguously different from the surrounding
+                    // dashed outline.
+                    Image(systemName: "arrow.down.circle.fill")
                         .font(.title2)
                         .foregroundStyle(NovaPalette.classroomSky)
+                        .offset(y: idlePulse && reduceMotion == false ? 4 : 0)
+                        .animation(
+                            reduceMotion ? nil : .easeInOut(duration: 0.95).repeatForever(autoreverses: true),
+                            value: idlePulse
+                        )
                         .accessibilityHidden(true)
 
                     Text(target.label)
@@ -606,6 +688,11 @@ private struct DropTargetView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 100)
+        .onAppear {
+            if reduceMotion == false {
+                idlePulse = true
+            }
+        }
         .dropDestination(for: ExperimentCardView.DragItemState.self) { items, _ in
             if let item = items.first {
                 onDrop(item, target)
@@ -616,6 +703,26 @@ private struct DropTargetView: View {
             self.isTargeted = isTargeted
         }
         .accessibilityLabel("Drop zone: \(target.label)")
+    }
+
+    // V2-S4-F3: derives the underglow fill color from zone state.
+    // - Hovering (isTargeted): leaf-tinted, strong, attention-grabbing.
+    // - Empty + motion allowed: sky-tinted, breathing via `idlePulse`.
+    // - Empty + reduce-motion: sky-tinted static medium opacity, so
+    //   the "landing pad" reads without any animation.
+    // - Filled: clear — the leaf-tinted placed-item overlay supplies
+    //   its own visual confirmation; doubling up would just muddy it.
+    private var underglowColor: Color {
+        if isEmpty == false {
+            return Color.clear
+        }
+        if isTargeted {
+            return NovaPalette.classroomLeaf.opacity(0.28)
+        }
+        if reduceMotion {
+            return NovaPalette.classroomSky.opacity(0.16)
+        }
+        return NovaPalette.classroomSky.opacity(idlePulse ? 0.22 : 0.10)
     }
 
     @ViewBuilder

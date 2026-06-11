@@ -178,6 +178,8 @@ public enum NavigationScript {
             return "These are the lessons. Tap one to start!"
         case "classroomBookshelf":
             return "Pick a lesson book from the shelf."
+        case "classroomBookshelfEmpty":
+            return "Looks like the bookshelf is empty! Ask a grown-up to add a lesson book."
         case "lessonDetail":
             return "Let's begin! Tap the arrow to see the first card."
         case "trophyRoom":
