@@ -77,6 +77,27 @@ describe('VOX-03 + VOX-04 — wire behavior', () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it('VOX-02: POST /auth/dev-bypass mints a real token pair outside production', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/v1/auth/dev-bypass',
+      headers: { 'content-type': 'application/json' },
+      // no body — also exercises the VOX-03 parser on a fresh route
+    });
+
+    // With a live dev DB: 200 + tokens for the deterministic dev user.
+    // Without a DB (bare CI): 500 from the prisma call. Never a router
+    // 404 — that would mean the route isn't registered.
+    if (response.statusCode === 200) {
+      const body = JSON.parse(response.body);
+      expect(body.accessToken).toBeTruthy();
+      expect(body.refreshToken).toBeTruthy();
+      expect(body.user.displayName).toBe('Dev Tester');
+    } else {
+      expect(response.statusCode).toBe(500);
+    }
+  });
+
   it('VOX-04: unpublish route is registered (no router 404)', async () => {
     const response = await fastify.inject({
       method: 'POST',

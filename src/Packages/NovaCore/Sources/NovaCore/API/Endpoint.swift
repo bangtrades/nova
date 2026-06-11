@@ -75,6 +75,17 @@ public struct Endpoint {
         )
     }
 
+    /// Development-only login (S14-VOX-02) — the backend mints a REAL
+    /// token pair for its deterministic dev user. The backend answers
+    /// 404 in production, so this is only useful against a dev server.
+    public static func devBypass() -> Endpoint {
+        return Endpoint(
+            path: "/auth/dev-bypass",
+            method: .POST,
+            requiresAuth: false
+        )
+    }
+
     /// Delete user account.
     public static func deleteAccount() -> Endpoint {
         return Endpoint(path: "/auth/account", method: .DELETE)

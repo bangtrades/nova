@@ -10,6 +10,10 @@ const PUBLIC_ROUTES = [
   '/api/v1/auth/refresh',
   '/api/v1/auth/logout',
   '/api/v1/auth/revoke',
+  // S14-VOX-02: dev-only login. Public like the other login routes (a
+  // login can't require a token); the route handler itself 404s in
+  // production, so listing it here exposes nothing outside dev.
+  '/api/v1/auth/dev-bypass',
 ];
 
 export async function authMiddleware(

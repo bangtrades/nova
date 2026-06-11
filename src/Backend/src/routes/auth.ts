@@ -112,6 +112,74 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     }
   );
 
+  // POST /auth/dev-bypass — S14-VOX-02. Development-only login that
+  // mints a REAL token pair for a deterministic dev user, so the iOS
+  // `AuthManager.devBypassLogin()` stores working credentials instead
+  // of faking authenticated state with no tokens. That fake state was
+  // the "stale keychain bites you" failure mode: the UI said signed-in
+  // while every API call rode whatever stale token the keychain held.
+  //
+  // Hard-gated out of production: NODE_ENV=production → 404, same shape
+  // as an unregistered route, so the endpoint is not discoverable.
+  fastify.post('/dev-bypass', async (request, reply) => {
+    const config = getConfig();
+    if (config.NODE_ENV === 'production') {
+      return reply.status(404).send({
+        statusCode: 404,
+        error: 'Not Found',
+        message: `Route POST:${request.url} not found`,
+      });
+    }
+
+    try {
+      const prisma = getPrismaClient();
+      const devAppleId = 'dev.tester';
+
+      let user = await prisma.user.findUnique({
+        where: { appleId: devAppleId },
+      });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            appleId: devAppleId,
+            displayName: 'Dev Tester',
+            email: 'dev-tester@nova.local',
+          },
+        });
+
+        await prisma.subscription.create({
+          data: {
+            userId: user.id,
+            plan: 'free',
+            status: 'active',
+          },
+        });
+      }
+
+      const { accessToken, refreshToken } = generateTokenPair(user.id);
+
+      const response: AuthResponse = {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          displayName: user.displayName,
+          email: user.email || undefined,
+        },
+      };
+
+      return reply.status(200).send(response);
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: 'Failed to dev-bypass sign in',
+      });
+    }
+  });
+
   // POST /auth/refresh - Refresh JWT token
   fastify.post<{ Body: RefreshTokenRequest }>(
     '/refresh',

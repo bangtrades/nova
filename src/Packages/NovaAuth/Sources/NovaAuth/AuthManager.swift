@@ -139,19 +139,54 @@ public class AuthManager: ObservableObject, TokenProvider {
     }
 
     /// Development-only bypass for testing without Apple Sign In.
-    /// Creates a mock user and sets authenticated state.
+    ///
+    /// S14-VOX-02: hits `POST /auth/dev-bypass`, which mints a REAL
+    /// token pair for the backend's deterministic dev user, and stores
+    /// it via `updateTokens(...)` — every subsequent API call is then
+    /// properly authenticated instead of riding whatever stale token
+    /// the keychain happened to hold (the "stale keychain bites you"
+    /// failure mode that cost 30 minutes of demo prep).
+    ///
+    /// If the backend is unreachable (offline UI work), falls back to
+    /// the old local-only mock state — authenticated UI, no tokens.
     #if DEBUG
+    @MainActor
     public func devBypassLogin() async {
-        let mockUser = User(
-            id: UUID(),
-            appleId: "dev.tester",
-            email: "dev-tester@nova.local",
-            displayName: "Dev Tester",
-            createdAt: Date()
-        )
-        currentUser = mockUser
-        isAuthenticated = true
-        authState = .authenticated(mockUser)
+        authState = .authenticating
+
+        do {
+            let response: DevBypassResponse = try await apiClient.request(.devBypass())
+
+            await updateTokens(
+                accessToken: response.accessToken,
+                refreshToken: response.refreshToken
+            )
+
+            let user = User(
+                id: response.user.id,
+                appleId: "dev.tester",
+                email: response.user.email,
+                displayName: response.user.displayName,
+                createdAt: Date()
+            )
+            currentUser = user
+            isAuthenticated = true
+            authState = .authenticated(user)
+        } catch {
+            // Backend not running — keep the legacy local-only bypass
+            // so offline UI development still works. No tokens stored;
+            // API calls will 401 until the backend is reachable.
+            let mockUser = User(
+                id: UUID(),
+                appleId: "dev.tester",
+                email: "dev-tester@nova.local",
+                displayName: "Dev Tester",
+                createdAt: Date()
+            )
+            currentUser = mockUser
+            isAuthenticated = true
+            authState = .authenticated(mockUser)
+        }
     }
     #endif
 
@@ -215,3 +250,21 @@ private struct TokenResponse: Decodable {
 
 /// Empty response for endpoints that don't return data.
 private struct EmptyResponse: Decodable {}
+
+/// Response from the dev-bypass endpoint (S14-VOX-02). Keyed to the
+/// backend's actual camelCase wire shape (which passes through the
+/// `.convertFromSnakeCase` decoder unchanged); the user payload is
+/// minimal — `{ id, displayName, email? }` — so it gets its own type
+/// rather than forcing a full `User` decode that would fail on the
+/// missing `createdAt`.
+private struct DevBypassResponse: Decodable {
+    struct DevUser: Decodable {
+        let id: UUID
+        let displayName: String
+        let email: String?
+    }
+
+    let accessToken: String
+    let refreshToken: String
+    let user: DevUser
+}
