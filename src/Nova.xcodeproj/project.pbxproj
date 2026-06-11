@@ -116,7 +116,6 @@
 		F59578BCFFEDBE35939D3B5E /* Sources/ViewModels/TrophyRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7B95C7986033B43A1727A4E /* Sources/ViewModels/TrophyRoomViewModel.swift */; };
 		F5CDEF86C422D0F140415A0A /* Sources/Views/Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB3E8ED1D23FA44AF3BD609 /* Sources/Views/Onboarding/OnboardingView.swift */; };
 		F5F2B50E727775536D2619FA /* Sources/App/KidsAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C1B25C2161246413B0E8B6 /* Sources/App/KidsAppState.swift */; };
-		F7FA543395D7DF3D9537FB7C /* Sources/Views/Home/EnhancedHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */; };
 		F85CBAABDEE1194967EFE542 /* Sources/Views/Progress/SessionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791D1AA468D7048B9EB70E8C /* Sources/Views/Progress/SessionHistoryView.swift */; };
 		F9AFF746C2C2B8C76A90ED85 /* Sources/Views/Trophies/TrophiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 306A3ADD1172B9C030B3CF91 /* Sources/Views/Trophies/TrophiesView.swift */; };
 		FBDBF61FFE29AD1C581474E8 /* Sources/Views/Settings/SubscriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48138F82BE647EED2EB2CD8 /* Sources/Views/Settings/SubscriptionView.swift */; };
@@ -276,7 +275,6 @@
 		D6272D038F1E108B494151DA /* Sources/Views/Flipbook/FlipbookHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Flipbook/FlipbookHeader.swift; sourceTree = "<group>"; };
 		D778518FB1D6F9ECB5E31AD7 /* Sources/Views/Dashboard/QuickStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashboard/QuickStatsCard.swift; sourceTree = "<group>"; };
 		D8625EFB88BD9F749D46B926 /* Sources/Views/Common/ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/ParentalGateView.swift; sourceTree = "<group>"; };
-		D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Home/EnhancedHomeView.swift; sourceTree = "<group>"; };
 		D8C38D03FE5235B5F3310C42 /* Sources/ViewModels/ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/ViewModels/ProgressViewModel.swift; sourceTree = "<group>"; };
 		D99366EA94F6BE7853DB1733 /* Sources/Views/Common/PerformanceOptimizers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/PerformanceOptimizers.swift; sourceTree = "<group>"; };
 		DCA12AE9930CE73EB6A91985 /* Sources/Views/Editor/CardFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Editor/CardFormView.swift; sourceTree = "<group>"; };
@@ -370,7 +368,6 @@
 				DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */,
 				DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */,
 				C74E8C5A4EDD853DD14B581D /* Sources/Views/Common/EmptyStateView.swift */,
-				D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */,
 				35472C81670F14E61683F8F6 /* Sources/Views/Common/ErrorBoundaryView.swift */,
 				6C8E3FB0E48DAB16F5231287 /* Sources/Views/Flipbook/ExperimentCardView.swift */,
 				B5CE8633863B93C675ED6BAD /* Sources/Views/Home/FeaturedLessonCard.swift */,
@@ -625,7 +622,6 @@
 				8F4DA6594F3E3E12531DFD97 /* Sources/Views/Flipbook/ConfettiView.swift in Sources */,
 				37363F1507D9465B33AC90EB /* Sources/Views/Home/ContinueLearningSection.swift in Sources */,
 				3D86F9D1E86E81847CF061E0 /* Sources/Views/Common/EmptyStateView.swift in Sources */,
-				F7FA543395D7DF3D9537FB7C /* Sources/Views/Home/EnhancedHomeView.swift in Sources */,
 				3836C2DCB2AD5784B50D2385 /* Sources/Views/Common/ErrorBoundaryView.swift in Sources */,
 				3B03130B81B69267E128A04E /* Sources/Views/Flipbook/ExperimentCardView.swift in Sources */,
 				8B7AC272B1859DA304E9FC1D /* Sources/Views/Home/FeaturedLessonCard.swift in Sources */,

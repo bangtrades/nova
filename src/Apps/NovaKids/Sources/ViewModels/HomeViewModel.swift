@@ -6,7 +6,7 @@ import NovaCore
 /// Manages the display of featured lessons, current progress, and learning paths.
 ///
 /// S11-19: zero-arg `init()` preserved — callsite is `@StateObject private var
-/// viewModel = HomeViewModel()` in both `HomeView` and `EnhancedHomeView`, and
+/// viewModel = HomeViewModel()` in `HomeView`, and
 /// changing that constructor would ripple through every preview. Instead, the
 /// View attaches `apiRouter` + `appState` in its `.task`. `refresh()` falls
 /// through to the mock path when the router is nil so previews stay green.

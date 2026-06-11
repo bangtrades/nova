@@ -31,7 +31,7 @@ import SwiftUI
 ///    `ToolbarItem(placement: .principal)` carrying `Text(title)` in
 ///    `NovaPalette.displayFont(size: 20)` on `NovaPalette.ink`. Empty
 ///    titles render no principal view at all — the intentional escape
-///    hatch for screens like `EnhancedHomeView` and `DashyView` that own
+///    hatch for screens like the classroom Home and `DashyView` that own
 ///    their top chrome with an in-content greeting and want the nav bar
 ///    title-less.
 ///
@@ -105,7 +105,7 @@ public extension View {
     ///
     /// - Parameter title: The inline title rendered in Bangers on
     ///   `NovaPalette.ink`. Pass `""` when the screen owns its chrome with
-    ///   an in-content greeting (EnhancedHomeView, DashyView) and should
+    ///   an in-content greeting (classroom Home, DashyView) and should
     ///   leave the nav bar title-less.
     func novaNavigationStyle(title: String = "") -> some View {
         modifier(NovaNavigationStyleModifier(title: title))

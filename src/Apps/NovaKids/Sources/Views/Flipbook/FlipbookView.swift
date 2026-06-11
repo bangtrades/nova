@@ -473,62 +473,6 @@ public struct FlipbookView: View {
             .accessibilityHidden(true)
     }
 
-    private func classroomCardStage<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(NovaPalette.classroomPaper.opacity(0.88))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(NovaPalette.classroomInk.opacity(0.28), lineWidth: 3)
-                }
-                .shadow(color: NovaPalette.classroomInk.opacity(0.12), radius: 10, x: 0, y: 6)
-
-            VStack(spacing: 0) {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(NovaPalette.classroomChalkboard.opacity(0.86))
-                    .frame(height: 14)
-                    .padding(.horizontal, Spacing.lg)
-                    .padding(.top, Spacing.sm)
-
-                Spacer()
-
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(NovaPalette.classroomWood.opacity(0.82))
-                    .frame(height: 18)
-                    .padding(.horizontal, Spacing.md)
-                    .padding(.bottom, Spacing.sm)
-            }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-
-            content()
-        }
-        .overlay(alignment: .topLeading) {
-            Circle()
-                .fill(NovaPalette.classroomSchoolRed.opacity(0.82))
-                .frame(width: 18, height: 18)
-                .overlay {
-                    Circle()
-                        .stroke(NovaPalette.classroomInk.opacity(0.36), lineWidth: 1.5)
-                }
-                .padding(Spacing.md)
-                .accessibilityHidden(true)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            Circle()
-                .fill(NovaPalette.classroomSun.opacity(0.72))
-                .frame(width: 22, height: 22)
-                .overlay {
-                    Circle()
-                        .stroke(NovaPalette.classroomInk.opacity(0.30), lineWidth: 1.5)
-                }
-                .padding(Spacing.md)
-                .accessibilityHidden(true)
-        }
-    }
-
     /// Direction of a workbook nav-button page turn. Drives whether
     /// the chevron sits leading or trailing the title.
     private enum WorkbookNavDirection {

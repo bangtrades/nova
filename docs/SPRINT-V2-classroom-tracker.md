@@ -118,9 +118,9 @@ The two May 11 audit slices (`v2-beta-kid-flow-and-art-import-risk-audit`, `v2-c
 - [ ] Every art slot renders a real painted asset (or a deliberately-accepted stylized fallback — see [decision needed](#decision-needed-art-pipeline)). No solid-cream placeholders.
 - [ ] Kid test 1 (object-nav comprehension) **and** kid test 2 (full classroom loop) both run and written up as sprint-run notes.
 - [ ] The 4 fix-pack slices land.
-- [ ] Scene-model + object-derivation unit tests exist (closes V2-S1-02 / V2-S2-02 debt).
-- [ ] `classroomCardStage` dead code removed.
-- [ ] Performance pass recommendations (caching, downsampling) applied; no memory warnings on target iPad.
+- [x] Scene-model + object-derivation unit tests exist (closes V2-S1-02 / V2-S2-02 debt). *(Jun 10 — NovaClassroom package committed, 35 tests green on the Mac.)*
+- [x] `classroomCardStage` dead code removed. *(Jun 10 — plus the `EnhancedHomeView` orphan.)*
+- [x] Performance pass recommendations (caching, downsampling) applied *(Jun 10)*; no memory warnings on target iPad — device check in V2-S4-F4.
 - [ ] Release decision documented; TestFlight screenshots captured.
 
 ---
@@ -157,8 +157,8 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 |---|---|---|
 | ~~Scene-model test packaging decision~~ → **resolved May 22** | V2-S1-02 / V2-S2-02 | Decision taken: extract. `ClassroomSceneModel` moved into a new `NovaClassroom` SPM package (`src/Packages/NovaClassroom/`); the symlink package deleted; the 35 tests now run as `NovaClassroomTests` on the build graph. Remaining: one Xcode step on bang's Mac to wire NovaClassroom as a NovaKids target dependency (see Delivery Notes). |
 | ~~F2 error states + remaining `*Empty` registry cases~~ → **resolved Jun 10** | V2-S4-F2 (May 22 batch) | Closed by the F2-completion slice: error banners kid-safe + voiced everywhere, all three `*Empty` registry cases wired. See `sprint-runs/V2-S4-F2-completion-2026-06-10.md`. |
-| `classroomCardStage` dead code | V2-S3 rework | Superseded by `LessonBookReaderShell`; not removed. |
-| `EnhancedHomeView` orphaned | V2-S2 (live Home moved to `ClassroomSceneView`) | Referenced only in a `#Preview`. The S14-VF `.narrate("home")` call site sits on it, dead. |
+| ~~`classroomCardStage` dead code~~ → **removed Jun 10** | V2-S3 rework | Deleted from `FlipbookView` (−78 LOC, zero call sites). See `sprint-runs/dead-code-removal-2026-06-10.md`. |
+| ~~`EnhancedHomeView` orphaned~~ → **removed Jun 10** | V2-S2 (live Home moved to `ClassroomSceneView`) | File deleted + 4 pbxproj refs removed + 3 stale doc-comments rewritten. Same run summary. |
 | S14-VOX-02 — `devBypassLogin()` mints a real JWT | S14 VOX-FU carry-in | The one VOX-FU item still open after the Jun 10 backend trio shipped (`sprint-runs/VOX-FU-backend-trio-2026-06-10.md`). iOS-side: `AuthManager.devBypassLogin()` should hit `POST /api/v1/auth/dev-bypass` and store a real JWT. |
 | `classroomV2Enabled` hard-coded `true` | V2-S1-06 | No tested rollback to legacy Home. |
 | ~~Performance recommendations unapplied~~ → **resolved Jun 10** | V2-S4-06 | Formatter caching + off-main ImageIO downsampling applied; art-slot caching was already in place. See `sprint-runs/V2-S4-06-performance-2026-06-10.md`. |
