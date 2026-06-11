@@ -183,11 +183,13 @@ private struct ClassroomHotspotButton: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
     @State private var haloPulse = false
+    @State private var tapBurst = 0
 
     var body: some View {
         Button {
             guard object.state != .disabled else { return }
             NovaHaptics.tap()
+            tapBurst += 1
             action()
         } label: {
             decorations
@@ -196,6 +198,12 @@ private struct ClassroomHotspotButton: View {
         }
         .buttonStyle(.plain)
         .frame(minWidth: 88, minHeight: 88)
+        // V2-S4-05: same sparkle burst as the shape-fallback path —
+        // the tap reaction triple (bounce + haptic + burst) stays
+        // consistent across render paths. No-op under Reduce Motion.
+        .overlay {
+            ClassroomTapBurst(trigger: tapBurst)
+        }
         .scaleEffect(isPressed && reduceMotion == false ? 0.96 : 1.0)
         .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.72), value: isPressed)
         .simultaneousGesture(

@@ -8,6 +8,7 @@ public struct ClassroomObjectButton: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
+    @State private var tapBurst = 0
 
     public init(object: ClassroomObject, action: @escaping () -> Void) {
         self.object = object
@@ -18,6 +19,7 @@ public struct ClassroomObjectButton: View {
         Button {
             guard object.state != .disabled else { return }
             NovaHaptics.tap()
+            tapBurst += 1
             action()
         } label: {
             decoratedObjectVisual
@@ -26,6 +28,11 @@ public struct ClassroomObjectButton: View {
         }
         .buttonStyle(.plain)
         .frame(minWidth: 88, minHeight: 88)
+        // V2-S4-05: sparkle burst on tap — third beat of the reaction
+        // triple (bounce + haptic + burst). No-op under Reduce Motion.
+        .overlay {
+            ClassroomTapBurst(trigger: tapBurst)
+        }
         .scaleEffect(isPressed && reduceMotion == false ? 0.96 : 1.0)
         .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.72), value: isPressed)
         .simultaneousGesture(
@@ -727,6 +734,144 @@ public struct ClassroomObjectButton: View {
             title
         }
         .padding(Spacing.sm)
+    }
+}
+
+// MARK: - Tap burst (V2-S4-05)
+
+/// Small sparkle burst fired when a kid taps a primary classroom object
+/// (V2-S4-05).
+///
+/// Completes the story's reaction triple — bounce (`scaleEffect` spring
+/// on the buttons), haptic (`NovaHaptics.tap()`), and **this**: a brief
+/// spray of classroom-palette sparkles from the center of the tapped
+/// object. The burst is the same in both render paths (shape-fallback
+/// `ClassroomObjectButton` and illustrated `ClassroomHotspotButton`) so
+/// the tap reaction stays consistent when final art lands.
+///
+/// Lives in this file rather than its own because adding a file to the
+/// NovaKids target requires an Xcode-side pbxproj registration (project
+/// rule: new files via Xcode UI only). Split it out on the next Xcode
+/// pass if preferred.
+///
+/// ## Behavior
+///
+/// The parent owns an `Int` trigger and increments it on tap. Each
+/// change plays one ~0.55s cycle: eight particles (six palette dots,
+/// two sparkle glyphs) spring out radially from the center, shrinking
+/// and fading as they travel. The spray view is removed from the
+/// hierarchy entirely once the cycle ends — zero idle cost.
+///
+/// ## Reduce Motion
+///
+/// Renders **nothing** when Reduce Motion is on. The story's acceptance
+/// criterion is explicit — "Reduced motion removes ambient and particle
+/// effects" — and the haptic + the button's static state change already
+/// confirm the tap without motion.
+///
+/// ## Accessibility
+///
+/// `accessibilityHidden(true)` and hit-testing disabled — the burst is
+/// pure decoration; VoiceOver users get the button's label + haptic.
+struct ClassroomTapBurst: View {
+    /// Increment to fire one burst. Monotonic counter, not a Bool, so
+    /// rapid re-taps restart the spray instead of getting swallowed.
+    let trigger: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var activeBurst: Int?
+    @State private var clearTask: Task<Void, Never>?
+
+    var body: some View {
+        ZStack {
+            if let id = activeBurst {
+                BurstSpray()
+                    .id(id) // new identity per tap → onAppear re-runs
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: trigger) { _, newValue in
+            guard !reduceMotion else { return }
+            activeBurst = newValue
+            clearTask?.cancel()
+            clearTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 650_000_000)
+                guard !Task.isCancelled else { return }
+                activeBurst = nil
+            }
+        }
+        .onDisappear {
+            clearTask?.cancel()
+        }
+    }
+}
+
+/// One spray cycle. Created fresh per burst (the parent re-`id`s it) so
+/// all animation state starts from the pre-burst pose.
+private struct BurstSpray: View {
+    @State private var flying = false
+
+    /// Fixed particle layout — evenly spaced angles with a small
+    /// per-index jitter so the spray reads organic without per-tap
+    /// randomness (deterministic renders, stable previews).
+    private struct Particle {
+        let angle: Double      // degrees
+        let distance: CGFloat  // points traveled at full flight
+        let size: CGFloat
+        let color: Color
+        let isSparkle: Bool
+    }
+
+    private static let palette: [Color] = [
+        NovaPalette.classroomSun,
+        NovaPalette.classroomSky,
+        NovaPalette.classroomSchoolRed,
+        NovaPalette.classroomLeaf,
+        NovaPalette.classroomPurple,
+    ]
+
+    private static let particles: [Particle] = (0..<8).map { index in
+        let jitter = [4.0, -7.0, 6.0, -3.0, 8.0, -5.0, 2.0, -6.0][index]
+        return Particle(
+            angle: Double(index) * 45.0 + jitter,
+            distance: [38, 30, 42, 32, 40, 28, 36, 34][index],
+            size: [7, 5, 8, 5, 7, 5, 6, 5][index],
+            color: palette[index % palette.count],
+            isSparkle: index % 4 == 0 // two sparkle glyphs in the eight
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach(Array(Self.particles.enumerated()), id: \.offset) { _, particle in
+                particleView(particle)
+                    .offset(
+                        x: flying ? cos(particle.angle * .pi / 180) * particle.distance : 0,
+                        y: flying ? sin(particle.angle * .pi / 180) * particle.distance : 0
+                    )
+                    .scaleEffect(flying ? 0.35 : 1.0)
+                    .opacity(flying ? 0 : 1)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.55)) {
+                flying = true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func particleView(_ particle: Particle) -> some View {
+        if particle.isSparkle {
+            Image(systemName: "sparkle")
+                .font(.system(size: particle.size + 4, weight: .bold))
+                .foregroundStyle(particle.color)
+        } else {
+            Circle()
+                .fill(particle.color)
+                .frame(width: particle.size, height: particle.size)
+        }
     }
 }
 

@@ -94,7 +94,7 @@ The current sprint. Started ~May 11. **Art-asset generation (V2-S4-02) is the ga
 | V2-S4-02 | **Classroom art asset integration** | 8 | ❌ | **THE GATE.** Art-slot contract system is built (`LessonArtSlot`, `ClassroomLibraryArtSlot`, `ClassroomRewardArtSlot` + resolution caching) but **zero painted PNGs ship** — every slot renders a SwiftUI fallback. bang generating assets per the v2-beta-art-asset-list. |
 | V2-S4-03 | Age profile visual variants | 6 | ✅ | Age-band routing live — `.classroom45` / `.makerLab67` / `.aiStudio8Plus`. 8+ falls back to maker-lab profile until 8+ art ships. |
 | V2-S4-04 | Parent-safe controls | 4 | 🟡 | Voice picker / mute / settings present; "visually adult-coded, not a primary child object" treatment not fully verified. |
-| V2-S4-05 | Classroom sound + reaction pass | 5 | 🟡 | Bounce + haptic on object taps exist (`ClassroomObjectButton`). Consistent particle-burst pass + reduce-motion strip not confirmed across all surfaces. |
+| V2-S4-05 | Classroom sound + reaction pass | 5 | ✅ | **Jun 10:** `ClassroomTapBurst` sparkle spray added to primary object taps in both render paths (reaction triple complete: bounce + haptic + burst); all 20 `repeatForever` ambient sites audited RM-gated. No audio SFX — no sound-asset catalog exists; flagged as a potential new asset lane. Run: `sprint-runs/V2-S4-05-sound-reaction-2026-06-10.md`. |
 | V2-S4-06 | Performance pass | 4 | 🟡 | May 11 perf-audit slice ran (`v2-classroom-swiftui-performance-code-audit` — "no P0 blocker"). Recommended caching + downsampling **not yet applied.** |
 | V2-S4-07 | Kid test 2 | 4 | ⬜ | Blocked on art — a kid test against shape-placeholders tests plumbing, not the experience. Run after art integration. |
 | V2-S4-08 | Release decision + cleanup | 5 | ⬜ | Decide whether classroom replaces Home by default (currently hard-`true`). Document known issues + screenshots for TestFlight. |
@@ -191,6 +191,16 @@ Four file-disjoint agent slices ran in parallel while the art catalog was genera
 - **V2-S1-02 / V2-S2-02** 🟡 — 35 `ClassroomSceneModel` unit tests delivered, but via a symlinked SPM package off the app build graph — **drift; needs a packaging decision** (recommend extracting `ClassroomSceneModel` into a real SPM package).
 
 **Status:** all four delivered to the working tree, **uncommitted** — review checkpoint. Agent `BUILD SUCCEEDED` / 35-tests-pass claims are **unverified** (no Xcode in the sandbox); Mac-side build + `swift test` is the gate before commit. **Process change:** future agent slice briefs must include the slice-report instruction (see the run summary's "Slice-report protocol" section) so slices self-document instead of evaporating into chat recaps.
+
+### V2-S4-05 — sound + reaction pass (Jun 10)
+
+Single slice, lead-executed. Full report:
+[`sprint-runs/V2-S4-05-sound-reaction-2026-06-10.md`](./sprint-runs/V2-S4-05-sound-reaction-2026-06-10.md).
+
+- **Particle burst** — new `ClassroomTapBurst` (8-particle classroom-palette sparkle spray, ~0.55s, deterministic, zero idle cost) fires on every primary object tap in **both** render paths (shape fallback + illustrated hotspots). Reaction triple now consistent: bounce + haptic + burst.
+- **Reduce-motion strip audited** — all 20 `repeatForever` sites across the kid app verified gated; burst renders nothing under RM per the story's acceptance criterion. No code change needed beyond the burst itself.
+- **Scope note:** no audio SFX — the repo has no sound-effect assets and TTS narration is the designated audio channel. Tap-sound generation would be a new asset lane (like art); decision left to bang.
+- **Placement note:** `ClassroomTapBurst` lives in `ClassroomObjectButton.swift` (new-file pbxproj registration requires Xcode UI per project rule); split out on the next Xcode pass.
 
 ### V2-S4-F2 completion — kid-safe error states + empty-state wiring (Jun 10)
 
