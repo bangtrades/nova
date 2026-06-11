@@ -135,8 +135,8 @@ public class APIRouter: APIRouting, ObservableObject {
 
     /// Syncs progress interactions to the server.
     @MainActor
-    public func syncProgress(_ interactions: [CardInteraction]) async throws {
-        let _: EmptyResponse = try await request(.syncProgress(interactions))
+    public func syncProgress(childId: UUID, _ interactions: [CardInteraction]) async throws {
+        let _: EmptyResponse = try await request(.syncProgress(childId: childId, interactions))
     }
 
     /// Gets progress for a child.

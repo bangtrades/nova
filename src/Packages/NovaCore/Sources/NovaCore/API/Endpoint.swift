@@ -255,14 +255,28 @@ public struct Endpoint {
     // MARK: - Progress Endpoints
 
     /// Sync progress interactions.
-    public static func syncProgress(_ interactions: [CardInteraction]) -> Endpoint {
+    ///
+    /// Contract fix (Jun 10): the backend's `syncProgressSchema` requires
+    /// a top-level `childId` — the old body omitted it, so every sync
+    /// would have 400'd. `deviceId` is the schema's optional companion.
+    public static func syncProgress(
+        childId: UUID,
+        deviceId: String? = nil,
+        _ interactions: [CardInteraction]
+    ) -> Endpoint {
         struct Body: Encodable {
+            let childId: String
+            let deviceId: String?
             let interactions: [CardInteraction]
         }
         return Endpoint(
             path: "/progress/sync",
             method: .POST,
-            body: Body(interactions: interactions)
+            body: Body(
+                childId: childId.uuidString.lowercased(),
+                deviceId: deviceId,
+                interactions: interactions
+            )
         )
     }
 
@@ -301,42 +315,53 @@ public struct Endpoint {
     }
 
     /// Generate cards for a lesson from ingested content.
+    ///
+    /// Contract fix (Jun 10): the backend's `generateCardsSchema` takes
+    /// camelCase `{ ingestId, pathId?, childId? }` — the old body's
+    /// `ingest_id` key would never validate, and `stage` isn't part of
+    /// the schema (the pipeline derives staging from the child profile
+    /// when `childId` is supplied).
     public static func generateCardsFromIngest(
         ingestId: UUID,
-        stage: ChildProfile.Stage
+        pathId: UUID? = nil,
+        childId: UUID? = nil
     ) -> Endpoint {
         struct Body: Encodable {
-            let ingest_id: String
-            let stage: Int
+            let ingestId: String
+            let pathId: String?
+            let childId: String?
         }
         return Endpoint(
             path: "/pipeline/generate/cards",
             method: .POST,
-            body: Body(ingest_id: ingestId.uuidString, stage: stage.rawValue)
+            body: Body(
+                ingestId: ingestId.uuidString.lowercased(),
+                pathId: pathId?.uuidString.lowercased(),
+                childId: childId?.uuidString.lowercased()
+            )
         )
     }
 
     /// Generate assets (images, audio) for a lesson.
+    ///
+    /// Contract fix (Jun 10): the backend route is
+    /// `POST /pipeline/assets/:lessonId` — the lesson id rides the path,
+    /// no body needed (empty-body POSTs are tolerated since S14-VOX-03).
     public static func generateAssets(lessonId: UUID) -> Endpoint {
-        struct Body: Encodable {
-            let lesson_id: String
-        }
         return Endpoint(
-            path: "/pipeline/generate/assets",
-            method: .POST,
-            body: Body(lesson_id: lessonId.uuidString)
+            path: "/pipeline/assets/\(lessonId.uuidString)",
+            method: .POST
         )
     }
 
     /// Generate lesson assets (TTS and images).
+    ///
+    /// Contract fix (Jun 10): the lesson id rides the path; the old
+    /// redundant `lesson_id` body key was never read by the backend.
     public static func generateLessonAssets(lessonId: UUID) -> Endpoint {
-        struct Body: Encodable {
-            let lesson_id: String
-        }
         return Endpoint(
             path: "/pipeline/assets/\(lessonId.uuidString)",
-            method: .POST,
-            body: Body(lesson_id: lessonId.uuidString)
+            method: .POST
         )
     }
 
@@ -411,16 +436,34 @@ public struct Endpoint {
     // MARK: - Dashy Chat Endpoints
 
     /// Send a message to Dashy for AI response.
-    public static func dashyChat(message: String, history: [[String: String]]) -> Endpoint {
+    ///
+    /// Contract fix (Jun 10): the backend's `dashyMessageSchema` wants
+    /// `{ childId, transcript, conversationHistory[{role: user|assistant,
+    /// content}], providerId? }` — the old body sent `{ message, history,
+    /// childAge }`, none of which the schema recognizes, so every chat
+    /// turn would have 400'd. Callers must map their local "dashy" role
+    /// to "assistant" before passing history.
+    public static func dashyChat(
+        childId: UUID,
+        transcript: String,
+        conversationHistory: [[String: String]] = [],
+        providerId: String? = nil
+    ) -> Endpoint {
         struct Body: Encodable {
-            let message: String
-            let history: [[String: String]]
-            let childAge: Int
+            let childId: String
+            let transcript: String
+            let conversationHistory: [[String: String]]
+            let providerId: String?
         }
         return Endpoint(
             path: "/dashy/chat",
             method: .POST,
-            body: Body(message: message, history: history, childAge: 4),
+            body: Body(
+                childId: childId.uuidString.lowercased(),
+                transcript: transcript,
+                conversationHistory: conversationHistory,
+                providerId: providerId
+            ),
             requiresAuth: true
         )
     }

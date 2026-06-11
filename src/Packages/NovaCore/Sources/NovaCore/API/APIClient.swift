@@ -35,8 +35,14 @@ public class APIClient {
         self.tokenProvider = tokenProvider
         self.session = session
 
-        // Configure JSON encoder for snake_case.
-        encoder.keyEncodingStrategy = .convertToSnakeCase
+        // Encode-side contract fix (Jun 10): the backend's zod schemas
+        // are uniformly camelCase, but this encoder converted every body
+        // key to snake_case — silently dropping optional fields and
+        // 400-ing required ones (zod strips unknown keys). `.useDefaultKeys`
+        // emits exactly the Swift property / CodingKey names, which match
+        // the schemas. Do NOT "restore" snake conversion; the auth routes
+        // tolerate both spellings but nothing else does.
+        encoder.keyEncodingStrategy = .useDefaultKeys
         encoder.dateEncodingStrategy = .iso8601
 
         // Decoder is built by the shared factory so the same configuration

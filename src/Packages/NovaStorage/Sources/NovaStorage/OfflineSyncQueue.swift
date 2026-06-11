@@ -83,8 +83,10 @@ public class OfflineSyncQueue {
     ///
     /// - Parameters:
     ///   - apiRouter: The API router to use for syncing.
+    ///   - childId: The child whose interactions these are — required
+    ///     by the backend's syncProgressSchema (contract fix, Jun 10).
     /// - Throws: QueueError or APIError if sync fails.
-    public func flush(using apiRouter: APIRouting) async throws {
+    public func flush(using apiRouter: APIRouting, childId: UUID) async throws {
         // Read queue synchronously to avoid NSLock in async context
         let queue: [CardInteraction] = readQueueSynchronously()
 
@@ -94,7 +96,7 @@ public class OfflineSyncQueue {
 
         // Sync to server (EmptyResponse provides the generic type)
         struct FlushResponse: Decodable {}
-        let _: FlushResponse = try await apiRouter.request(.syncProgress(queue))
+        let _: FlushResponse = try await apiRouter.request(.syncProgress(childId: childId, queue))
 
         // Clear the queue on success (synchronous lock scope)
         clearQueueSynchronously()

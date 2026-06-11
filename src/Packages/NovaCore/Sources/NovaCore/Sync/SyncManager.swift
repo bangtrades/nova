@@ -77,7 +77,7 @@ public class SyncManager: ObservableObject {
     ///
     /// Sends buffered card interactions to the API with retry logic.
     @MainActor
-    public func syncProgress(_ interactions: [CardInteraction]) async throws {
+    public func syncProgress(childId: UUID, _ interactions: [CardInteraction]) async throws {
         syncState = .syncing
         isSyncing = true
         syncError = nil
@@ -85,7 +85,7 @@ public class SyncManager: ObservableObject {
         defer { isSyncing = false }
 
         do {
-            let _: EmptyResponse = try await apiRouter.request(.syncProgress(interactions))
+            let _: EmptyResponse = try await apiRouter.request(.syncProgress(childId: childId, interactions))
             lastSyncDate = Date()
             syncState = .completed(Date())
         } catch {

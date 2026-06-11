@@ -35,6 +35,7 @@ public struct DashyView: View {
     @StateObject private var viewModel: DashyViewModel
     @EnvironmentObject var apiRouter: APIRouter
     @EnvironmentObject var voiceManager: VoiceManager
+    @EnvironmentObject var appState: KidsAppState
 
     @State private var animationState: DashyAnimationState = .idle
     @State private var inputText: String = ""
@@ -140,6 +141,16 @@ public struct DashyView: View {
             }
             .novaNavigationStyle()
             .onAppear {
+                // Contract fix (Jun 10): swap the placeholder router the
+                // VM was constructed with for the real environment
+                // objects + active child id. Without this, every chat
+                // request went to a dead host.
+                viewModel.attach(
+                    apiRouter: apiRouter,
+                    voiceManager: voiceManager,
+                    childId: appState.currentChild?.id
+                )
+
                 // Capture the session start once; subsequent .onAppear firings
                 // (tab re-selection without unmount) do not reset the timer.
                 if sessionStartedAt == nil {

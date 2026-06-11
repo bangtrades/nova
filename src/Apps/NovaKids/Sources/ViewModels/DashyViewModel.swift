@@ -75,8 +75,12 @@ public class DashyViewModel: NSObject, ObservableObject {
 
     // MARK: - Private Properties
 
-    private let apiRouter: APIRouter
-    private let voiceManager: VoiceManager
+    private var apiRouter: APIRouter
+    private var voiceManager: VoiceManager
+
+    /// Active child profile id — required by the backend's dashy
+    /// schema (contract fix, Jun 10). Set via `attach(...)`.
+    private var childId: UUID?
     private let speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
@@ -100,6 +104,18 @@ public class DashyViewModel: NSObject, ObservableObject {
         SFSpeechRecognizer.requestAuthorization { _ in
             // Authorization status updated
         }
+    }
+
+    /// Late-binding wire-up (contract fix, Jun 10). `DashyView` must
+    /// construct this VM in its `init`, before the environment objects
+    /// exist — so it builds it against a PLACEHOLDER router pointed at
+    /// a dead host, then swaps in the real router + voice manager +
+    /// child id here on appear. Without this call, every chat request
+    /// went to `https://api.nova.local` and silently failed.
+    public func attach(apiRouter: APIRouter, voiceManager: VoiceManager, childId: UUID?) {
+        self.apiRouter = apiRouter
+        self.voiceManager = voiceManager
+        self.childId = childId
     }
 
     // MARK: - Public Methods
@@ -221,8 +237,11 @@ public class DashyViewModel: NSObject, ObservableObject {
     /// Kept at type scope (not nested inside `fetchDashyResponse`) so the
     /// Swift 6 decoder doesn't drag an async-context generic binding across
     /// a function body every call.
+    /// Backend wire shape (contract fix, Jun 10): the route returns
+    /// `{ response, emotion, suggestions, conversationId }` — the old
+    /// struct decoded a nonexistent `message` key.
     private struct DashyResponse: Decodable {
-        let message: String
+        let response: String
         let emotion: String?
         let suggestions: [String]?
     }
@@ -232,10 +251,22 @@ public class DashyViewModel: NSObject, ObservableObject {
 
         // Build the history payload in the wire shape the backend expects:
         // an array of `{role, content}` dicts, one per message in the
-        // rolling 10-message window. `dashyChat` takes `[[String: String]]`
-        // because `[String: Any]` isn't `Encodable`.
+        // rolling 10-message window. The backend's role enum is
+        // `user | assistant` — our local "dashy" role maps to assistant
+        // (contract fix, Jun 10).
         let historyPayload: [[String: String]] = conversationHistory.map { message in
-            ["role": message.role, "content": message.content]
+            [
+                "role": message.role == "user" ? "user" : "assistant",
+                "content": message.content,
+            ]
+        }
+
+        // The backend requires the active child id (it loads the child's
+        // guidance + session context for the prompt). No profile → no
+        // chat; surface a kid-safe error instead of a doomed request.
+        guard let childId else {
+            setState(.error("Ask a grown-up to set up your profile first!"))
+            return
         }
 
         do {
@@ -252,7 +283,11 @@ public class DashyViewModel: NSObject, ObservableObject {
             // in a single coordinated commit range alongside the backend
             // service rename — no in-flight skew.
             let response: DashyResponse = try await apiRouter.request(
-                .dashyChat(message: userMessage, history: historyPayload)
+                .dashyChat(
+                    childId: childId,
+                    transcript: userMessage,
+                    conversationHistory: historyPayload
+                )
             )
 
             processingProgress = 0.8
@@ -261,7 +296,7 @@ public class DashyViewModel: NSObject, ObservableObject {
             // when present so the character animation has a signal.
             let dashyMessage = ChatMessage(
                 role: "dashy",
-                content: response.message,
+                content: response.response,
                 emotion: response.emotion
             )
 
@@ -279,7 +314,7 @@ public class DashyViewModel: NSObject, ObservableObject {
             // current narration persona. Single-voice consistency is part
             // of who Dashy is. VoiceManager routes through the backend
             // TTS proxy with shimmer; AVSpeech remains the offline fallback.
-            try await voiceManager.speak(text: response.message, voice: "shimmer")
+            try await voiceManager.speak(text: response.response, voice: "shimmer")
 
             processingProgress = 1.0
             state = .ready

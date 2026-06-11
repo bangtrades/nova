@@ -270,8 +270,9 @@ final class ModelTests: XCTestCase {
     }
 
     func testEndpointAuthentication() {
-        let publicEndpoint = Endpoint.signIn(appleToken: "token123")
+        let publicEndpoint = Endpoint.signIn(appleId: "apple.user.1", identityToken: "token123")
         XCTAssertFalse(publicEndpoint.requiresAuth)
+        XCTAssertEqual(publicEndpoint.path, "/auth/apple")
 
         let protectedEndpoint = Endpoint.getProfile()
         XCTAssertTrue(protectedEndpoint.requiresAuth)

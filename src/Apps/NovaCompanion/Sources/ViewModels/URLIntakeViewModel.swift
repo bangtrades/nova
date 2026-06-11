@@ -91,8 +91,7 @@ public class URLIntakeViewModel: ObservableObject {
         do {
             let generateResponse: GenerateResponse = try await apiRouter.request(
                 .generateCardsFromIngest(
-                    ingestId: UUID(uuidString: analysis.ingestId) ?? UUID(),
-                    stage: .toddler  // Default to toddler; could be configurable
+                    ingestId: UUID(uuidString: analysis.ingestId) ?? UUID()
                 )
             )
 
