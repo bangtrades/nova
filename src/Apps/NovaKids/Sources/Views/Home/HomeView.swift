@@ -1,5 +1,6 @@
 import SwiftUI
 import NovaCore
+import NovaClassroom
 
 private let classroomV2Enabled = true
 

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		003C006B8A6358865F3F53A0 /* NovaStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4016D4D86767E83D36548370 /* NovaStorage */; };
+		00A4E2010000000000000001 /* NovaClassroom in Frameworks */ = {isa = PBXBuildFile; productRef = 00A4E2010000000000000002 /* NovaClassroom */; };
 		016A7E7BA6B750B6B8EF4659 /* Sources/ViewModels/DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F577672B0643F9B68B9CEBE8 /* Sources/ViewModels/DashboardViewModel.swift */; };
 		055F40099791BBF320586AB1 /* Sources/Views/Curriculum/CurriculumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB712A63D74FBC9C1785AACB /* Sources/Views/Curriculum/CurriculumView.swift */; };
 		08BB4C210DEA5B6033293695 /* Sources/Views/Lessons/LessonManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5BD0D18AB8B247F78B9DC9E /* Sources/Views/Lessons/LessonManagerView.swift */; };
@@ -131,7 +132,6 @@
 		DE51617100000011000000B7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */; };
 		DE51617100000011000000B8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */; };
 		DE51617100000011000000B9 /* Sources/Views/Dashy/DashySpeechBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */; };
-		DE51617100000011000000BA /* Sources/Views/Classroom/ClassroomSceneModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */; };
 		DE51617100000011000000BB /* Sources/Views/Classroom/ClassroomSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */; };
 		DE51617100000011000000BC /* Sources/Views/Classroom/ClassroomObjectButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */; };
 		DE51617100000011000000BD /* Sources/Views/Classroom/ClassroomBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51617100000011000000CD /* Sources/Views/Classroom/ClassroomBackgroundView.swift */; };
@@ -164,7 +164,6 @@
 		DE51617100000011000000C7 /* Sources/Views/Trophies/BadgeUnlockBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Trophies/BadgeUnlockBurst.swift; sourceTree = "<group>"; };
 		DE51617100000011000000C8 /* Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Common/DesignSystem/NovaNavigationStyle.swift; sourceTree = "<group>"; };
 		DE51617100000011000000C9 /* Sources/Views/Dashy/DashySpeechBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Dashy/DashySpeechBubble.swift; sourceTree = "<group>"; };
-		DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomSceneModel.swift; sourceTree = "<group>"; };
 		DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomSceneView.swift; sourceTree = "<group>"; };
 		DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomObjectButton.swift; sourceTree = "<group>"; };
 		DE51617100000011000000CD /* Sources/Views/Classroom/ClassroomBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Views/Classroom/ClassroomBackgroundView.swift; sourceTree = "<group>"; };
@@ -305,6 +304,7 @@
 				2F2421A1715D50703CEAD01B /* NovaAuth in Frameworks */,
 				52CC759A7D822C0DF53F7974 /* NovaVoice in Frameworks */,
 				003C006B8A6358865F3F53A0 /* NovaStorage in Frameworks */,
+				00A4E2010000000000000001 /* NovaClassroom in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,7 +368,6 @@
 				DE51617100000011000000CF /* Sources/Views/Classroom/ClassroomLessonLibraryView.swift */,
 				DE51617100000022000000C1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift */,
 				DE51617100000011000000CC /* Sources/Views/Classroom/ClassroomObjectButton.swift */,
-				DE51617100000011000000CA /* Sources/Views/Classroom/ClassroomSceneModel.swift */,
 				DE51617100000011000000CB /* Sources/Views/Classroom/ClassroomSceneView.swift */,
 				C74E8C5A4EDD853DD14B581D /* Sources/Views/Common/EmptyStateView.swift */,
 				D878CA0EFD93CECBCDDEC489 /* Sources/Views/Home/EnhancedHomeView.swift */,
@@ -518,10 +517,11 @@
 			);
 			name = NovaKids;
 			packageProductDependencies = (
-				A9834D3C9A96E6587B8070D4 /* NovaCore */,
-				32A1016D67A7E20E7EA68929 /* NovaAuth */,
-				5E3338B7C7592FB6D0D6425A /* NovaVoice */,
-				4016D4D86767E83D36548370 /* NovaStorage */,
+					A9834D3C9A96E6587B8070D4 /* NovaCore */,
+					32A1016D67A7E20E7EA68929 /* NovaAuth */,
+					5E3338B7C7592FB6D0D6425A /* NovaVoice */,
+					4016D4D86767E83D36548370 /* NovaStorage */,
+					00A4E2010000000000000002 /* NovaClassroom */,
 			);
 			productName = NovaKids;
 			productReference = AA000000000000000000AA01 /* NovaKids.app */;
@@ -683,7 +683,6 @@
 				DE51617100000022000000B1 /* Sources/Views/Classroom/ClassroomLibraryArtSlot.swift in Sources */,
 				DE51617100000023000000B1 /* Sources/Views/Trophies/ClassroomRewardArtSlot.swift in Sources */,
 				DE51617100000011000000BC /* Sources/Views/Classroom/ClassroomObjectButton.swift in Sources */,
-				DE51617100000011000000BA /* Sources/Views/Classroom/ClassroomSceneModel.swift in Sources */,
 				DE51617100000011000000BB /* Sources/Views/Classroom/ClassroomSceneView.swift in Sources */,
 				DE51617100000012000000B1 /* Sources/Views/Flipbook/ChalkboardLessonCardSurface.swift in Sources */,
 			);
@@ -927,6 +926,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		00A4E2010000000000000002 /* NovaClassroom */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NovaClassroom;
+		};
 		2A56072A95B4D7F45FD41361 /* NovaAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NovaAuth;

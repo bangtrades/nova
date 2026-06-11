@@ -1,4 +1,5 @@
 import SwiftUI
+import NovaClassroom
 
 /// Top-level classroom scene view.
 ///

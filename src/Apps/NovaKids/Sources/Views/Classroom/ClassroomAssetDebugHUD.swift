@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import UIKit
+import NovaClassroom
 
 /// Developer-only asset readiness HUD for the classroom scene.
 ///

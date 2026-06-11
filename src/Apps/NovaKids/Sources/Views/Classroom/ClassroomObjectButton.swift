@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import NovaClassroom
 
 public struct ClassroomObjectButton: View {
     let object: ClassroomObject

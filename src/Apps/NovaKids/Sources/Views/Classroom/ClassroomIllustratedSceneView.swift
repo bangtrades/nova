@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import NovaClassroom
 
 /// Image-backed 2.5D classroom scene.
 ///

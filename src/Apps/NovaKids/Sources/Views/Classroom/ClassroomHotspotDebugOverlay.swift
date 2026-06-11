@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import NovaClassroom
 
 /// Dev-only overlay that visualizes the classroom-home hotspot
 /// rectangles **and** the reserved zones from the 2.5D art contract on
