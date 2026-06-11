@@ -65,17 +65,30 @@ public class AuthViewModel: ObservableObject {
         self.currentUser = self.authManager.currentUser
     }
 
-    /// Signs in with Apple using the user identifier.
+    /// Signs in with Apple using the credential fields.
     ///
     /// - Parameters:
     ///   - userIdentifier: The Apple user ID from ASAuthorizationAppleIDCredential.user
-    public func signInWithApple(userIdentifier: String) async {
+    ///   - identityToken: Apple's identity JWT, UTF-8 decoded.
+    ///   - displayName: Formatted full name (first authorization only).
+    ///   - email: Email (first authorization only).
+    public func signInWithApple(
+        userIdentifier: String,
+        identityToken: String,
+        displayName: String? = nil,
+        email: String? = nil
+    ) async {
         isLoading = true
         error = nil
 
         defer { isLoading = false }
 
-        await authManager.signInWithApple(credential: userIdentifier)
+        await authManager.signInWithApple(
+            appleId: userIdentifier,
+            identityToken: identityToken,
+            displayName: displayName,
+            email: email
+        )
 
         // Update published state
         isAuthenticated = authManager.isAuthenticated

@@ -12,16 +12,48 @@ import { tokenBlacklistService } from '@services/tokenBlacklist';
 import type { TokenPayload } from '@types';
 
 // Schema definitions
-const appleSignInSchema = z.object({
-  identityToken: z.string().min(1, 'Identity token is required'),
-  appleId: z.string().min(1, 'Apple ID is required'),
-  displayName: z.string().optional(),
-  email: z.string().email().optional(),
-});
 
-const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
-});
+// Tolerant-reader key normalization: iOS's APIClient encodes bodies
+// with `.convertToSnakeCase`, so the wire carries `identity_token` /
+// `apple_id` / `refresh_token` while these schemas are camelCase.
+// Promote the snake spelling when the camel key is absent — same
+// tolerant-reader posture as the empty-body parser and the iOS
+// QuizOption dual-shape decode. (The long-term fix is one consistent
+// key convention across the seam; until then both spellings are valid.)
+const promoteSnakeCaseKeys = (body: unknown): unknown => {
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const o = body as Record<string, unknown>;
+    const aliases: Record<string, string> = {
+      identity_token: 'identityToken',
+      apple_id: 'appleId',
+      display_name: 'displayName',
+      refresh_token: 'refreshToken',
+    };
+    for (const [snake, camel] of Object.entries(aliases)) {
+      if (o[snake] !== undefined && o[camel] === undefined) {
+        o[camel] = o[snake];
+      }
+    }
+  }
+  return body;
+};
+
+const appleSignInSchema = z.preprocess(
+  promoteSnakeCaseKeys,
+  z.object({
+    identityToken: z.string().min(1, 'Identity token is required'),
+    appleId: z.string().min(1, 'Apple ID is required'),
+    displayName: z.string().optional(),
+    email: z.string().email().optional(),
+  })
+);
+
+const refreshTokenSchema = z.preprocess(
+  promoteSnakeCaseKeys,
+  z.object({
+    refreshToken: z.string().min(1, 'Refresh token is required'),
+  })
+);
 
 const revokeTokenSchema = z.object({
   token: z.string().min(1, 'Token is required'),

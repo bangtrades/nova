@@ -49,15 +49,34 @@ public struct Endpoint {
 
     // MARK: - Auth Endpoints
 
-    /// Sign in with Apple token.
-    public static func signIn(appleToken: String) -> Endpoint {
+    /// Sign in with Apple.
+    ///
+    /// Contract fix (Jun 10): the route is the backend's `/auth/apple`
+    /// (the old `/auth/signin` never existed server-side), and the body
+    /// carries the full credential set its zod schema requires. The
+    /// snake_case wire keys produced by APIClient's encoder are accepted
+    /// by the backend's tolerant-reader schema.
+    public static func signIn(
+        appleId: String,
+        identityToken: String,
+        displayName: String? = nil,
+        email: String? = nil
+    ) -> Endpoint {
         struct Body: Encodable {
-            let token: String
+            let identityToken: String
+            let appleId: String
+            let displayName: String?
+            let email: String?
         }
         return Endpoint(
-            path: "/auth/signin",
+            path: "/auth/apple",
             method: .POST,
-            body: Body(token: appleToken),
+            body: Body(
+                identityToken: identityToken,
+                appleId: appleId,
+                displayName: displayName,
+                email: email
+            ),
             requiresAuth: false
         )
     }
@@ -65,12 +84,12 @@ public struct Endpoint {
     /// Refresh access token using refresh token.
     public static func refreshToken(refreshToken: String) -> Endpoint {
         struct Body: Encodable {
-            let refresh_token: String
+            let refreshToken: String
         }
         return Endpoint(
             path: "/auth/refresh",
             method: .POST,
-            body: Body(refresh_token: refreshToken),
+            body: Body(refreshToken: refreshToken),
             requiresAuth: false
         )
     }

@@ -77,16 +77,39 @@ public class AuthManager: ObservableObject, TokenProvider {
 
     // MARK: - Authentication Methods
 
-    /// Signs in with an Apple ID credential token.
+    /// Signs in with an Apple ID credential.
+    ///
+    /// Contract fix (Jun 10): posts to the backend's actual route
+    /// (`/auth/apple`) with the credential fields its schema requires,
+    /// and decodes the camelCase response (the old `SignInResponse`
+    /// expected snake_case keys and a full `User` with `createdAt`,
+    /// neither of which the backend ships).
     ///
     /// - Parameters:
-    ///   - credential: The Apple ID credential (user ID token string).
+    ///   - appleId: `ASAuthorizationAppleIDCredential.user` — the stable
+    ///     Apple user identifier.
+    ///   - identityToken: Apple's identity JWT, UTF-8 decoded.
+    ///   - displayName: Formatted full name — Apple provides it on
+    ///     first authorization only.
+    ///   - email: Same first-authorization-only caveat.
     @MainActor
-    public func signInWithApple(credential: String) async {
+    public func signInWithApple(
+        appleId: String,
+        identityToken: String,
+        displayName: String? = nil,
+        email: String? = nil
+    ) async {
         authState = .authenticating
 
         do {
-            let response: SignInResponse = try await apiClient.request(.signIn(appleToken: credential))
+            let response: AuthTokenResponse = try await apiClient.request(
+                .signIn(
+                    appleId: appleId,
+                    identityToken: identityToken,
+                    displayName: displayName,
+                    email: email
+                )
+            )
 
             // Store tokens
             await updateTokens(
@@ -94,10 +117,16 @@ public class AuthManager: ObservableObject, TokenProvider {
                 refreshToken: response.refreshToken
             )
 
-            // Update state
-            currentUser = response.user
+            let user = User(
+                id: response.user.id,
+                appleId: appleId,
+                email: response.user.email,
+                displayName: response.user.displayName,
+                createdAt: Date()
+            )
+            currentUser = user
             isAuthenticated = true
-            authState = .authenticated(response.user)
+            authState = .authenticated(user)
         } catch let error as APIError {
             authState = .error(error)
             isAuthenticated = false
@@ -109,17 +138,24 @@ public class AuthManager: ObservableObject, TokenProvider {
     }
 
     /// Refreshes the access token using the refresh token.
+    ///
+    /// Contract fix (Jun 10): the backend rotates BOTH tokens on
+    /// refresh — the old code stored the new access token but kept the
+    /// stale refresh token, which dies on the second refresh cycle.
     @MainActor
     public func refreshToken() async throws {
         guard let refreshToken = await self.refreshToken else {
             throw APIError.unauthorized
         }
 
-        let response: TokenResponse = try await apiClient.request(
+        let response: AuthTokenResponse = try await apiClient.request(
             .refreshToken(refreshToken: refreshToken)
         )
 
-        await updateTokens(accessToken: response.accessToken, refreshToken: refreshToken)
+        await updateTokens(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken
+        )
     }
 
     /// Signs out the current user, clearing all auth state.
@@ -155,7 +191,7 @@ public class AuthManager: ObservableObject, TokenProvider {
         authState = .authenticating
 
         do {
-            let response: DevBypassResponse = try await apiClient.request(.devBypass())
+            let response: AuthTokenResponse = try await apiClient.request(.devBypass())
 
             await updateTokens(
                 accessToken: response.accessToken,
@@ -226,39 +262,17 @@ public enum AuthState {
 
 // MARK: - Response Models
 
-/// Response from sign-in endpoint.
-private struct SignInResponse: Decodable {
-    let accessToken: String
-    let refreshToken: String
-    let user: User
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
-        case user
-    }
-}
-
-/// Response from token refresh endpoint.
-private struct TokenResponse: Decodable {
-    let accessToken: String
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-    }
-}
-
 /// Empty response for endpoints that don't return data.
 private struct EmptyResponse: Decodable {}
 
-/// Response from the dev-bypass endpoint (S14-VOX-02). Keyed to the
-/// backend's actual camelCase wire shape (which passes through the
-/// `.convertFromSnakeCase` decoder unchanged); the user payload is
-/// minimal — `{ id, displayName, email? }` — so it gets its own type
-/// rather than forcing a full `User` decode that would fail on the
-/// missing `createdAt`.
-private struct DevBypassResponse: Decodable {
-    struct DevUser: Decodable {
+/// The backend's `AuthResponse` — one shape for `/auth/apple`,
+/// `/auth/refresh`, and `/auth/dev-bypass`. Keyed to the actual
+/// camelCase wire (passes through the `.convertFromSnakeCase` decoder
+/// unchanged); the user payload is minimal — `{ id, displayName,
+/// email? }` — so it gets its own type rather than forcing a full
+/// `User` decode that would fail on the missing `createdAt`.
+private struct AuthTokenResponse: Decodable {
+    struct AuthUser: Decodable {
         let id: UUID
         let displayName: String
         let email: String?
@@ -266,5 +280,5 @@ private struct DevBypassResponse: Decodable {
 
     let accessToken: String
     let refreshToken: String
-    let user: DevUser
+    let user: AuthUser
 }

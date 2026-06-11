@@ -138,8 +138,23 @@ public struct KidsLoginView: View {
                 // Get the user identifier (required for COPPA)
                 let userIdentifier = appleIDCredential.user
 
+                // Contract fix (Jun 10): the backend's /auth/apple also
+                // requires the identity token; name + email only arrive
+                // on the FIRST authorization, so pass them when present.
+                let identityToken = appleIDCredential.identityToken
+                    .flatMap { String(data: $0, encoding: .utf8) } ?? ""
+                let displayName = appleIDCredential.fullName.map {
+                    PersonNameComponentsFormatter().string(from: $0)
+                }
+                let email = appleIDCredential.email
+
                 Task {
-                    await viewModel.signInWithApple(userIdentifier: userIdentifier)
+                    await viewModel.signInWithApple(
+                        userIdentifier: userIdentifier,
+                        identityToken: identityToken,
+                        displayName: displayName?.isEmpty == false ? displayName : nil,
+                        email: email
+                    )
                 }
             }
 
