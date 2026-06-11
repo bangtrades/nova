@@ -132,6 +132,10 @@ public struct LessonsView: View {
                 icon: "sparkles"
             )
             .frame(minHeight: 400)
+            // V2-S4-F2: voiced empty state. Distinct screen key from
+            // "lessons" so the kid hears the why-it's-empty line, not
+            // the pick-a-lesson line, when the grid has nothing in it.
+            .narrate("lessonsEmpty")
         } else {
             MasonryGrid(
                 items: viewModel.filteredLessons,

@@ -108,12 +108,17 @@ public struct TrophyRoomView: View {
                 viewModel.attach(apiRouter: apiRouter, childId: appState.currentChild?.id)
                 await viewModel.loadBadges()
             }
-            // S14-VF-02: kid hears "Look at all your trophies! Tap one
-            // to remember what you learned." Empty-state variant is
-            // resolved at the surface level (see condition below or in
-            // future polish — for now the trophy-room line covers both
-            // populated and empty rooms with a single message).
-            .narrate("trophyRoom")
+            // S14-VF-02 + V2-S4-F2: kid hears "Look at all your
+            // trophies!" when there's something on the shelf, and the
+            // why-it's-empty line ("Finish a lesson to earn your first
+            // one") when there isn't. Keyed on the local completion
+            // store, so the answer is available synchronously on
+            // appear — no async badge fetch to race.
+            .narrate(
+                completionStore.trophies(for: appState.currentChild?.id).isEmpty
+                    ? "trophyRoomEmpty"
+                    : "trophyRoom"
+            )
         }
     }
 

@@ -195,6 +195,10 @@ public struct HomeView: View {
                     subtitle: "Ask a grown-up to add a lesson.",
                     icon: "sparkles"
                 )
+                // V2-S4-F2: voiced empty state — a pre-literate kid who
+                // taps the chalkboard with no lesson queued hears why
+                // it's empty instead of reading silent text.
+                .narrate("homeEmpty")
             }
         case .lesson(let lessonId):
             if let lesson = lesson(matching: lessonId) {
@@ -205,6 +209,7 @@ public struct HomeView: View {
                     subtitle: "Ask a grown-up to refresh your classroom.",
                     icon: "sparkles"
                 )
+                .narrate("lessonNotFound")
             }
         case .lessonLibrary:
             ClassroomLessonLibraryView(
@@ -232,6 +237,7 @@ public struct HomeView: View {
                 subtitle: message,
                 icon: "sparkles"
             )
+            .narrate("comingSoon")
         }
     }
 

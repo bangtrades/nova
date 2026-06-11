@@ -106,7 +106,7 @@ The two May 11 audit slices (`v2-beta-kid-flow-and-art-import-risk-audit`, `v2-c
 | ID | Story | Pts | Status | Notes |
 |---|---|---:|:---:|---|
 | V2-S4-F1 | Kid-flow hit-target audit | 3 | ✅ | Audit-only slice (May 22 batch) — every primary classroom-home object already met the 88×88pt floor, reduce-motion gated. Zero code change. Run summary: `sprint-runs/V2-S4-fixpack-2026-05-22.md`. |
-| V2-S4-F2 | Kid-safe fallback / error copy | 2 | 🟡 | Bookshelf empty state done (May 22 batch) — kid-safe copy + voiced `classroomBookshelfEmpty` line. **Gap:** error states + `homeEmpty`/`lessonsEmpty`/`trophyRoomEmpty` registry cases not yet reviewed → follow-up slice. Uncommitted. |
+| V2-S4-F2 | Kid-safe fallback / error copy | 2 | ✅ | Bookshelf empty state done (May 22 batch). **Completed Jun 10:** `ClassroomErrorBanner` now displays + narrates kid-safe registry lines at all 5 call sites (technical message preserved for VoiceOver); `homeEmpty`/`lessonsEmpty`/`trophyRoomEmpty` wired; `lessonNotFound`/`comingSoon` added. Run: `sprint-runs/V2-S4-F2-completion-2026-06-10.md`. |
 | V2-S4-F3 | Experiment-card affordance clarity | 3 | ✅ | Done (May 22 batch) — finger-tap badge, lift shadow, breathing pulse on draggables; underglow + thicker stroke + bobbing filled-arrow on drop targets; every motion cue has a static reduce-motion fallback. +113 LOC. Uncommitted, pending Mac build verify. |
 | V2-S4-F4 | Post-art iPad verification pass | 2 | ⬜ | After art lands: full device walkthrough, both orientations, reduce-motion, VoiceOver. Gated on V2-S4-02. Fold in an F1 hit-target spot-check. |
 
@@ -156,7 +156,7 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 | Item | Origin | Notes |
 |---|---|---|
 | ~~Scene-model test packaging decision~~ → **resolved May 22** | V2-S1-02 / V2-S2-02 | Decision taken: extract. `ClassroomSceneModel` moved into a new `NovaClassroom` SPM package (`src/Packages/NovaClassroom/`); the symlink package deleted; the 35 tests now run as `NovaClassroomTests` on the build graph. Remaining: one Xcode step on bang's Mac to wire NovaClassroom as a NovaKids target dependency (see Delivery Notes). |
-| F2 error states + remaining `*Empty` registry cases | V2-S4-F2 (May 22 batch) | F2 covered the bookshelf empty state only. Error states + `homeEmpty`/`lessonsEmpty`/`trophyRoomEmpty` unreviewed → follow-up slice. |
+| ~~F2 error states + remaining `*Empty` registry cases~~ → **resolved Jun 10** | V2-S4-F2 (May 22 batch) | Closed by the F2-completion slice: error banners kid-safe + voiced everywhere, all three `*Empty` registry cases wired. See `sprint-runs/V2-S4-F2-completion-2026-06-10.md`. |
 | `classroomCardStage` dead code | V2-S3 rework | Superseded by `LessonBookReaderShell`; not removed. |
 | `EnhancedHomeView` orphaned | V2-S2 (live Home moved to `ClassroomSceneView`) | Referenced only in a `#Preview`. The S14-VF `.narrate("home")` call site sits on it, dead. |
 | `classroomV2Enabled` hard-coded `true` | V2-S1-06 | No tested rollback to legacy Home. |
@@ -191,6 +191,16 @@ Four file-disjoint agent slices ran in parallel while the art catalog was genera
 - **V2-S1-02 / V2-S2-02** 🟡 — 35 `ClassroomSceneModel` unit tests delivered, but via a symlinked SPM package off the app build graph — **drift; needs a packaging decision** (recommend extracting `ClassroomSceneModel` into a real SPM package).
 
 **Status:** all four delivered to the working tree, **uncommitted** — review checkpoint. Agent `BUILD SUCCEEDED` / 35-tests-pass claims are **unverified** (no Xcode in the sandbox); Mac-side build + `swift test` is the gate before commit. **Process change:** future agent slice briefs must include the slice-report instruction (see the run summary's "Slice-report protocol" section) so slices self-document instead of evaporating into chat recaps.
+
+### V2-S4-F2 completion — kid-safe error states + empty-state wiring (Jun 10)
+
+Single slice, executed directly by the session lead on the Mac (no agent
+dispatch). Closes the F2 carry-debt row. Full report:
+[`sprint-runs/V2-S4-F2-completion-2026-06-10.md`](./sprint-runs/V2-S4-F2-completion-2026-06-10.md).
+
+- **Error states** — `ClassroomErrorBanner` now resolves a kid-safe line from the `NavigationScript` registry via its existing `context` param, displays it (raw `errorDescription` no longer reaches the kid), narrates it on appear (60s per-context cooldown, mute-respecting), and keeps the technical message in the VoiceOver announcement. All 5 call sites covered with zero signature changes; unknown contexts fall back to a generic voiced line rather than silence.
+- **Empty registry wiring** — `homeEmpty` (chalkboard tap, no lesson), `lessonsEmpty` (empty grid), `trophyRoomEmpty` (zero earned trophies, state-conditional with `trophyRoom`), plus new `lessonNotFound` / `comingSoon` cases for the previously-silent HomeView fallbacks.
+- **Validation:** Mac `xcodebuild` BUILD SUCCEEDED. Device pass folds into V2-S4-F4 per plan.
 
 ### ClassroomSceneModel extracted into the NovaClassroom package (May 22)
 

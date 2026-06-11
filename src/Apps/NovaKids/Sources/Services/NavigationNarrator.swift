@@ -194,9 +194,37 @@ public enum NavigationScript {
             return "No lessons here yet! Ask a grown-up to add some."
         case "trophyRoomEmpty":
             return "No trophies yet! Finish a lesson to earn your first one."
+        case "lessonNotFound":
+            return "Hmm, I can't find that lesson. Ask a grown-up to refresh your classroom."
+        case "comingSoon":
+            return "This part isn't built yet. Come back soon!"
+        // V2-S4-F2 — error lines. Keyed "<context>Error" to match the
+        // `context` strings callers already pass to ClassroomErrorBanner
+        // ("home" / "lessons" / "trophies" / "cards"), so the banner can
+        // resolve its kid-safe line from its existing parameter.
+        case "homeError":
+            return "Oops! The classroom got stuck. Let's try again!"
+        case "lessonsError":
+            return "Oops! The lessons got stuck. Let's try again!"
+        case "trophiesError":
+            return "Oops! The trophy shelf got stuck. Let's try again!"
+        case "cardsError":
+            return "Oops! This lesson got stuck. Let's try again!"
+        case "classroomError":
+            return "Oops! Something got stuck. Let's try again!"
         default:
             return nil
         }
+    }
+
+    /// Kid-safe error line for a `ClassroomErrorBanner` context
+    /// ("home", "lessons", "trophies", "cards", …). Falls back to the
+    /// generic classroom error line for contexts without a bespoke one,
+    /// so new surfaces are voiced from day one.
+    public static func errorLine(forContext context: String) -> String {
+        line(for: "\(context)Error")
+            ?? line(for: "classroomError")
+            ?? "Oops! Something got stuck. Let's try again!"
     }
 
     /// Dynamic-script variants — caller supplies the data, registry
