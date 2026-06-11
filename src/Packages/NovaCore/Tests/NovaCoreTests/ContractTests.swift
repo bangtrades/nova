@@ -293,10 +293,20 @@ final class ContractTests: XCTestCase {
     /// second payload. If a future refactor "simplifies" the production
     /// decoder back to `.iso8601`, `testLessonsListDecodesFromRealBackendPayload`
     /// above goes red — this test explains the failure to whoever reads it.
-    func testStrictISO8601StrategyRejectsRealBackendDates() {
+    ///
+    /// Runtime caveat: newer Foundation (observed on macOS 26 hosts)
+    /// accepts fractional seconds under strict `.iso8601`, so the trap
+    /// only springs on the OS versions our users actually run. Skip —
+    /// don't fail — where the runtime is lenient; the A/B test below
+    /// still pins the production decoder either way.
+    func testStrictISO8601StrategyRejectsRealBackendDates() throws {
         let strict = JSONDecoder()
         strict.keyDecodingStrategy = .convertFromSnakeCase
         strict.dateDecodingStrategy = .iso8601 // the trap — do NOT use in production
+
+        if (try? strict.decode(PaginatedResponse<Lesson>.self, from: Data(lessonsJSON.utf8))) != nil {
+            throw XCTSkip("This runtime's strict .iso8601 accepts fractional seconds; canary not applicable here.")
+        }
 
         XCTAssertThrowsError(
             try strict.decode(PaginatedResponse<Lesson>.self, from: Data(lessonsJSON.utf8)),

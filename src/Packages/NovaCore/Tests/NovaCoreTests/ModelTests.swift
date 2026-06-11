@@ -92,8 +92,8 @@ final class ModelTests: XCTestCase {
         var content = Card.CardContent(title: "Test Card")
         content.question = "What is AI?"
         content.options = [
-            Card.CardContent.QuizOption(id: "1", text: "Artificial Intelligence"),
-            Card.CardContent.QuizOption(id: "2", text: "Automated Integration"),
+            Card.QuizOption(id: "1", text: "Artificial Intelligence"),
+            Card.QuizOption(id: "2", text: "Automated Integration"),
         ]
         content.correctOptionIndex = 0
 
