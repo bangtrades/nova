@@ -454,10 +454,18 @@ private struct DraggableItemView: View {
 
             VStack(spacing: 4) {
                 if let imageURL = item.imageURL {
-                    LazyImageView(
-                        url: imageURL,
-                        placeholder: Image(systemName: "photo")
-                    )
+                    // Tiny tile art — cap the decode at 128px so a large
+                    // source URL can't balloon memory (V2-S4-06).
+                    LazyImageView(url: imageURL, maxPixelSize: 128) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFill()
+                        } else {
+                            Image(systemName: "photo")
+                                .resizable()
+                                .scaledToFill()
+                                .foregroundStyle(.gray)
+                        }
+                    }
                     .frame(height: 32)
                 } else {
                     Image(systemName: "cube.fill")

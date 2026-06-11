@@ -95,7 +95,7 @@ The current sprint. Started ~May 11. **Art-asset generation (V2-S4-02) is the ga
 | V2-S4-03 | Age profile visual variants | 6 | ✅ | Age-band routing live — `.classroom45` / `.makerLab67` / `.aiStudio8Plus`. 8+ falls back to maker-lab profile until 8+ art ships. |
 | V2-S4-04 | Parent-safe controls | 4 | 🟡 | Voice picker / mute / settings present; "visually adult-coded, not a primary child object" treatment not fully verified. |
 | V2-S4-05 | Classroom sound + reaction pass | 5 | ✅ | **Jun 10:** `ClassroomTapBurst` sparkle spray added to primary object taps in both render paths (reaction triple complete: bounce + haptic + burst); all 20 `repeatForever` ambient sites audited RM-gated. No audio SFX — no sound-asset catalog exists; flagged as a potential new asset lane. Run: `sprint-runs/V2-S4-05-sound-reaction-2026-06-10.md`. |
-| V2-S4-06 | Performance pass | 4 | 🟡 | May 11 perf-audit slice ran (`v2-classroom-swiftui-performance-code-audit` — "no P0 blocker"). Recommended caching + downsampling **not yet applied.** |
+| V2-S4-06 | Performance pass | 4 | ✅ | **Jun 10:** audit recs applied — art-slot caching verified already-landed; trophy `DateFormatter`s cached; `ImageLoader` rebuilt with off-main one-pass ImageIO decode+downsample; all 3 `AsyncImage` sites converted to capped `LazyImageView`. Device Instruments pass folds into V2-S4-F4. Run: `sprint-runs/V2-S4-06-performance-2026-06-10.md`. |
 | V2-S4-07 | Kid test 2 | 4 | ⬜ | Blocked on art — a kid test against shape-placeholders tests plumbing, not the experience. Run after art integration. |
 | V2-S4-08 | Release decision + cleanup | 5 | ⬜ | Decide whether classroom replaces Home by default (currently hard-`true`). Document known issues + screenshots for TestFlight. |
 
@@ -160,7 +160,7 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 | `classroomCardStage` dead code | V2-S3 rework | Superseded by `LessonBookReaderShell`; not removed. |
 | `EnhancedHomeView` orphaned | V2-S2 (live Home moved to `ClassroomSceneView`) | Referenced only in a `#Preview`. The S14-VF `.narrate("home")` call site sits on it, dead. |
 | `classroomV2Enabled` hard-coded `true` | V2-S1-06 | No tested rollback to legacy Home. |
-| Performance recommendations unapplied | V2-S4-06 | Caching + downsampling from the May 11 perf audit. |
+| ~~Performance recommendations unapplied~~ → **resolved Jun 10** | V2-S4-06 | Formatter caching + off-main ImageIO downsampling applied; art-slot caching was already in place. See `sprint-runs/V2-S4-06-performance-2026-06-10.md`. |
 | `architecture.mermaid` was stale | pre-existing | Fixed May 22 alongside this tracker. |
 
 ---
@@ -191,6 +191,16 @@ Four file-disjoint agent slices ran in parallel while the art catalog was genera
 - **V2-S1-02 / V2-S2-02** 🟡 — 35 `ClassroomSceneModel` unit tests delivered, but via a symlinked SPM package off the app build graph — **drift; needs a packaging decision** (recommend extracting `ClassroomSceneModel` into a real SPM package).
 
 **Status:** all four delivered to the working tree, **uncommitted** — review checkpoint. Agent `BUILD SUCCEEDED` / 35-tests-pass claims are **unverified** (no Xcode in the sandbox); Mac-side build + `swift test` is the gate before commit. **Process change:** future agent slice briefs must include the slice-report instruction (see the run summary's "Slice-report protocol" section) so slices self-document instead of evaporating into chat recaps.
+
+### V2-S4-06 — performance pass (Jun 10)
+
+Single slice, lead-executed. Full report:
+[`sprint-runs/V2-S4-06-performance-2026-06-10.md`](./sprint-runs/V2-S4-06-performance-2026-06-10.md).
+
+- **Rec #1 (art-slot caching)** — verified already-landed in all three slot enums; the tracker's "not yet applied" was stale.
+- **Rec #2 (formatters)** — `BadgeView` + `BadgeDetailSheet` now use static cached `DateFormatter`s.
+- **Rec #3 (downsampling)** — `ImageLoader` rebuilt: off-main one-pass `CGImageSourceCreateThumbnailAtIndex` decode+downsample (the old path decoded full-res on main *and* stretched aspect into 800×800); `LazyImageView` is phase-based with per-site `maxPixelSize` caps; all three `AsyncImage` sites (card hero 1600px, trophy tile 300px, celebration 400px) converted; cache keyed by URL+cap.
+- **Validation:** Mac build green. Hardware Instruments pass folds into V2-S4-F4 per the audit's follow-up #4.
 
 ### V2-S4-05 — sound + reaction pass (Jun 10)
 

@@ -359,15 +359,15 @@ public struct LessonCompleteCelebration: View {
             // Trophy art — lesson's hero image, or sticker fallback.
             Group {
                 if let url = heroImageURL {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
+                    // V2-S4-06: off-main decode, capped at 400px for the
+                    // 200pt trophy circle; usually a cache hit since the
+                    // card deck already decoded this hero.
+                    LazyImageView(url: url, maxPixelSize: 400) { phase in
+                        if case .success(let image) = phase {
                             image
                                 .resizable()
                                 .scaledToFill()
-                        case .empty, .failure:
-                            trophyPlaceholder
-                        @unknown default:
+                        } else {
                             trophyPlaceholder
                         }
                     }

@@ -161,13 +161,12 @@ public struct TrophyRoomView: View {
                 Group {
                     if let urlString = trophy.lessonHeroImageURL,
                        let url = URL(string: urlString) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
+                        // V2-S4-06: off-main decode, capped at 300px for
+                        // the small shelf tile, memory-cached on re-scroll.
+                        LazyImageView(url: url, maxPixelSize: 300) { phase in
+                            if case .success(let image) = phase {
                                 image.resizable().scaledToFill()
-                            case .empty, .failure:
-                                trophyPlaceholder
-                            @unknown default:
+                            } else {
                                 trophyPlaceholder
                             }
                         }
@@ -956,10 +955,16 @@ private struct BadgeDetailSheet: View {
         Int((Float(item.badge.criteria.count) * item.progress).rounded())
     }
 
-    private func formatDate(_ date: Date) -> String {
+    /// Static cached formatter (V2-S4-06) — avoids re-allocating a
+    /// `DateFormatter` on every badge-sheet recomputation.
+    private static let earnedDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formatDate(_ date: Date) -> String {
+        Self.earnedDateFormatter.string(from: date)
     }
 }
 

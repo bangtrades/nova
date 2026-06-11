@@ -1,97 +1,141 @@
 import SwiftUI
 import UIKit
+import ImageIO
 
 // MARK: - Lazy Image View
 
-/// Async image loading with caching, downsampling, and fade-in.
-public struct LazyImageView: View {
+/// Loading phase reported to `LazyImageView`'s content closure.
+/// Mirrors the `AsyncImage.phase` shape so converting a call site is a
+/// rename, not a redesign.
+public enum LazyImagePhase {
+    case loading
+    case success(Image)
+    case failure
+}
+
+/// Async image loading with memory caching and **off-main** decode +
+/// downsample (V2-S4-06).
+///
+/// Drop-in replacement for `AsyncImage` on kid surfaces. The difference
+/// that matters: `AsyncImage` decodes the full-resolution payload on
+/// whatever thread Swift picks and keeps the full bitmap in memory.
+/// This view routes through `ImageLoader`, which decodes and
+/// downsamples in **one pass** via `CGImageSourceCreateThumbnailAtIndex`
+/// on the cooperative pool — the main actor only ever sees the final,
+/// already-decoded, capped-size `UIImage`. Repeat requests for the same
+/// URL hit an `NSCache` and render synchronously.
+///
+/// `maxPixelSize` caps the decoded bitmap's longest side. Size it to
+/// the rendered frame (e.g. 600 for a small trophy tile, 1600 for a
+/// full-width hero) — memory cost scales with the square of this value.
+public struct LazyImageView<Content: View>: View {
     let url: URL?
-    let placeholder: Image
+    let maxPixelSize: CGFloat
+    @ViewBuilder let content: (LazyImagePhase) -> Content
 
-    @StateObject private var loader = ImageLoader()
-    @State private var image: UIImage?
+    @State private var phase: LazyImagePhase = .loading
 
-    public init(url: URL?, placeholder: Image = Image(systemName: "photo")) {
+    public init(
+        url: URL?,
+        maxPixelSize: CGFloat = 1600,
+        @ViewBuilder content: @escaping (LazyImagePhase) -> Content
+    ) {
         self.url = url
-        self.placeholder = placeholder
+        self.maxPixelSize = maxPixelSize
+        self.content = content
     }
 
     public var body: some View {
-        ZStack {
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .transition(.opacity)
-            } else {
-                placeholder
-                    .resizable()
-                    .scaledToFill()
-                    .foregroundStyle(.gray)
-            }
-        }
-        .clipped()
-        .onAppear {
-            guard let url = url else { return }
-            Task {
-                if let cachedImage = loader.getFromCache(url) {
-                    image = cachedImage
-                } else {
-                    do {
-                        let downloadedImage = try await loader.loadImage(url)
-                        await MainActor.run {
-                            image = downloadedImage
-                        }
-                    } catch {
-                        print("Failed to load image: \(error)")
-                    }
+        content(phase)
+            .task(id: url) {
+                guard let url else {
+                    phase = .failure
+                    return
+                }
+
+                // Cache hit renders synchronously — no loading flash on
+                // re-scroll.
+                if let cached = ImageLoader.cachedImage(for: url, maxPixelSize: maxPixelSize) {
+                    phase = .success(Image(uiImage: cached))
+                    return
+                }
+
+                phase = .loading
+                do {
+                    let image = try await ImageLoader.loadImage(url, maxPixelSize: maxPixelSize)
+                    phase = .success(Image(uiImage: image))
+                } catch is CancellationError {
+                    // View went away mid-fetch; leave phase alone.
+                } catch {
+                    phase = .failure
                 }
             }
-        }
     }
 }
 
 // MARK: - Image Loader
 
-@MainActor
-private class ImageLoader: NSObject, ObservableObject {
+/// Stateless loader behind `LazyImageView`. Namespaced as an enum —
+/// the cache is process-global and the functions are pure async, so
+/// there is nothing to instantiate.
+private enum ImageLoader {
     private static let cache = NSCache<NSString, UIImage>()
-    private let urlSession = URLSession.shared
 
-    /// Gets image from memory cache.
-    func getFromCache(_ url: URL) -> UIImage? {
-        ImageLoader.cache.object(forKey: url.absoluteString as NSString)
+    /// Cache key includes the size cap — the same URL decoded at 300px
+    /// for a trophy tile must not be served to a 1600px hero panel
+    /// (visibly soft) or vice versa (wasted memory).
+    private static func cacheKey(_ url: URL, maxPixelSize: CGFloat) -> NSString {
+        "\(url.absoluteString)#\(Int(maxPixelSize))" as NSString
     }
 
-    /// Loads image from URL with caching and downsampling.
-    func loadImage(_ url: URL) async throws -> UIImage {
-        // Check cache first
-        if let cached = getFromCache(url) {
+    /// Synchronous memory-cache lookup. `NSCache` is thread-safe.
+    static func cachedImage(for url: URL, maxPixelSize: CGFloat) -> UIImage? {
+        cache.object(forKey: cacheKey(url, maxPixelSize: maxPixelSize))
+    }
+
+    /// Downloads, decodes, and downsamples off the main actor.
+    /// `nonisolated async` functions run on the global concurrent
+    /// executor, so the `CGImageSource` work below never blocks UI.
+    static func loadImage(_ url: URL, maxPixelSize: CGFloat) async throws -> UIImage {
+        if let cached = cachedImage(for: url, maxPixelSize: maxPixelSize) {
             return cached
         }
 
-        // Download
-        let (data, _) = try await urlSession.data(from: url)
+        let (data, _) = try await URLSession.shared.data(from: url)
+        try Task.checkCancellation()
 
-        // Downsample to save memory
-        guard let image = UIImage(data: data) else {
-            throw NSError(domain: "ImageLoader", code: -1, userInfo: nil)
+        guard let image = downsampledImage(data: data, maxPixelSize: maxPixelSize) else {
+            throw URLError(.cannotDecodeContentData)
         }
 
-        let downsampledImage = downsample(image, to: CGSize(width: 800, height: 800))
-
-        // Cache
-        ImageLoader.cache.setObject(downsampledImage, forKey: url.absoluteString as NSString)
-
-        return downsampledImage
+        cache.setObject(image, forKey: cacheKey(url, maxPixelSize: maxPixelSize))
+        return image
     }
 
-    /// Downsamples image to target size.
-    private func downsample(_ image: UIImage, to size: CGSize) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
+    /// One-pass decode + downsample via ImageIO (the May 11 perf
+    /// audit's prescribed fix). Compared to `UIImage(data:)` +
+    /// `UIGraphicsImageRenderer`: never materializes the full-size
+    /// bitmap, preserves aspect ratio and EXIF orientation, and
+    /// produces an already-decoded image (`ShouldCacheImmediately`)
+    /// so first render doesn't pay a lazy-decode hitch on main.
+    private static func downsampledImage(data: Data, maxPixelSize: CGFloat) -> UIImage? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
+            return nil
         }
+
+        let thumbnailOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+        ] as CFDictionary
+
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
     }
 }
 
@@ -301,10 +345,16 @@ private struct PreviewItem: Identifiable {
 
 #Preview {
     VStack(spacing: 24) {
-        LazyImageView(
-            url: URL(string: "https://via.placeholder.com/200"),
-            placeholder: Image(systemName: "photo")
-        )
+        LazyImageView(url: URL(string: "https://via.placeholder.com/200")) { phase in
+            if case .success(let image) = phase {
+                image.resizable().scaledToFill()
+            } else {
+                Image(systemName: "photo")
+                    .resizable()
+                    .scaledToFill()
+                    .foregroundStyle(.gray)
+            }
+        }
         .frame(height: 200)
         .cornerRadius(12)
 

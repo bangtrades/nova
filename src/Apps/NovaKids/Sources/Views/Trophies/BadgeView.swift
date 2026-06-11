@@ -242,10 +242,17 @@ public struct BadgeView: View {
         return "Locked — \(Int(progress * 100)) percent progress"
     }
 
-    private func formatDate(_ date: Date) -> String {
+    /// Static cached formatter (V2-S4-06) — `DateFormatter()` is
+    /// expensive to construct and this runs inside view recomputation
+    /// for every badge tile in the grid.
+    private static let earnedDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formatDate(_ date: Date) -> String {
+        Self.earnedDateFormatter.string(from: date)
     }
 
     /// Earned entrance — spring bounce on first render, skipped under

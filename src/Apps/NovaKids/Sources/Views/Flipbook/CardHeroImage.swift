@@ -62,9 +62,13 @@ public struct CardHeroImage<Placeholder: View>: View {
         }()
 
         if let resolvedURL {
-            AsyncImage(url: resolvedURL) { phase in
+            // V2-S4-06: LazyImageView instead of AsyncImage — decode +
+            // downsample happen off-main in one ImageIO pass, capped at
+            // 1600px for the full-width hero, and repeat visits hit the
+            // memory cache instead of re-decoding.
+            LazyImageView(url: resolvedURL, maxPixelSize: 1600) { phase in
                 switch phase {
-                case .empty:
+                case .loading:
                     // Show placeholder beneath a small classroom spinner
                     // so kids see immediate visual feedback while the
                     // image fetches over LAN/wifi. `ClassroomSpinner` is
@@ -79,8 +83,6 @@ public struct CardHeroImage<Placeholder: View>: View {
                         .resizable()
                         .scaledToFill()
                 case .failure:
-                    placeholder()
-                @unknown default:
                     placeholder()
                 }
             }
