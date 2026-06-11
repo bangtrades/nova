@@ -21,6 +21,14 @@ vi.hoisted(() => {
 });
 
 describe('VOX-01 — PUBLIC_BASE_URL in dev-mode asset URLs', () => {
+  // The local fallback genuinely writes to public/assets/ — clean up the
+  // artifact so test runs don't leave untracked files in the repo.
+  afterAll(async () => {
+    const { unlink } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    await unlink(join(__dirname, '..', 'public', 'assets', 'vox01-test.mp3')).catch(() => {});
+  });
+
   it('bakes PUBLIC_BASE_URL into the local-fallback asset URL', async () => {
     // Dynamic import so the env override above is definitely live first.
     const { uploadToR2 } = await import('../src/services/assets/assetUploader');
