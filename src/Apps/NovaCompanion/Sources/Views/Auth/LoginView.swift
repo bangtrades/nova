@@ -98,8 +98,21 @@ public struct LoginView: View {
                 switch result {
                 case .success(let authorization):
                     if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-                        // Pass to auth manager for Sign in with Apple handling
-                        await authManager.handleAppleSignIn(credential: appleIDCredential)
+                        // Build-fix (Jun 11): `handleAppleSignIn(credential:)`
+                        // never existed on AuthManager — call the real API
+                        // with the extracted credential fields (same flow as
+                        // the kid app's login).
+                        let identityToken = appleIDCredential.identityToken
+                            .flatMap { String(data: $0, encoding: .utf8) } ?? ""
+                        let displayName = appleIDCredential.fullName.map {
+                            PersonNameComponentsFormatter().string(from: $0)
+                        }
+                        await authManager.signInWithApple(
+                            appleId: appleIDCredential.user,
+                            identityToken: identityToken,
+                            displayName: displayName?.isEmpty == false ? displayName : nil,
+                            email: appleIDCredential.email
+                        )
                     }
                 case .failure(let error):
                     if (error as NSError).code != ASAuthorizationError.canceled.rawValue {

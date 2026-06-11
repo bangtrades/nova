@@ -71,7 +71,13 @@ public struct AdaptiveCardEditorView: View {
                         // Card List (Left Side)
                         CardListSidebar(
                             cards: $lesson.cards,
-                            selectedCardIndex: $selectedCardIndex,
+                            // Build-fix (Jun 11): the sidebar's selection is
+                            // optional (nil = nothing selected); this editor
+                            // always keeps a selection, so bridge nil → 0.
+                            selectedCardIndex: Binding(
+                                get: { selectedCardIndex },
+                                set: { selectedCardIndex = $0 ?? 0 }
+                            ),
                             lessonId: lesson.id
                         )
                         .frame(width: 280)

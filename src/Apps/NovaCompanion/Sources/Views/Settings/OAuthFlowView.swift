@@ -108,7 +108,10 @@ public struct OAuthFlowView: View {
 
                             Button(action: {
                                 isLoading = true
-                                errorMessage = nil
+                                // Build-fix (Jun 11): `errorMessage` here is
+                                // the immutable `if let` shadow — write the
+                                // state property explicitly.
+                                self.errorMessage = nil
                                 flowTask?.cancel()
                                 flowTask = Task {
                                     try? await Task.sleep(nanoseconds: 2_000_000_000)

@@ -171,7 +171,10 @@ public struct LessonManagerView: View {
                     }
                 )
             }
-            .sheet(isPresented: $isEditingLesson, item: $selectedLesson) { lesson in
+            // Build-fix (Jun 11): `.sheet(isPresented:item:)` is not a
+            // SwiftUI API — item-driven presentation alone carries the
+            // same behavior (sheet shows while selectedLesson != nil).
+            .sheet(item: $selectedLesson) { lesson in
                 LessonEditorView(
                     lesson: lesson,
                     onSave: { updated in

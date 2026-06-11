@@ -25,8 +25,8 @@ public struct CardPreviewView: View {
             }
             .frame(maxWidth: .infinity)
             .aspectRatio(16 / 9, contentMode: .fit)
-            .background(NovaPalette.novaBackground)
-            .border(NovaPalette.novaBlue, width: 2)
+            .background(CompanionPalette.companionBackground)
+            .border(CompanionPalette.novaBlue, width: 2)
             .cornerRadius(12)
             .padding(.horizontal, 16)
 
@@ -38,7 +38,7 @@ public struct CardPreviewView: View {
     @ViewBuilder
     private func previewContent() -> some View {
         ZStack {
-            NovaPalette.novaBackground
+            CompanionPalette.companionBackground
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 16) {
@@ -72,7 +72,7 @@ public struct CardPreviewView: View {
                         .foregroundStyle(.gray)
 
                     Text("Image: \(imageURL.lastPathComponent)")
-                        .font(NovaPalette.captionFont())
+                        .font(CompanionPalette.captionFont())
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -84,14 +84,14 @@ public struct CardPreviewView: View {
             // Title
             if let title = card.content.title {
                 Text(title)
-                    .font(NovaPalette.headingFont())
+                    .font(CompanionPalette.headingFont())
                     .fontWeight(.bold)
             }
 
             // Narrative Text
             if let text = card.content.narrativeText {
                 Text(text)
-                    .font(NovaPalette.bodyFont())
+                    .font(CompanionPalette.bodyFont())
                     .foregroundStyle(.primary)
                     .lineLimit(4)
             }
@@ -102,10 +102,10 @@ public struct CardPreviewView: View {
             HStack {
                 Image(systemName: "speaker.wave.2.fill")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(NovaPalette.novaOrange)
+                    .foregroundStyle(CompanionPalette.novaOrange)
 
                 Text("Tap to listen")
-                    .font(NovaPalette.captionFont())
+                    .font(CompanionPalette.captionFont())
                     .foregroundStyle(.secondary)
             }
         }
@@ -122,7 +122,7 @@ public struct CardPreviewView: View {
                         .foregroundStyle(.gray)
 
                     Text("Image")
-                        .font(NovaPalette.captionFont())
+                        .font(CompanionPalette.captionFont())
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -135,13 +135,13 @@ public struct CardPreviewView: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let title = card.content.title {
                     Text(title)
-                        .font(NovaPalette.headingFont())
+                        .font(CompanionPalette.headingFont())
                         .fontWeight(.bold)
                 }
 
                 if let explanation = card.content.explanation {
                     Text(explanation)
-                        .font(NovaPalette.bodyFont())
+                        .font(CompanionPalette.bodyFont())
                         .foregroundStyle(.primary)
                         .lineLimit(3)
                 }
@@ -157,14 +157,14 @@ public struct CardPreviewView: View {
             // Title
             if let title = card.content.title {
                 Text(title)
-                    .font(NovaPalette.headingFont())
+                    .font(CompanionPalette.headingFont())
                     .fontWeight(.bold)
             }
 
             // Instructions preview
             if let instructions = card.content.instructions {
                 Text(instructions)
-                    .font(NovaPalette.captionFont())
+                    .font(CompanionPalette.captionFont())
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -174,7 +174,7 @@ public struct CardPreviewView: View {
                 if let dragItems = card.content.dragItems, !dragItems.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Drag Items")
-                            .font(NovaPalette.smallHeadingFont())
+                            .font(CompanionPalette.smallHeadingFont())
                             .fontWeight(.bold)
 
                         ForEach(dragItems.prefix(2), id: \.id) { item in
@@ -182,11 +182,11 @@ public struct CardPreviewView: View {
                                 Image(systemName: "hand.tap")
                                     .font(.caption)
                                 Text(item.label)
-                                    .font(NovaPalette.captionFont())
+                                    .font(CompanionPalette.captionFont())
                                     .lineLimit(1)
                             }
                             .padding(6)
-                            .background(NovaPalette.novaPurple.opacity(0.2))
+                            .background(CompanionPalette.novaPurple.opacity(0.2))
                             .cornerRadius(4)
                         }
                     }
@@ -198,7 +198,7 @@ public struct CardPreviewView: View {
                 if let dropTargets = card.content.dropTargets, !dropTargets.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Targets")
-                            .font(NovaPalette.smallHeadingFont())
+                            .font(CompanionPalette.smallHeadingFont())
                             .fontWeight(.bold)
 
                         ForEach(dropTargets.prefix(2), id: \.id) { target in
@@ -206,11 +206,11 @@ public struct CardPreviewView: View {
                                 Image(systemName: "location.fill")
                                     .font(.caption)
                                 Text(target.label)
-                                    .font(NovaPalette.captionFont())
+                                    .font(CompanionPalette.captionFont())
                                     .lineLimit(1)
                             }
                             .padding(6)
-                            .background(NovaPalette.novaGreen.opacity(0.2))
+                            .background(CompanionPalette.novaGreen.opacity(0.2))
                             .cornerRadius(4)
                         }
                     }
@@ -227,7 +227,7 @@ public struct CardPreviewView: View {
             // Question
             if let question = card.content.question {
                 Text(question)
-                    .font(NovaPalette.headingFont())
+                    .font(CompanionPalette.headingFont())
                     .fontWeight(.bold)
             }
 
@@ -238,27 +238,27 @@ public struct CardPreviewView: View {
                         Button(action: {}) {
                             HStack {
                                 Text(option.text)
-                                    .font(NovaPalette.bodyFont())
+                                    .font(CompanionPalette.bodyFont())
                                     .lineLimit(1)
 
                                 Spacer()
 
                                 if index == card.content.correctOptionIndex {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(NovaPalette.novaGreen)
+                                        .foregroundStyle(CompanionPalette.novaGreen)
                                 }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(12)
                             .background(
                                 index == card.content.correctOptionIndex ?
-                                NovaPalette.novaGreen.opacity(0.25) :
-                                NovaPalette.novaBlue.opacity(0.15)
+                                CompanionPalette.novaGreen.opacity(0.25) :
+                                CompanionPalette.novaBlue.opacity(0.15)
                             )
                             .border(
                                 index == card.content.correctOptionIndex ?
-                                NovaPalette.novaGreen :
-                                NovaPalette.novaBlue,
+                                CompanionPalette.novaGreen :
+                                CompanionPalette.novaBlue,
                                 width: 1
                             )
                             .cornerRadius(8)
@@ -278,7 +278,7 @@ public struct CardPreviewView: View {
             // Prompt text
             if let promptText = card.content.promptText {
                 Text(promptText)
-                    .font(NovaPalette.bodyFont())
+                    .font(CompanionPalette.bodyFont())
                     .foregroundStyle(.primary)
             }
 
@@ -289,11 +289,11 @@ public struct CardPreviewView: View {
                 VStack(spacing: 8) {
                     Image(systemName: isPlayingVoice ? "pause.circle.fill" : "mic.circle.fill")
                         .font(.largeTitle)
-                        .foregroundStyle(NovaPalette.novaOrange)
+                        .foregroundStyle(CompanionPalette.novaOrange)
 
                     Text(isPlayingVoice ? "Recording..." : "Tap to speak")
-                        .font(NovaPalette.bodyFont())
-                        .foregroundStyle(NovaPalette.novaOrange)
+                        .font(CompanionPalette.bodyFont())
+                        .foregroundStyle(CompanionPalette.novaOrange)
                 }
             }
 
@@ -304,10 +304,10 @@ public struct CardPreviewView: View {
                 HStack {
                     Image(systemName: "speaker.wave.2")
                         .font(.subheadline)
-                        .foregroundStyle(NovaPalette.novaBlue)
+                        .foregroundStyle(CompanionPalette.novaBlue)
 
                     Text("Narration recorded")
-                        .font(NovaPalette.captionFont())
+                        .font(CompanionPalette.captionFont())
                         .foregroundStyle(.secondary)
                 }
             }
@@ -323,15 +323,15 @@ public struct CardPreviewView: View {
             VStack(spacing: 12) {
                 Image(systemName: "film.fill")
                     .font(.largeTitle.weight(.light))
-                    .foregroundStyle(NovaPalette.novaBlue)
+                    .foregroundStyle(CompanionPalette.novaBlue)
 
                 if let videoURL = card.content.videoURL {
                     Text(videoURL.lastPathComponent)
-                        .font(NovaPalette.captionFont())
+                        .font(CompanionPalette.captionFont())
                         .foregroundStyle(.secondary)
                 } else {
                     Text("No video selected")
-                        .font(NovaPalette.captionFont())
+                        .font(CompanionPalette.captionFont())
                         .foregroundStyle(.secondary)
                 }
             }
@@ -340,7 +340,7 @@ public struct CardPreviewView: View {
             Button(action: {}) {
                 Image(systemName: "play.circle.fill")
                     .font(.largeTitle)
-                    .foregroundStyle(NovaPalette.novaOrange)
+                    .foregroundStyle(CompanionPalette.novaOrange)
             }
 
             Spacer()
@@ -350,10 +350,10 @@ public struct CardPreviewView: View {
                 HStack {
                     Image(systemName: "timer")
                         .font(.subheadline)
-                        .foregroundStyle(NovaPalette.novaBlue)
+                        .foregroundStyle(CompanionPalette.novaBlue)
 
                     Text("\(pausePoints.count) pause point\(pausePoints.count == 1 ? "" : "s")")
-                        .font(NovaPalette.captionFont())
+                        .font(CompanionPalette.captionFont())
                         .foregroundStyle(.secondary)
                 }
             }

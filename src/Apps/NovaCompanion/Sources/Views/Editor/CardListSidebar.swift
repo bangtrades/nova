@@ -37,11 +37,15 @@ public struct CardListSidebar: View {
                             cardListItemButton(index: index, card: card)
                         }
                         .onMove { from, to in
-                            cards.move(fromOffsets: from, toOffset: to)
-                            // Update sort orders
-                            for (i, _) in cards.enumerated() {
-                                cards[i].sortOrder = i + 1
+                            // Build-fix (Jun 11): `cards` here is the
+                            // immutable `if let` shadow — mutate through
+                            // the binding instead.
+                            var reordered = cards
+                            reordered.move(fromOffsets: from, toOffset: to)
+                            for i in reordered.indices {
+                                reordered[i].sortOrder = i + 1
                             }
+                            self.cards = reordered
                         }
                     }
                     .padding(.horizontal, 16)

@@ -54,8 +54,8 @@ public class LessonManagerViewModel: ObservableObject {
 
         allLessons = [
             Lesson(
-                userId: UUID(),
                 pathId: pathId1,
+                userId: UUID(),
                 title: "What is AI?",
                 description: "An introduction to artificial intelligence and how it works",
                 difficulty: 1,
@@ -64,8 +64,8 @@ public class LessonManagerViewModel: ObservableObject {
                 publishedAt: Date().addingTimeInterval(-86400 * 7)
             ),
             Lesson(
-                userId: UUID(),
                 pathId: pathId1,
+                userId: UUID(),
                 title: "AI in Daily Life",
                 description: "Discovering AI applications in everyday situations",
                 difficulty: 1,
@@ -74,8 +74,8 @@ public class LessonManagerViewModel: ObservableObject {
                 publishedAt: Date().addingTimeInterval(-86400 * 5)
             ),
             Lesson(
-                userId: UUID(),
                 pathId: pathId2,
+                userId: UUID(),
                 title: "Data and Learning",
                 description: "How machines learn from data patterns",
                 difficulty: 2,
@@ -84,8 +84,8 @@ public class LessonManagerViewModel: ObservableObject {
                 publishedAt: Date().addingTimeInterval(-86400 * 3)
             ),
             Lesson(
-                userId: UUID(),
                 pathId: pathId2,
+                userId: UUID(),
                 title: "Training Neural Networks",
                 description: "Basics of neural network training (DRAFT)",
                 difficulty: 2,
@@ -93,8 +93,8 @@ public class LessonManagerViewModel: ObservableObject {
                 sortOrder: 2
             ),
             Lesson(
-                userId: UUID(),
                 pathId: pathId3,
+                userId: UUID(),
                 title: "AI Art Generation",
                 description: "Using generative models for creative work",
                 difficulty: 3,
@@ -102,8 +102,8 @@ public class LessonManagerViewModel: ObservableObject {
                 sortOrder: 1
             ),
             Lesson(
-                userId: UUID(),
                 pathId: nil,
+                userId: UUID(),
                 title: "Ethics in AI",
                 description: "Understanding AI ethics and responsible AI (ARCHIVED)",
                 difficulty: 2,

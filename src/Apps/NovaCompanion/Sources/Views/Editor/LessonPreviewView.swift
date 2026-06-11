@@ -21,7 +21,7 @@ public struct LessonPreviewView: View {
         NavigationStack {
             ZStack {
                 // Nova Kids background (simulating the Kids app)
-                NovaPalette.novaBackground
+                CompanionPalette.companionBackground
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -40,7 +40,7 @@ public struct LessonPreviewView: View {
 
                         // Lesson Title
                         Text(lesson.title)
-                            .font(NovaPalette.headingFont())
+                            .font(CompanionPalette.headingFont())
                             .fontWeight(.bold)
                             .lineLimit(1)
 
@@ -53,7 +53,7 @@ public struct LessonPreviewView: View {
                     // Card Preview
                     if let card = currentCard {
                         ZStack {
-                            NovaPalette.novaBackground
+                            CompanionPalette.companionBackground
                                 .ignoresSafeArea()
 
                             VStack {
@@ -72,8 +72,8 @@ public struct LessonPreviewView: View {
                                 .frame(height: 6)
                                 .foregroundStyle(
                                     index == currentCardIndex ?
-                                    NovaPalette.novaBlue :
-                                    NovaPalette.novaBlue.opacity(0.3)
+                                    CompanionPalette.novaBlue :
+                                    CompanionPalette.novaBlue.opacity(0.3)
                                 )
                         }
                     }
@@ -87,8 +87,8 @@ public struct LessonPreviewView: View {
                                 .font(.largeTitle)
                                 .foregroundStyle(
                                     currentCardIndex > 0 ?
-                                    NovaPalette.novaBlue :
-                                    NovaPalette.novaBlue.opacity(0.3)
+                                    CompanionPalette.novaBlue :
+                                    CompanionPalette.novaBlue.opacity(0.3)
                                 )
                         }
                         .disabled(currentCardIndex == 0)
@@ -97,11 +97,11 @@ public struct LessonPreviewView: View {
 
                         VStack(spacing: 4) {
                             Text("Card")
-                                .font(NovaPalette.captionFont())
+                                .font(CompanionPalette.captionFont())
                                 .foregroundStyle(.secondary)
 
                             Text("\(currentCardIndex + 1) of \(cards.count)")
-                                .font(NovaPalette.headingFont())
+                                .font(CompanionPalette.headingFont())
                                 .fontWeight(.bold)
                         }
 
@@ -112,8 +112,8 @@ public struct LessonPreviewView: View {
                                 .font(.largeTitle)
                                 .foregroundStyle(
                                     currentCardIndex < cards.count - 1 ?
-                                    NovaPalette.novaBlue :
-                                    NovaPalette.novaBlue.opacity(0.3)
+                                    CompanionPalette.novaBlue :
+                                    CompanionPalette.novaBlue.opacity(0.3)
                                 )
                         }
                         .disabled(currentCardIndex >= cards.count - 1)
@@ -145,15 +145,15 @@ public struct LessonPreviewView: View {
                 .foregroundStyle(.gray)
 
             Text("No cards to preview")
-                .font(NovaPalette.headingFont())
+                .font(CompanionPalette.headingFont())
                 .fontWeight(.bold)
 
             Text("Add cards to this lesson to see a preview")
-                .font(NovaPalette.bodyFont())
+                .font(CompanionPalette.bodyFont())
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(NovaPalette.novaBackground)
+        .background(CompanionPalette.companionBackground)
     }
 
     private func moveCard(by offset: Int) {

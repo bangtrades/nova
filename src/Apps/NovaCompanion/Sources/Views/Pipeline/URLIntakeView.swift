@@ -398,12 +398,16 @@ private struct ErrorView: View {
     }
 }
 
-#Preview {
-    struct MockAPIRouter: APIRouting {
-        func request<T: Decodable>(_ endpoint: Endpoint) async throws -> T {
-            throw APIError.networkError(NSError(domain: "", code: 0))
-        }
+// Build fix (Jun 11): the mock lived inside the #Preview closure, which
+// must be a single View-building expression — a local type declaration
+// plus a trailing expression doesn't satisfy the macro ("no exact
+// matches in call to macro 'Preview'"). Hoisted to file scope.
+private struct PreviewMockAPIRouter: APIRouting {
+    func request<T: Decodable>(_ endpoint: Endpoint) async throws -> T {
+        throw APIError.networkError(NSError(domain: "", code: 0))
     }
+}
 
-    URLIntakeView(apiRouter: MockAPIRouter())
+#Preview {
+    URLIntakeView(apiRouter: PreviewMockAPIRouter())
 }

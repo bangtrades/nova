@@ -3,17 +3,48 @@ import NovaCore
 
 /// Nova Companion design system color palette and typography.
 ///
-/// Extends NovaPalette with professional, parent-focused colors and typography.
-/// Uses system fonts (not rounded) for a mature, dashboard-like appearance.
+/// Professional, parent-focused colors and typography. Uses system
+/// fonts (not rounded) for a mature, dashboard-like appearance.
+///
+/// Build fix (Jun 11): the brand colors below were aliases into
+/// `NovaPalette` — but that type is compiled only into the NovaKids
+/// target, so this file never compiled in the Companion target (broken
+/// since the initial commit, masked because nobody built the scheme).
+/// The values are inlined verbatim from `NovaPalette.Category`; if the
+/// brand palette ever moves into a shared package, re-alias these.
 public struct CompanionPalette {
-    // MARK: - Color Palette (from NovaPalette)
+    // MARK: - Brand colors (inlined from NovaPalette.Category)
 
-    public static let novaBlue = NovaPalette.novaBlue
-    public static let novaOrange = NovaPalette.novaOrange
-    public static let novaGreen = NovaPalette.novaGreen
-    public static let novaPurple = NovaPalette.novaPurple
-    public static let novaYellow = NovaPalette.novaYellow
-    public static let novaPink = NovaPalette.novaPink
+    public static let novaBlue = dynamicColor(
+        light: (0.29, 0.56, 0.85), dark: (0.40, 0.65, 0.95)
+    )
+    public static let novaOrange = dynamicColor(
+        light: (1.0, 0.55, 0.26), dark: (1.0, 0.62, 0.35)
+    )
+    public static let novaGreen = dynamicColor(
+        light: (0.36, 0.72, 0.36), dark: (0.42, 0.78, 0.42)
+    )
+    public static let novaPurple = dynamicColor(
+        light: (0.61, 0.35, 0.71), dark: (0.72, 0.48, 0.82)
+    )
+    public static let novaYellow = dynamicColor(
+        light: (1.0, 0.85, 0.24), dark: (1.0, 0.88, 0.35)
+    )
+    public static let novaPink = dynamicColor(
+        light: (1.0, 0.42, 0.42), dark: (1.0, 0.52, 0.52)
+    )
+
+    /// Light/dark adaptive color from RGB triples — local equivalent of
+    /// the `Color(light:dark:)` helper that lives in the NovaKids target.
+    private static func dynamicColor(
+        light: (Double, Double, Double),
+        dark: (Double, Double, Double)
+    ) -> Color {
+        Color(UIColor { traits in
+            let rgb = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
+        })
+    }
 
     // MARK: - Companion-Specific Colors
 
@@ -70,6 +101,12 @@ public struct CompanionPalette {
     /// Small caption font (12pt, system, regular)
     public static func smallCaptionFont() -> Font {
         return .system(size: 12, weight: .regular, design: .default)
+    }
+
+    /// Small heading font (15pt, system, semibold) — used by the lesson
+    /// preview surfaces ported from the kid app's type ramp.
+    public static func smallHeadingFont() -> Font {
+        return .system(size: 15, weight: .semibold, design: .default)
     }
 
     // MARK: - Helper

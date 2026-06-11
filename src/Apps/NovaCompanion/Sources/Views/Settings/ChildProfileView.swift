@@ -126,7 +126,14 @@ public struct ChildProfileView: View {
                 }
 
                 // Data Management
-                Section("Data Management", footer: Text("COPPA compliance")) {
+                // Build-fix (Jun 11): `Section("…", footer:)` is not a
+                // SwiftUI initializer — header/footer view builders are.
+                // (This bad expression type-collapsed the whole Form into
+                // the misleading "FormStyleConfiguration" diagnostic.)
+                Section(
+                    header: Text("Data Management"),
+                    footer: Text("COPPA compliance")
+                ) {
                     Button(action: { showExportSheet = true }) {
                         HStack {
                             Image(systemName: "arrow.down.doc.fill")
