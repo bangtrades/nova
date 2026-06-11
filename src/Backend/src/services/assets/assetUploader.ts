@@ -95,7 +95,10 @@ export async function uploadToR2(
     const localPath = join(localDir, filename);
     mkdirSync(dirname(localPath), { recursive: true });
     writeFileSync(localPath, buffer);
-    const localUrl = `http://localhost:${config.PORT}/dev/assets/${filename}`;
+    // S14-VOX-01: prefer PUBLIC_BASE_URL so the URL persisted to the DB
+    // is reachable from LAN devices (the iPad can't resolve localhost).
+    const baseUrl = (config.PUBLIC_BASE_URL ?? `http://localhost:${config.PORT}`).replace(/\/+$/, '');
+    const localUrl = `${baseUrl}/dev/assets/${filename}`;
     console.log(`[Asset] Saved locally: ${localUrl} (${(buffer.length / 1024).toFixed(1)} KB)`);
     return localUrl;
   }

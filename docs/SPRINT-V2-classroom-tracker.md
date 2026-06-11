@@ -159,6 +159,7 @@ V2-S4-F4 (post-art verification) and V2-S4-07 (kid test 2) are the only V2-S4 it
 | ~~F2 error states + remaining `*Empty` registry cases~~ → **resolved Jun 10** | V2-S4-F2 (May 22 batch) | Closed by the F2-completion slice: error banners kid-safe + voiced everywhere, all three `*Empty` registry cases wired. See `sprint-runs/V2-S4-F2-completion-2026-06-10.md`. |
 | `classroomCardStage` dead code | V2-S3 rework | Superseded by `LessonBookReaderShell`; not removed. |
 | `EnhancedHomeView` orphaned | V2-S2 (live Home moved to `ClassroomSceneView`) | Referenced only in a `#Preview`. The S14-VF `.narrate("home")` call site sits on it, dead. |
+| S14-VOX-02 — `devBypassLogin()` mints a real JWT | S14 VOX-FU carry-in | The one VOX-FU item still open after the Jun 10 backend trio shipped (`sprint-runs/VOX-FU-backend-trio-2026-06-10.md`). iOS-side: `AuthManager.devBypassLogin()` should hit `POST /api/v1/auth/dev-bypass` and store a real JWT. |
 | `classroomV2Enabled` hard-coded `true` | V2-S1-06 | No tested rollback to legacy Home. |
 | ~~Performance recommendations unapplied~~ → **resolved Jun 10** | V2-S4-06 | Formatter caching + off-main ImageIO downsampling applied; art-slot caching was already in place. See `sprint-runs/V2-S4-06-performance-2026-06-10.md`. |
 | `architecture.mermaid` was stale | pre-existing | Fixed May 22 alongside this tracker. |
@@ -191,6 +192,17 @@ Four file-disjoint agent slices ran in parallel while the art catalog was genera
 - **V2-S1-02 / V2-S2-02** 🟡 — 35 `ClassroomSceneModel` unit tests delivered, but via a symlinked SPM package off the app build graph — **drift; needs a packaging decision** (recommend extracting `ClassroomSceneModel` into a real SPM package).
 
 **Status:** all four delivered to the working tree, **uncommitted** — review checkpoint. Agent `BUILD SUCCEEDED` / 35-tests-pass claims are **unverified** (no Xcode in the sandbox); Mac-side build + `swift test` is the gate before commit. **Process change:** future agent slice briefs must include the slice-report instruction (see the run summary's "Slice-report protocol" section) so slices self-document instead of evaporating into chat recaps.
+
+### VOX-FU backend trio (Jun 10)
+
+Single backend-only slice ("Slice D"), lead-executed. Full report:
+[`sprint-runs/VOX-FU-backend-trio-2026-06-10.md`](./sprint-runs/VOX-FU-backend-trio-2026-06-10.md).
+
+- **S14-VOX-01** ✅ — `PUBLIC_BASE_URL` env var; dev-mode asset URLs persisted to the DB are LAN-reachable when set. iOS localhost rewrite stays as fallback.
+- **S14-VOX-03** ✅ — global empty-body-tolerant JSON parser in `server.ts`; `curl -d '{}'` workaround dead for every no-body action route.
+- **S14-VOX-04** ✅ — Oracle Content Browser per-row publish/unpublish toggle + bulk "publish all drafts" per path; new `POST /lessons/:id/unpublish` endpoint.
+- **Validation:** `tsc --noEmit` at the 33-error baseline (zero new); **vitest 842/842** (suite-wide, since the parser change is global); 4 new tests in `tests/voxFollowups.test.ts`.
+- **Still open:** S14-VOX-02 (iOS `devBypassLogin()` real JWT) → carry-debt row.
 
 ### V2-S4-06 — performance pass (Jun 10)
 

@@ -10,7 +10,7 @@
 > - **MP — Mascot Presence** → V2's `ClassroomDashyGuideLayer` (Dashy persistent on every classroom surface).
 > - **TR — Tap Reaction Stack** → V2's `ClassroomObjectButton` bounce/haptic + V2-S4-05 sound/reaction pass.
 > - **HT — Hero Tile Upgrade / BL — Background Layering** → V2's illustrated classroom scenes + the v2-beta art catalog.
-> - **VOX-FU touch-test follow-ups** — the 4 carry-in items (backend `PUBLIC_BASE_URL`, `devBypassLogin()` real JWT, empty-body POST exemption, Oracle publish toggle) were **not done** and did not migrate cleanly. They are real debt — re-logged in the V2 tracker's [parallel dev lane](./SPRINT-V2-classroom-tracker.md#parallel-dev-lane) / carry-debt so they aren't lost.
+> - **VOX-FU touch-test follow-ups** — the 4 carry-in items were re-logged as debt when S14 was cancelled. **Jun 10 update: the backend trio shipped** (`PUBLIC_BASE_URL` env var, empty-body POST exemption via a global tolerant JSON parser, Oracle publish/unpublish toggle + bulk path publish + `/unpublish` endpoint) — see `sprint-runs/VOX-FU-backend-trio-2026-06-10.md`. **Still open: S14-VOX-02** (`devBypassLogin()` mints a real JWT) — iOS-side, tracked in the V2 tracker's carry-debt.
 >
 > The original S14 plan is preserved below for history. Do not work from it — work from the V2 classroom tracker.
 

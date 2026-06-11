@@ -2786,6 +2786,17 @@ function renderBrowserLessonList() {
     const assetsBtn = `<button class="lesson-action-btn" title="Generate images + audio for this lesson's cards"
                onclick="event.stopPropagation(); generateLessonAssets('${escAttr(lesson.id)}', '${titleEscJs}')"
                style="background:transparent;border:1px solid var(--border);color:#fcd34d;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">🎨</button>`;
+    // S14-VOX-04: publish/unpublish toggle. Published lessons are the
+    // iOS-visible set — this closes the gap between authoring a lesson
+    // and it showing up as real content on the iPad, without curl.
+    const isPublished = lesson.status === 'published';
+    const publishBtn = isPublished
+      ? `<button class="lesson-action-btn" title="Unpublish (revert to draft — hides from iOS)"
+               onclick="event.stopPropagation(); togglePublishLesson('${escAttr(lesson.id)}', '${titleEscJs}', false)"
+               style="background:transparent;border:1px solid var(--border);color:#fcd34d;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">⬇</button>`
+      : `<button class="lesson-action-btn" title="Publish (becomes visible to iOS)"
+               onclick="event.stopPropagation(); togglePublishLesson('${escAttr(lesson.id)}', '${titleEscJs}', true)"
+               style="background:transparent;border:1px solid var(--border);color:#86efac;padding:2px 8px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;flex-shrink:0;">⬆</button>`;
     return `
       <div class="browser-lesson-row" data-lesson-id="${escAttr(lesson.id)}"
            onclick="selectBrowserLesson('${escAttr(lesson.id)}')"
@@ -2795,6 +2806,7 @@ function renderBrowserLessonList() {
         ${cardsLabel ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);flex-shrink:0;">${escHtml(cardsLabel)}</span>` : ''}
         <span style="font-family:var(--mono);font-size:10px;color:${statusColor};text-transform:uppercase;flex-shrink:0;">${escHtml(lesson.status || 'draft')}</span>
         <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;">${escHtml(createdLabel)}</span>
+        ${publishBtn}
         ${reseedBtn}
         ${moveBtn}
         ${assetsBtn}
@@ -2802,7 +2814,71 @@ function renderBrowserLessonList() {
       </div>`;
   }).join('');
 
-  listEl.innerHTML = rows;
+  // S14-VOX-04: bulk publish — one click takes every draft in the
+  // selected path live. Renders only when there's something to publish.
+  const draftCount = lessons.filter((l) => l.status !== 'published').length;
+  const bulkBar = draftCount > 0
+    ? `<div style="padding:6px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:flex-end;background:var(--surface-2, #1a1a1f);">
+         <button onclick="publishAllInPath()"
+                 title="Publish every draft lesson in this path"
+                 style="background:transparent;border:1px solid var(--border);color:#86efac;padding:3px 10px;font-family:var(--mono);font-size:11px;border-radius:3px;cursor:pointer;">⬆ Publish all drafts (${draftCount})</button>
+       </div>`
+    : '';
+
+  listEl.innerHTML = bulkBar + rows;
+}
+
+/**
+ * S14-VOX-04 — POST /lessons/:id/publish or /unpublish, then refresh
+ * the browser so the status pill + row actions update. No confirm for
+ * single-lesson toggles: the action is cheap and reversible (the
+ * opposite button is one click away).
+ */
+async function togglePublishLesson(lessonId, title, publish) {
+  if (!lessonId) return;
+  const action = publish ? 'publish' : 'unpublish';
+  try {
+    const res = await fetch(`${API}/lessons/${encodeURIComponent(lessonId)}/${action}`, { method: 'POST' });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || `HTTP ${res.status}`);
+    }
+    await refreshContentBrowser();
+  } catch (err) {
+    window.alert(`Failed to ${action} "${title || '(untitled)'}": ${err.message}`);
+    console.error('[togglePublishLesson]', err);
+  }
+}
+
+/**
+ * S14-VOX-04 — publish every draft lesson in the currently-selected
+ * path. Sequential (not Promise.all) so a mid-batch failure leaves an
+ * understandable partial state, and the dev DB isn't hammered with
+ * parallel writes. Native confirm, same rationale as deleteLesson.
+ */
+async function publishAllInPath() {
+  const selectedId = BROWSER_STATE.selectedPathId;
+  const lessons = BROWSER_STATE.lessonsByPath[selectedId] || [];
+  const drafts = lessons.filter((l) => l.status !== 'published');
+  if (drafts.length === 0) return;
+  const ok = window.confirm(
+    `Publish ${drafts.length} draft lesson${drafts.length === 1 ? '' : 's'} in this path?\n\n` +
+    `Published lessons become visible to the iOS apps.`
+  );
+  if (!ok) return;
+  const failures = [];
+  for (const lesson of drafts) {
+    try {
+      const res = await fetch(`${API}/lessons/${encodeURIComponent(lesson.id)}/publish`, { method: 'POST' });
+      if (!res.ok) failures.push(lesson.title || lesson.id);
+    } catch {
+      failures.push(lesson.title || lesson.id);
+    }
+  }
+  if (failures.length > 0) {
+    window.alert(`Failed to publish ${failures.length} lesson(s):\n${failures.join('\n')}`);
+  }
+  await refreshContentBrowser();
 }
 
 /**

@@ -10,6 +10,14 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
+  // S14-VOX-01: externally-reachable base URL baked into dev-mode asset
+  // URLs (assetUploader local fallback). Unset → `http://localhost:PORT`,
+  // which an iPad on the LAN can't reach — set to e.g.
+  // `http://192.168.7.50:3000` for LAN demos. The iOS-side localhost
+  // rewrite (CardHeroImage) stays as a defensive fallback for rows
+  // minted before this var was set.
+  PUBLIC_BASE_URL: z.string().url().optional(),
+
   // Database
   DATABASE_URL: z.string(),
 

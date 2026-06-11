@@ -553,6 +553,80 @@ export async function lessonRoutes(fastify: FastifyInstance): Promise<void> {
     }
   );
 
+  // POST /lessons/:id/unpublish - Revert lesson to draft (S14-VOX-04).
+  // Mirror of /publish so the Oracle Content Browser can toggle a lesson
+  // out of the iOS-visible set without deleting it.
+  fastify.post<{ Params: LessonParams }>(
+    '/:id/unpublish',
+    {
+      preHandler: validateParams(lessonParamsSchema),
+    },
+    async (request, reply) => {
+      try {
+        if (!request.userId) {
+          return reply.status(401).send({
+            statusCode: 401,
+            error: 'Unauthorized',
+            message: 'Missing authentication token',
+          });
+        }
+
+        const { id } = request.params;
+        const prisma = getPrismaClient();
+
+        // Verify ownership
+        const lesson = await prisma.lesson.findUnique({
+          where: { id },
+          select: { userId: true },
+        });
+
+        if (!lesson) {
+          return reply.status(404).send({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Lesson not found',
+          });
+        }
+
+        if (lesson.userId !== request.userId) {
+          return reply.status(403).send({
+            statusCode: 403,
+            error: 'Forbidden',
+            message: 'You do not have permission to unpublish this lesson',
+          });
+        }
+
+        const unpublished = await prisma.lesson.update({
+          where: { id },
+          data: {
+            status: 'draft',
+            publishedAt: null,
+          },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            thumbnailUrl: true,
+            difficulty: true,
+            status: true,
+            sortOrder: true,
+            createdAt: true,
+            publishedAt: true,
+          },
+        });
+
+        return reply.status(200).send(unpublished);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'Failed to unpublish lesson',
+        });
+      }
+    }
+  );
+
   // DELETE /lessons/:id - Delete lesson
   fastify.delete<{ Params: LessonParams }>(
     '/:id',

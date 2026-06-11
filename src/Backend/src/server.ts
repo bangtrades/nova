@@ -37,6 +37,38 @@ async function buildServer(): Promise<ReturnType<typeof Fastify>> {
   });
 
   // ---------------------------------------------------------------------
+  // S14-VOX-03: Empty-body JSON tolerance
+  //
+  // Fastify's stock JSON parser rejects a request that declares
+  // `Content-Type: application/json` but ships no body
+  // (FST_ERR_CTP_EMPTY_JSON_BODY → 400). Several routes are action
+  // endpoints with no payload (`POST /lessons/:id/publish`,
+  // `/unpublish`, pipeline retriggers), and both iOS URLSession and
+  // plain `curl -X POST -H 'content-type: application/json'` hit the
+  // rejection — forcing the `-d '{}'` workaround. This replacement
+  // parser treats an empty/whitespace body as `undefined` (same as no
+  // body at all) and otherwise parses JSON normally, returning the
+  // same 400 shape on malformed payloads.
+  // ---------------------------------------------------------------------
+  fastify.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_request, body, done) => {
+      if (typeof body !== 'string' || body.trim() === '') {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body));
+      } catch (err) {
+        const error = err as Error & { statusCode?: number };
+        error.statusCode = 400;
+        done(error, undefined);
+      }
+    }
+  );
+
+  // ---------------------------------------------------------------------
   // S12-12: Global UUID-param case normalization
   //
   // Why this exists: every model in `schema.prisma` declares its `id` as
